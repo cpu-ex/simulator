@@ -1,7 +1,8 @@
-srcs = mem.c core.c instr.c main.c
+srcs = mem.c core.c instr.c win.c sim.c main.c
+cflags = -lncurses
 
 main: $(srcs)
-	gcc $^ -o $@
+	gcc $(cflags) $^ -o $@
 
 .PHONY: clean
 clean:
