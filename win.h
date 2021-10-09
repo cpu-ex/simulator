@@ -9,7 +9,8 @@ typedef struct win {
     WINDOW* mem_win;
     WINDOW* com_win;
 
-    void (*wait)(void);
+    STATE (*update)(CORE* core);
+    void (*show_splash_info)(void);
     void (*deinit)(void);
 } WIN;
 

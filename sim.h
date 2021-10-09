@@ -7,7 +7,9 @@ typedef struct sim {
     CORE* core;
     WIN* win;
 
+    STATE state;
+
     void (*run)(void);
 } SIM;
 
-void init_sim(SIM* sim);
+void init_sim(SIM* sim, ADDR pc);

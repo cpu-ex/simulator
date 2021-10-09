@@ -32,10 +32,10 @@ void store(ADDR addr, WORD val, int bytes) {
     }
 }
 
-void init_core(CORE* core) {
+void init_core(CORE* core, ADDR pc) {
     core_base = core;
 
-    core->pc = 0x100;
+    core->pc = pc;
     for (int i = 0; i < 32; i++)
         core->regs[i] = 0;
     
