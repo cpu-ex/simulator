@@ -9,7 +9,8 @@ typedef u_int32_t WORD;
 typedef u_int32_t ADDR;
 typedef u_int32_t REG;
 
-typedef enum state {
-    QUIT = 0,
-    NEXT
-} STATE;
+// assuming maximum 8
+typedef u_int32_t STATE;
+#define STAT_QUIT 0
+#define STAT_HALT 1
+#define STAT_STEP 2

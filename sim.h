@@ -7,7 +7,13 @@ typedef struct sim {
     CORE* core;
     WIN* win;
 
-    STATE state;
+    union _state {
+        STATE raw;
+        struct _info {
+            u_int8_t type : 3;
+            u_int32_t steps: 29;
+        } info;
+    } state;
 
     void (*run)(void);
 } SIM;

@@ -10,6 +10,7 @@ void if_dc_ex() {
     INSTR curr_instr = { .raw = raw };
     // execute
     execute(core_base, curr_instr);
+    core_base->instr_counter += 1;
 }
 
 WORD load(ADDR addr, int bytes, int sign) {
@@ -39,6 +40,8 @@ void init_core(CORE* core, ADDR pc) {
     for (int i = 0; i < 32; i++)
         core->regs[i] = 0;
     
+    core->instr_counter = 0;
+
     static MMU mmu;
     init_mmu(&mmu);
     core->mmu = &mmu;
