@@ -33,7 +33,7 @@ typedef struct core {
     REG pc;
     REG regs[32];
     
-    u_int64_t instr_counter;
+    uint64_t instr_counter;
 
     MMU* mmu;
 

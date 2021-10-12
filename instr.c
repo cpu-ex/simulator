@@ -51,7 +51,7 @@ void BRANCH(CORE* core, INSTR instr) {
     BYTE rs2 = instr.b.rs2;
     BYTE funct3 = instr.b.funct3;
 
-    u_int8_t cmp = 0;
+    uint8_t cmp = 0;
     WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
     switch (funct3) {
     // beq
