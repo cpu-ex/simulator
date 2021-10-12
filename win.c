@@ -63,8 +63,6 @@ void show_help_win() {
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);
-    free(help_win_outer);
-    free(help_win_inner);
 }
 
 void show_splash_win() {
@@ -82,7 +80,6 @@ void show_splash_win() {
     if (getch() == 'h') {
         show_help_win();
     }
-    free(splash_box);
     show_main_win();
 }
 

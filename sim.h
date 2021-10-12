@@ -10,8 +10,8 @@ typedef struct sim {
     union _state {
         STATE raw;
         struct _info {
-            uint8_t type : 3;
-            uint32_t steps: 29;
+            u8 type : 3;
+            u32 steps: 29;
         } info;
     } state;
 

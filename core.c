@@ -5,7 +5,7 @@ static CORE* core_base;
 
 void if_dc_ex() {
     // fetch
-    uint32_t raw = core_base->mmu->read_word(core_base->pc);
+    u32 raw = core_base->mmu->read_word(core_base->pc);
     // decode
     INSTR curr_instr = { .raw = raw };
     // execute
