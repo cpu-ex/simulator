@@ -73,7 +73,9 @@ void show_splash_win() {
     char info[] = "-> press any key but 'h' to skip <-";
     mvwprintw(splash_box, 2, (40 - strlen(title)) / 2, title);
     mvwprintw(splash_box, 3, (40 - strlen(author)) / 2, author);
+    attron(COLOR_PAIR(STANDOUT_COLOR));
     mvprintw(13, (80 - strlen(info)) / 2, info);
+    attroff(COLOR_PAIR(STANDOUT_COLOR));
     refresh();
     wrefresh(splash_box);
     // catch char h
@@ -100,6 +102,10 @@ int reg2idx(char* reg) {
 }
 
 COMMAND get_command() {
+    // echo + blinking cursor
+    echo();
+    curs_set(1);
+    // prepare a COMMAND struct
     COMMAND com;
     com.argc = 0;
     // split with space (exactly 1 space)
@@ -163,6 +169,9 @@ COMMAND get_command() {
         com.argc = 1;
         com.argv[0] = 1;
     }
+    // noecho + hide cursor
+    noecho();
+    curs_set(0);
     return com;
 }
 
@@ -285,7 +294,8 @@ void init_win(WIN* win) {
     printf("\e[8;24;80t");
     // initialize ncurses mode, and end it in deinit()
     initscr();
-    cbreak();
+    noecho();
+    curs_set(0);
     // set colors if supported
     if (has_colors()) start_color();
     init_pair(TITLE_COLOR, COLOR_BLUE, COLOR_BLACK);
