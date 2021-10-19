@@ -1,9 +1,14 @@
-srcs = mem.c core.c instr.c win.c sim.c main.c
-cflags = -lncurses
+VPATH = src gui
+srcs = $(shell find . -type f -name "*.c")
+objs = $(patsubst %.c, %.o, $(srcs))
 
-main: $(srcs)
-	gcc $^ -o $@ $(cflags)
+sim: $(objs)
+	gcc -o $@ $^ -lncurses
+
+$(objs): types.h
+core.o: mem.h
+instr.o, win.o: core.h
 
 .PHONY: clean
 clean:
-	rm main
+	rm sim $(objs)

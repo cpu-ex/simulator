@@ -1,7 +1,7 @@
 #pragma once
 #include <ncurses.h>
-#include "types.h"
-#include "core.h"
+#include "../src/types.h"
+#include "../src/core.h"
 
 #define REG_SET_DEF 0
 #define REG_SET_A   1

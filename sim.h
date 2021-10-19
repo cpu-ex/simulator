@@ -1,7 +1,7 @@
 #pragma once
-#include "types.h"
-#include "core.h"
-#include "win.h"
+#include "src/types.h"
+#include "src/core.h"
+#include "gui/win.h"
 
 typedef struct sim {
     CORE* core;
