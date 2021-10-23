@@ -11,7 +11,7 @@ void run() {
             return;
         case STAT_STEP:
             if (sim_base->state.info.steps > 0) {
-                sim_base->core->if_dc_ex();
+                sim_base->core->step();
                 sim_base->state.info.steps -= 1;
             } else {
                 sim_base->state.raw = STAT_HALT;

@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
-#include "core.h"
+
+#define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
 
 typedef union instr {
     u32 raw;
@@ -63,4 +64,4 @@ typedef union instr {
     } __attribute__((packed)) j;
 } INSTR;
 
-void execute(CORE *core, INSTR instr);
+void disasm(INSTR instr, char* buffer);

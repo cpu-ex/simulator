@@ -39,7 +39,7 @@ typedef struct core {
 
     WORD (*load)(ADDR, int ,int);
     void (*store)(ADDR, WORD, int);
-    void (*if_dc_ex)(void);
+    void (*step)(void);
 } CORE;
 
 void init_core(CORE* core, ADDR pc);

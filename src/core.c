@@ -1,9 +1,9 @@
 #include "core.h"
-#include "instr.h"
+#include "exec.h"
 
 static CORE* core_base;
 
-void if_dc_ex() {
+void step() {
     // fetch
     u32 raw = core_base->mmu->read_word(core_base->pc);
     // decode
@@ -48,5 +48,5 @@ void init_core(CORE* core, ADDR pc) {
 
     core->load = load;
     core->store = store;
-    core->if_dc_ex = if_dc_ex;
+    core->step = step;
 }

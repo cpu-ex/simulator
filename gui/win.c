@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "win.h"
+#include "../src/instr.h"
 
 #define TITLE_COLOR    1
 #define SUBTITLE_COLOR 2
@@ -215,9 +216,15 @@ STATE wait4command() {
 void update_pc(CORE* core) {
     WINDOW *win = win_base->pc_win;
     wclear(win);
+    // fetch pc and op
     ADDR pc = core->pc;
     WORD op = core->load(pc, 2, 0);
-    wprintw(win, "%-5u 0x%08X : %08X", core->instr_counter, pc, op);
+    // disasm
+    char asm_buf[24];
+    INSTR curr_instr = { .raw = op };
+    disasm(curr_instr, asm_buf);
+    // update
+    wprintw(win, "%-5u 0x%08X : %08X : %s", core->instr_counter, pc, op, asm_buf);
 }
 
 void update_reg(CORE* core) {
