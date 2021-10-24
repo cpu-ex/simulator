@@ -7,7 +7,8 @@ sim: $(objs)
 
 $(objs): types.h
 core.o: mem.h
-instr.o, win.o: core.h
+exec.o, win.o: core.h
+exec.o: instr.h
 
 .PHONY: clean
 clean:

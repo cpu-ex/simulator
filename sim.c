@@ -22,7 +22,7 @@ void run() {
             break;
         case STAT_STEP:
             if (BROADCAST.decoder.info > 0) {
-                sim_base->core->if_dc_ex();
+                sim_base->core->step();
                 BROADCAST.decoder.info -= 1;
             } else {
                 BROADCAST(STAT_HALT);

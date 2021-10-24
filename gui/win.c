@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "win.h"
+#include "../src/instr.h"
 
 #define TITLE_COLOR    1
 #define SUBTITLE_COLOR 2
@@ -215,15 +216,21 @@ STATE wait4command() {
 void update_pc(CORE* core) {
     WINDOW *win = win_base->pc_win;
     wclear(win);
+    // fetch pc and op
     ADDR pc = core->pc;
     WORD op = core->load(pc, 2, 0);
-    wprintw(win, "%-5u 0x%08X : %08X", core->instr_counter, pc, op);
+    // disasm
+    char asm_buf[24];
+    INSTR curr_instr = { .raw = op };
+    disasm(curr_instr, asm_buf);
+    // update
+    wprintw(win, "%-5u 0x%08X : %08X : %24s", core->instr_counter, pc, op, asm_buf);
     switch (BROADCAST.decoder.type) {
-    case STAT_EXIT: wprintw(win, "%50s", "exit"); break;
-    case STAT_HALT: wprintw(win, "%50s", "halt"); break;
-    case STAT_STEP: wprintw(win, "%50s", "step"); break;
-    case STAT_MEM_EXCEPTION: wprintw(win, "%50s", "mem exception"); break;
-    default: wprintw(win, "%50s", "quit or unknow"); break;
+    case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
+    case STAT_HALT: wprintw(win, "%24s", "halt"); break;
+    case STAT_STEP: wprintw(win, "%24s", "step"); break;
+    case STAT_MEM_EXCEPTION: wprintw(win, "%24s", "mem exception"); break;
+    default: wprintw(win, "%24s", "quit or unknow"); break;
     }
 }
 

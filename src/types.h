@@ -1,8 +1,6 @@
 #pragma once
 #include <stdio.h>
 
-#define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
-
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
