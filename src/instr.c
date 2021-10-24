@@ -176,8 +176,6 @@ void ARITH_DISASM(INSTR instr, char* buffer) {
     }
 }
 
-// store 
-
 void disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* risc-v I */
