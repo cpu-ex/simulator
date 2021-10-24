@@ -16,15 +16,15 @@ void run() {
                 BROADCAST(STAT_EXIT);
             break;
         case STAT_HALT:
-            if (!sim_base->core->pc)
-                BROADCAST(STAT_EXIT);
-            else
-                BROADCAST(sim_base->win->update(sim_base->core));
+            BROADCAST(sim_base->win->update(sim_base->core));
             break;
         case STAT_STEP:
-            if (BROADCAST.decoder.info > 0) {
+            if (!sim_base->core->pc) {
+                // pc final return
+                BROADCAST(STAT_EXIT);
+            } else if ((signed)BROADCAST.decoder.info) {
                 sim_base->core->step();
-                BROADCAST.decoder.info -= 1;
+                BROADCAST.decoder.info = (unsigned)((signed)BROADCAST.decoder.info - 1);
             } else {
                 BROADCAST(STAT_HALT);
             }
