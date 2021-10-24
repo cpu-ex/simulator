@@ -13,6 +13,7 @@
 	- gcc
 	- ncurses
 		> MacOS: supported
+		> 
 		> Ubuntu: run `sudo apt-get install libncurses5-dev`
 	- python3.8
 
@@ -21,7 +22,7 @@
 	- step2: `python3 asm.py fileName.s`
 		
 		> relative path to `.s` file needed
-	- step3: check output of in `./bin`
+	- step3: check outputs in `./bin`
 	
 - simulator
 	- step1: `make`
