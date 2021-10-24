@@ -202,7 +202,7 @@ STATE wait4command() {
         }
         return STAT_HALT;
     case 'm':
-        win_base->mem_start = com.argc ? com.argv[0] & (~0xFF) : 0x0;
+        win_base->mem_start = com.argc ? com.argv[0] & (~0xFF) : 0x10000;
         win_base->mem_focus = com.argc ? com.argv[0] : 0xFFFFFFFF;
         return STAT_HALT;
     case 'h':
@@ -305,7 +305,7 @@ void init_win(WIN* win) {
     // regist variables
     win->reg_set = REG_SET_DEF;
     memset(win->reg_focus, 0, 32);
-    win->mem_start = 0x0;
+    win->mem_start = 0x10000;
     win->mem_focus = 0xFFFFFFFF;
 
     win->update = update;

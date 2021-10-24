@@ -1,10 +1,13 @@
 #pragma once
 #include "types.h"
 
-#define CACHE_LEN 0x400
+#define STACK_POINTER 0xBFFFFFF0
 
 typedef struct mmu {
-    BYTE* cache;
+    BYTE* instr_cache;
+    BYTE* data_cache;
+    BYTE* data_mem;
+    BYTE* stack;
 
     BYTE (*read_byte)(ADDR);
     HALF (*read_half)(ADDR);

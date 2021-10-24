@@ -37,10 +37,8 @@ void init_core(CORE* core, ADDR pc) {
     core_base = core;
 
     core->pc = pc;
-    for (int i = 0; i < 32; i++)
-        core->regs[i] = 0;
-    
     core->instr_counter = 0;
+    core->regs[sp] = STACK_POINTER;
 
     static MMU mmu;
     init_mmu(&mmu);
