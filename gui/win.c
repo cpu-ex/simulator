@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "win.h"
 #include "../src/instr.h"
 
@@ -227,6 +224,7 @@ void update_pc(CORE* core) {
     disasm(curr_instr, asm_buf);
     // update
     wprintw(win, "%-5u 0x%08X : %08X : %-24s", core->instr_counter, pc, op, asm_buf);
+    wattron(win, COLOR_PAIR(STANDOUT_COLOR));
     switch (BROADCAST.decoder.type) {
     case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
     case STAT_HALT: wprintw(win, "%24s", "halt"); break;
@@ -234,6 +232,7 @@ void update_pc(CORE* core) {
     case STAT_MEM_EXCEPTION: wprintw(win, "%24s", "mem exception"); break;
     default: wprintw(win, "%24s", "quit or unknow"); break;
     }
+    wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
 }
 
 void update_reg(CORE* core) {

@@ -30,7 +30,7 @@ void JALR_DISASM(INSTR instr, char* buffer) {
     BYTE rd = instr.i.rd;
     WORD imm = instr.i.imm;
     BYTE rs1 = instr.i.rs1;
-    sprintf(buffer, "jalr %s, %s, %d", reg_name[rd], reg_name[rs1], imm);
+    sprintf(buffer, "jalr %s, %d(%s)", reg_name[rd], imm, reg_name[rs1]);
 }
 
 // branch rs1, rs2, imm

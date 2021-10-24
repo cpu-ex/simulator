@@ -1,4 +1,5 @@
 # encoder
+
 import re
 
 def reg2idx(name: str) -> int:
@@ -87,17 +88,17 @@ def branch(instr: tuple, addr: int, tags: dict) -> str:
     mc = 1100011
     mc |= ((imm & 0x00000800) >> 11) << 7 # 11
     mc |= ((imm & 0x0000001E) >>  1) << 8 # 4:1
-    if name == 'beq':
+    if name == 'BEQ':
         mc |= 0b000 << 12
-    elif name == 'bne':
+    elif name == 'BNE':
         mc |= 0b001 << 12
-    elif name == 'blt':
+    elif name == 'BLT':
         mc |= 0b100 << 12
-    elif name == 'bge':
+    elif name == 'BGE':
         mc |= 0b101 << 12
-    elif name == 'bltu':
+    elif name == 'BLTU':
         mc |= 0b110 << 12
-    elif name == 'bgeu':
+    elif name == 'BGEU':
         mc |= 0b111 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
@@ -114,15 +115,15 @@ def load(instr: tuple, addr: int, tags: dict) -> str:
 
     mc = 0b0000011
     mc |= (rd & 0x1F) << 7
-    if name == 'lb':
+    if name == 'LB':
         mc |= 0b000 << 12
-    elif name == 'lh':
+    elif name == 'LH':
         mc |= 0b001 << 12
-    elif name == 'lw':
+    elif name == 'LW':
         mc |= 0b010 << 12
-    elif name == 'lbu':
+    elif name == 'LBU':
         mc |= 0b100 << 12
-    elif name == 'lhu':
+    elif name == 'LHU':
         mc |= 0b101 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
@@ -137,11 +138,11 @@ def store(instr: tuple, addr: int, tags: dict) -> str:
 
     mc = 0b0100011
     mc |= (imm & 0xF) << 7 # [4:0]
-    if name == 'sb':
+    if name == 'SB':
         mc |= 0b000 << 12
-    elif name == 'sh':
+    elif name == 'SH':
         mc |= 0b001 << 12
-    elif name == 'sw':
+    elif name == 'SW':
         mc |= 0b010 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
@@ -158,33 +159,33 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> str:
     mc = 0b0010011
     mc |= (rd & 0x1F) << 7
     mc |= (rs1 & 0x1F) << 15
-    if name == 'addi':
+    if name == 'ADDI':
         mc |= 0b000 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'slti':
+    elif name == 'SLTI':
         mc |= 0b010 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'sltiu':
+    elif name == 'SLTIU':
         mc |= 0b011 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'xori':
+    elif name == 'XORI':
         mc |= 0b100 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'ori':
+    elif name == 'ORI':
         mc |= 0b110 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'andi':
+    elif name == 'ANDI':
         mc |= 0b111 << 12
         mc |= (imm & 0xFFF) << 20
-    elif name == 'slli':
+    elif name == 'SLLI':
         mc |= 0b001 << 12
         mc |= (imm & 0x1F) << 20 # shamt
         mc |= 0b0000000 << 25
-    elif name == 'srli':
+    elif name == 'SRLI':
         mc |= 0b101 << 12
         mc |= (imm & 0x1F) << 20 # shamt
         mc |= 0b0000000 << 25
-    elif name == 'srai':
+    elif name == 'SRAI':
         mc |= 0b101 << 12
         mc |= (imm & 0x1F) << 20 # shamt
         mc |= 0b0100000 << 25
@@ -201,34 +202,34 @@ def arith(instr: tuple, addr: int, tags: dict) -> str:
     mc |= (rd & 0x1F) << 7
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
-    if name == 'add':
+    if name == 'ADD':
         mc |= 0b000 << 12
         mc |= 0b0000000 << 25
-    elif name == 'sub':
+    elif name == 'SUB':
         mc |= 0b000 << 12
         mc |= 0b0100000 << 25
-    elif name == 'sll':
+    elif name == 'SLL':
         mc |= 0b001 << 12
         mc |= 0b0000000 << 25
-    elif name == 'slt':
+    elif name == 'SLT':
         mc |= 0b010 << 12
         mc |= 0b0000000 << 25
-    elif name == 'sltu':
+    elif name == 'SLTU':
         mc |= 0b011 << 12
         mc |= 0b0000000 << 25
-    elif name == 'xor':
+    elif name == 'XOR':
         mc |= 0b100 << 12
         mc |= 0b0000000 << 25
-    elif name == 'srl':
+    elif name == 'SRL':
         mc |= 0b101 << 12
         mc |= 0b0000000 << 25
-    elif name == 'sra':
+    elif name == 'SRA':
         mc |= 0b101 << 12
         mc |= 0b0100000 << 25
-    elif name == 'or':
+    elif name == 'OR':
         mc |= 0b110 << 12
         mc |= 0b0000000 << 25
-    elif name == 'and':
+    elif name == 'AND':
         mc |= 0b111 << 12
         mc |= 0b0000000 << 25
     return bin(mc)[2:].zfill(32)

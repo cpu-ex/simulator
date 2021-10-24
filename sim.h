@@ -7,6 +7,7 @@ typedef struct sim {
     CORE* core;
     WIN* win;
 
+    void (*load)(char*);
     void (*run)(void);
 } SIM;
 

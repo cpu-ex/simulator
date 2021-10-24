@@ -1,5 +1,5 @@
 # assembler
-# pesudo code not supported
+# pseudo code not supported
 
 import os
 import decoder, encoder
@@ -57,11 +57,12 @@ class ASM(object):
     def output(self):
         if not os.path.exists('../bin/'):
             os.mkdir('../bin/')
+        buffer = list()
+        for idx, instr in enumerate(self.source):
+            addr = DEFAULT_PC + 4 * idx
+            buffer.append(self.encode(instr, addr))
         with open(f'../bin/{self.fileName}.code', 'w') as file:
-            for idx, instr in enumerate(self.source):
-                addr = DEFAULT_PC + 4 * idx
-                file.write(self.encode(instr, addr))
-                file.write('\n')
+            file.writelines('\n'.join(buffer))
 
 if __name__ == '__main__':
     asm = ASM()

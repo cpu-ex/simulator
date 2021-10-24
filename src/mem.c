@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "mem.h"
 
 static MMU* mmu_base;
