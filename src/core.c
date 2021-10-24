@@ -10,6 +10,7 @@ void if_dc_ex() {
     INSTR curr_instr = { .raw = raw };
     // execute
     execute(core_base, curr_instr);
+    core_base->regs[zero] = 0;
     core_base->instr_counter += 1;
 }
 
@@ -38,6 +39,7 @@ void init_core(CORE* core, ADDR pc) {
 
     core->pc = pc;
     core->instr_counter = 0;
+    core->regs[ra] = 0x0;
     core->regs[sp] = STACK_POINTER;
 
     static MMU mmu;

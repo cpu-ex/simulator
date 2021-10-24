@@ -5,42 +5,53 @@ static MMU* mmu_base;
 static u32 INSTR_LEN, DATA_LEN, STACK_LEN;
 
 WORD mmu_read(ADDR addr, int loop) {
-    addr -= 0x10000;
     WORD val = 0;
-    for (int i = loop - 1; i >= 0; i--) {
-        val <<= 8;
-        if (addr < INSTR_LEN) {
-            // instruction memory
-            val |= mmu_base->instr_cache[addr + i];
-        } else if (addr < INSTR_LEN + DATA_LEN) {
-            // data memory
-            val |= mmu_base->data_mem[addr + i];
-        } else if (addr >= STACK_POINTER - STACK_LEN) {
-            // stack
-            val |= mmu_base->stack[STACK_POINTER - addr - 4 + i];
-        } else {
-            // unmapped
+    if (addr == 0x0) {
+        // pc final return
+    } else if (addr < 0x10000) {
+        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+    } else {
+        addr -= 0x10000;
+        for (int i = loop - 1; i >= 0; i--) {
+            val <<= 8;
+            if (addr < INSTR_LEN) {
+                // instruction memory
+                val |= mmu_base->instr_cache[addr + i];
+            } else if (addr < INSTR_LEN + DATA_LEN) {
+                // data memory
+                val |= mmu_base->data_mem[addr + i];
+            } else if (addr >= STACK_POINTER - STACK_LEN) {
+                // stack
+                val |= mmu_base->stack[STACK_POINTER - addr - 4 + i];
+            } else {
+                // unmapped
+            }
         }
     }
     return val;
 }
 
 void mmu_write(ADDR addr, WORD val, int loop) {
-    addr -= 0x10000;
-    for (int i = 0; i < loop; i++) {
-        if (addr < INSTR_LEN) {
-            // instruction memory
-            mmu_base->instr_cache[addr + i] = val & 0xFF;
-        } else if (addr < INSTR_LEN + DATA_LEN) {
-            // data memory
-            mmu_base->data_mem[addr + i] = val & 0xFF;
-        } else if (addr >= STACK_POINTER - STACK_LEN) {
-            // stack
-            mmu_base->stack[STACK_POINTER - addr - 4 + i] = val & 0xFF;
-        } else {
-            // unmapped
+    if (addr < 0x10000) {
+        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+        return;
+    } else {
+        addr -= 0x10000;
+        for (int i = 0; i < loop; i++) {
+            if (addr < INSTR_LEN) {
+                // instruction memory
+                mmu_base->instr_cache[addr + i] = val & 0xFF;
+            } else if (addr < INSTR_LEN + DATA_LEN) {
+                // data memory
+                mmu_base->data_mem[addr + i] = val & 0xFF;
+            } else if (STACK_POINTER - STACK_LEN <= addr && addr < STACK_POINTER) {
+                // stack
+                mmu_base->stack[STACK_POINTER - addr - 4 + i] = val & 0xFF;
+            } else {
+                // unmapped
+            }
+            val >>= 8;
         }
-        val >>= 8;
     }
 }
 

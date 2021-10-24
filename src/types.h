@@ -14,8 +14,19 @@ typedef u32 WORD;
 typedef u32 ADDR;
 typedef u32 REG;
 
-// assuming maximum 8
-typedef u32 STATE;
+union broadcast {
+    u64 raw;
+
+    struct broadcast_decoder {
+        u32 type: 32;
+        u32 info: 32;
+    } decoder;
+} BROADCAST;
+
+#define STATE u64
+#define BROADCAST(stat) BROADCAST.raw = (stat)
 #define STAT_QUIT 0
-#define STAT_HALT 1
-#define STAT_STEP 2
+#define STAT_EXIT 1
+#define STAT_HALT 2
+#define STAT_STEP 3
+#define STAT_MEM_EXCEPTION 4

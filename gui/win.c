@@ -181,7 +181,7 @@ STATE wait4command() {
     case 'q':
         return STAT_QUIT;
     case 's':
-        return STAT_STEP | (com.argv[0] << 3);
+        return STAT_STEP | ((u64)com.argv[0] << 32);
     case 'r':
         for (int i = 0; i < com.argc; i++) {
             int arg = com.argv[i];
@@ -218,6 +218,13 @@ void update_pc(CORE* core) {
     ADDR pc = core->pc;
     WORD op = core->load(pc, 2, 0);
     wprintw(win, "%-5u 0x%08X : %08X", core->instr_counter, pc, op);
+    switch (BROADCAST.decoder.type) {
+    case STAT_EXIT: wprintw(win, "%50s", "exit"); break;
+    case STAT_HALT: wprintw(win, "%50s", "halt"); break;
+    case STAT_STEP: wprintw(win, "%50s", "step"); break;
+    case STAT_MEM_EXCEPTION: wprintw(win, "%50s", "mem exception"); break;
+    default: wprintw(win, "%50s", "quit or unknow"); break;
+    }
 }
 
 void update_reg(CORE* core) {
@@ -243,6 +250,18 @@ void update_reg(CORE* core) {
 void update_mem(CORE* core) {
     WINDOW* win = win_base->mem_win;
     wclear(win);
+
+    // handle memory access exception
+    if (BROADCAST.decoder.type == STAT_MEM_EXCEPTION) {
+        win_base->mem_start = BROADCAST.decoder.info & (~0xFF);
+        win_base->mem_focus = BROADCAST.decoder.info;
+        wattron(win, COLOR_PAIR(STANDOUT_COLOR));
+        wprintw(win, "invalid access to 0x%08X", BROADCAST.decoder.info);
+        wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+        wgetch(win);
+        wclear(win);
+    }
+
     ADDR addr = win_base->mem_start;
     for (ADDR offset = 0; offset < 0x100; offset++) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));

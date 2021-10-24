@@ -5,7 +5,7 @@
 typedef union instr {
     u32 raw;
 
-    struct _decoder {
+    struct instr_decoder {
         u32 opcode : 7;
         u32 operand : 25;
     }__attribute__((packed)) decoder;
