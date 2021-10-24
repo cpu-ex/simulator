@@ -16,9 +16,10 @@ void run() {
                 BROADCAST(STAT_EXIT);
             break;
         case STAT_HALT:
-            BROADCAST(sim_base->win->update(sim_base->core));
             if (!sim_base->core->pc)
                 BROADCAST(STAT_EXIT);
+            else
+                BROADCAST(sim_base->win->update(sim_base->core));
             break;
         case STAT_STEP:
             if (BROADCAST.decoder.info > 0) {

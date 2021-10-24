@@ -224,7 +224,7 @@ void update_pc(CORE* core) {
     INSTR curr_instr = { .raw = op };
     disasm(curr_instr, asm_buf);
     // update
-    wprintw(win, "%-5u 0x%08X : %08X : %24s", core->instr_counter, pc, op, asm_buf);
+    wprintw(win, "%-5u 0x%08X : %08X : %-24s", core->instr_counter, pc, op, asm_buf);
     switch (BROADCAST.decoder.type) {
     case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
     case STAT_HALT: wprintw(win, "%24s", "halt"); break;
