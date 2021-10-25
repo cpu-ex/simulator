@@ -48,18 +48,18 @@ void show_main_win() {
 
 void show_help_win() {
     clear();
-    WINDOW* help_win_outer = newwin(17, 70, 3, 5);
-    WINDOW* help_win_inner = newwin(15, 68, 4, 6);
+    WINDOW* help_win_outer = newwin(18, 70, 3, 5);
+    WINDOW* help_win_inner = newwin(16, 68, 4, 6);
     wattron(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     box(help_win_outer, 0, 0);
     mvwprintw(help_win_outer, 0, 2, " Instruction ");
     wattroff(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     mvwprintw(help_win_inner, 0, 3, "step [n]:\n\tmove on for n step, default to 1,\n\tif n is negative, loops util exit or exception");
-    mvwprintw(help_win_inner, 3, 3, "reg [d/a/s/t]:\n\tswitch register set, default to zero -> a5");
+    mvwprintw(help_win_inner, 3, 3, "reg [d|a|s|t]:\n\tswitch register set, default to zero ~ a5");
     mvwprintw(help_win_inner, 5, 3, "reg [-][reg name]:\n\thighlight certain register,\n\tminus for setting back to normal,\n\tmutiple input supported");
-    mvwprintw(help_win_inner, 9, 3, "mem [address]:\n\tswitch memory range, default to 0x0");
-    mvwprintw(help_win_inner, 11, 3, "help:\n\tshow help window");
-    mvwprintw(help_win_inner, 13, 3, "quit:\n\texit simulator");
+    mvwprintw(help_win_inner, 9, 3, "mem [address|tag]:\n\tswitch memory range, default to 0x10000\n\ttags like instr, data, stack are supported");
+    mvwprintw(help_win_inner, 12, 3, "help:\n\tshow help window");
+    mvwprintw(help_win_inner, 14, 3, "quit:\n\texit simulator");
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);
@@ -149,7 +149,6 @@ COMMAND get_command() {
         } else {
             com.argc = 1;
             com.argv[0] = 'd'; // default reg set
-            wprintw(win_base->com_win, "parse as reg, argc = %d", com.argc);
             refresh();
             wgetch(win_base->com_win);
         }
@@ -157,7 +156,18 @@ COMMAND get_command() {
         com.type = 'm';
         if (argc > 1) {
             com.argc = 1;
-            sscanf(output[1], "0x%X", com.argv);
+            if (!strcmp(output[1], "instr")) {
+                com.argv[0] = 0;
+            } else if (!strcmp(output[1], "data")) {
+                com.argv[0] = 1;
+            } else if (!strcmp(output[1], "stack")) {
+                com.argv[0] = 2;
+            } else {
+                com.argv[0] = 0;
+                sscanf(output[1], "0x%X", com.argv);
+                if (!com.argv[0]) // not recognizable
+                    com.argc = 0;
+            }
         } else {
             com.argc = 0;
         }
@@ -175,7 +185,7 @@ COMMAND get_command() {
     return com;
 }
 
-STATE wait4command() {
+STATE wait4command(CORE* core) {
     COMMAND com = get_command();
     switch (com.type) {
     case 'q':
@@ -202,6 +212,17 @@ STATE wait4command() {
         }
         return STAT_HALT;
     case 'm':
+        if (com.argc) {
+            switch (com.argv[0]) {
+            // instructions
+            case 0: com.argv[0] = 0x10000; break;
+            // data
+            case 1: com.argv[0] = 0x10000 + core->mmu->instr_len; break;
+            // stack
+            case 2: com.argv[0] = core->regs[sp]; break;
+            default: break;
+            }
+        }
         win_base->mem_start = com.argc ? com.argv[0] & (~0xFF) : 0x10000;
         win_base->mem_focus = com.argc ? com.argv[0] : 0xFFFFFFFF;
         return STAT_HALT;
@@ -304,7 +325,7 @@ STATE update(CORE* core) {
     wrefresh(win_base->mem_win);
     wrefresh(win_base->com_win);
     // wait for a new command
-    return wait4command();
+    return wait4command(core);
 }
 
 void deinit() {
