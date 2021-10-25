@@ -9,6 +9,14 @@ typedef struct mmu {
     BYTE* data_mem;
     BYTE* stack;
 
+    u32 instr_len;
+    u32 data_len;
+    u32 stack_len;
+
+    void (*allocate_instr)(u64);
+    void (*allocate_data)(u64);
+    void (*allocate_stack)(u64);
+
     BYTE (*read_byte)(ADDR);
     HALF (*read_half)(ADDR);
     WORD (*read_word)(ADDR);

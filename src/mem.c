@@ -1,7 +1,6 @@
 #include "mem.h"
 
 static MMU* mmu_base;
-static u32 INSTR_LEN, DATA_LEN, STACK_LEN;
 
 WORD mmu_read(ADDR addr, int loop) {
     WORD val = 0;
@@ -13,13 +12,13 @@ WORD mmu_read(ADDR addr, int loop) {
         addr -= 0x10000;
         for (int i = loop - 1; i >= 0; i--) {
             val <<= 8;
-            if (addr < INSTR_LEN) {
+            if (addr < mmu_base->instr_len) {
                 // instruction memory
                 val |= mmu_base->instr_cache[addr + i];
-            } else if (addr < INSTR_LEN + DATA_LEN) {
+            } else if (addr < mmu_base->instr_len + mmu_base->data_len) {
                 // data memory
                 val |= mmu_base->data_mem[addr + i];
-            } else if (addr >= STACK_POINTER - STACK_LEN) {
+            } else if (STACK_POINTER - mmu_base->stack_len <= addr && addr < STACK_POINTER) {
                 // stack
                 val |= mmu_base->stack[STACK_POINTER - addr - 4 + i];
             } else {
@@ -37,13 +36,13 @@ void mmu_write(ADDR addr, WORD val, int loop) {
     } else {
         addr -= 0x10000;
         for (int i = 0; i < loop; i++) {
-            if (addr < INSTR_LEN) {
+            if (addr < mmu_base->instr_len) {
                 // instruction memory
                 mmu_base->instr_cache[addr + i] = val & 0xFF;
-            } else if (addr < INSTR_LEN + DATA_LEN) {
+            } else if (addr < mmu_base->instr_len + mmu_base->data_len) {
                 // data memory
                 mmu_base->data_mem[addr + i] = val & 0xFF;
-            } else if (STACK_POINTER - STACK_LEN <= addr && addr < STACK_POINTER) {
+            } else if (STACK_POINTER - mmu_base->stack_len <= addr && addr < STACK_POINTER) {
                 // stack
                 mmu_base->stack[STACK_POINTER - addr - 4 + i] = val & 0xFF;
             } else {
@@ -61,16 +60,27 @@ void write_byte(ADDR addr, BYTE val) { mmu_write(addr, (WORD)val, 1); }
 void write_half(ADDR addr, HALF val) { mmu_write(addr, (WORD)val, 2); }
 void write_word(ADDR addr, WORD val) { mmu_write(addr, (WORD)val, 4); }
 
+void allocate_instr(u64 size) {
+    mmu_base->instr_len = size;
+    mmu_base->instr_cache = malloc(size * sizeof(BYTE));
+}
+
+void allocate_data(u64 size) {
+    mmu_base->data_len = size;
+    mmu_base->data_mem = malloc(size * sizeof(BYTE));
+}
+
+void allocate_stack(u64 size) {
+    mmu_base->stack_len = size;
+    mmu_base->stack = malloc(size * sizeof(BYTE));
+}
+
 void init_mmu(MMU* mmu) {
     mmu_base = mmu;
-    // allocate memories
-    INSTR_LEN = 0x100;
-    DATA_LEN = 0x100;
-    STACK_LEN = 0x100;
-    mmu->instr_cache = malloc(INSTR_LEN * sizeof(BYTE));
-    mmu->data_mem = malloc(DATA_LEN * sizeof(BYTE));
-    mmu->stack = malloc(STACK_LEN * sizeof(BYTE));
     // assign interfaces
+    mmu->allocate_instr = allocate_instr;
+    mmu->allocate_data = allocate_data;
+    mmu->allocate_stack = allocate_stack;
     mmu->read_byte = read_byte;
     mmu->read_half = read_half;
     mmu->read_word = read_word;
