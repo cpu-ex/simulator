@@ -24,8 +24,17 @@
 		> relative path to `.s` file needed
 	- step3: check outputs in `./bin`
 	
+- dis-assembler
+
+  - step1: `make disasm`
+  - step2: `./disasm fileName`
+  	
+		> binary code with same file name supposed to be in `./bin`
+		>
+		> using stdout as output
+
 - simulator
-	- step1: `make`
+	- step1: `make sim`
 	- step2: `./sim fileName`
 		
 		> binary code with same file name supposed to be in `./bin`

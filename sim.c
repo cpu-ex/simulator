@@ -1,15 +1,7 @@
 #include "sim.h"
+#include "src/instr.h"
 
 static SIM* sim_base;
-
-u32 str2int(char data[33]) {
-    u32 val = 0;
-    for (int i = 0; i < 32; i++) {
-        if (data[31 - i] == '1')
-            val |= 1 << i;
-    }
-    return val;
-}
 
 void load_file(char* file_name) {
     char code_name[36], data_name[36];
@@ -17,7 +9,7 @@ void load_file(char* file_name) {
     sprintf(data_name, "./bin/%s.data", file_name);
     // read code
     FILE* code = fopen(code_name, "r");
-    ADDR addr = 0x10000;
+    ADDR offset = 0x0;
     if (code == NULL) {
         printf("invalid file name: %s.\n", file_name);
         exit(-1);
@@ -27,13 +19,14 @@ void load_file(char* file_name) {
             fgets(buffer, 34, code);
             buffer[32] = '\0';
             if (strlen(buffer) == 32) {
-                sim_base->core->store(addr, str2int(buffer), 2);
-                addr += 4;
+                sim_base->core->store(0x10000 + offset, str2int(buffer), 2);
+                offset += 4;
             }
             memset(buffer, 0, 32);
         }
     }
     fclose(code);
+    sim_base->core->mmu->instr_len = offset;
     // read data
     FILE* data = fopen(data_name, "r");
     if (data != NULL) {
@@ -42,11 +35,15 @@ void load_file(char* file_name) {
             fgets(buffer, 34, data);
             buffer[32] = '\0';
             if (strlen(buffer) == 32) {
-                sim_base->core->store(addr, str2int(buffer), 2);
-                addr += 4;
+                sim_base->core->store(0x10000 + offset, str2int(buffer), 2);
+                offset += 4;
             }
             memset(buffer, 0, 32);
         }
+        fclose(data);
+        sim_base->core->mmu->data_len = offset - sim_base->core->mmu->instr_len;
+    } else {
+        sim_base->core->mmu->data_len = 0x100;
     }
 }
 
@@ -98,4 +95,5 @@ void init_sim(SIM* sim, ADDR pc) {
     sim->run = run;
     // broadcast state
     BROADCAST(STAT_HALT);
+    printf("sim init done\n");
 }
