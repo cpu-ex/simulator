@@ -20,7 +20,7 @@ WORD load(ADDR addr, int bytes, int sign) {
     case 0: val = (WORD)core_base->mmu->read_byte(addr); break;
     case 1: val = (WORD)core_base->mmu->read_half(addr); break;
     case 2: val = (WORD)core_base->mmu->read_word(addr); break;
-    default: break; // unexpected
+    default: BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32)); break; // unexpected
     }
     return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
 }
@@ -30,7 +30,7 @@ void store(ADDR addr, WORD val, int bytes) {
     case 0: core_base->mmu->write_byte(addr, (BYTE)val); break;
     case 1: core_base->mmu->write_half(addr, (HALF)val); break;
     case 2: core_base->mmu->write_word(addr, (WORD)val); break;
-    default: break; // unexpected
+    default: BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32)); break; // unexpected
     }
 }
 

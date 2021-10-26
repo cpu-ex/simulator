@@ -47,7 +47,7 @@ void load_file(char* file_name) {
         sim_base->core->mmu->allocate_data(0x100);
     }
     // set stack
-    sim_base->core->mmu->allocate_stack(0x100);
+    sim_base->core->mmu->allocate_stack(0x200);
 }
 
 void run() {
@@ -63,6 +63,7 @@ void run() {
             return;
         case STAT_EXIT:
         case STAT_MEM_EXCEPTION:
+        case STAT_INSTR_EXCEPTION:
             BROADCAST(sim_base->win->update(sim_base->core));
             if (BROADCAST.decoder.type != STAT_QUIT)
                 BROADCAST(STAT_EXIT);

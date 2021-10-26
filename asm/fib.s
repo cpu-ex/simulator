@@ -2,7 +2,7 @@
     .align 2
     .globl main
 main:
-    addi a0, a0, 4
+    addi a0, zero, 10
 fib: # a0 = n
     addi sp, sp, -12
     sw ra, 0(sp)

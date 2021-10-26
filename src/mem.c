@@ -2,6 +2,13 @@
 
 static MMU* mmu_base;
 
+#define isInInstr(addr) ((addr) - 0x10000) < mmu_base->instr_len
+#define isInData(addr) ((addr) - 0x10000) < (mmu_base->instr_len + mmu_base->data_len)
+#define isInStack(addr) (STACK_POINTER - mmu_base->stack_len <= (addr)) && ((addr) < STACK_POINTER)
+#define map2instr(addr) (addr) - 0x10000
+#define map2data(addr) (addr) - 0x10000
+#define map2stack(addr) mmu_base->stack_len - (STACK_POINTER - (addr))
+
 WORD mmu_read(ADDR addr, int loop) {
     WORD val = 0;
     if (addr == 0x0) {
@@ -9,20 +16,20 @@ WORD mmu_read(ADDR addr, int loop) {
     } else if (addr < 0x10000) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
     } else {
-        addr -= 0x10000;
         for (int i = loop - 1; i >= 0; i--) {
             val <<= 8;
-            if (addr < mmu_base->instr_len) {
+            if (isInInstr(addr)) {
                 // instruction memory
-                val |= mmu_base->instr_cache[addr + i];
-            } else if (addr < mmu_base->instr_len + mmu_base->data_len) {
+                val |= mmu_base->instr_cache[map2instr(addr) + i];
+            } else if (isInData(addr)) {
                 // data memory
-                val |= mmu_base->data_mem[addr + i];
-            } else if (STACK_POINTER - mmu_base->stack_len <= addr && addr < STACK_POINTER) {
+                val |= mmu_base->data_mem[map2data(addr) + i];
+            } else if (isInStack(addr)) {
                 // stack
-                val |= mmu_base->stack[STACK_POINTER - addr - 4 + i];
+                val |= mmu_base->stack[map2stack(addr) + i];
             } else {
                 // unmapped
+                BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
             }
         }
     }
@@ -34,19 +41,19 @@ void mmu_write(ADDR addr, WORD val, int loop) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
         return;
     } else {
-        addr -= 0x10000;
         for (int i = 0; i < loop; i++) {
-            if (addr < mmu_base->instr_len) {
+            if (isInInstr(addr)) {
                 // instruction memory
-                mmu_base->instr_cache[addr + i] = val & 0xFF;
-            } else if (addr < mmu_base->instr_len + mmu_base->data_len) {
+                mmu_base->instr_cache[map2instr(addr) + i] = val & 0xFF;
+            } else if (isInData(addr)) {
                 // data memory
-                mmu_base->data_mem[addr + i] = val & 0xFF;
-            } else if (STACK_POINTER - mmu_base->stack_len <= addr && addr < STACK_POINTER) {
+                mmu_base->data_mem[map2data(addr) + i] = val & 0xFF;
+            } else if (isInStack(addr)) {
                 // stack
-                mmu_base->stack[STACK_POINTER - addr - 4 + i] = val & 0xFF;
+                mmu_base->stack[map2stack(addr) + i] = val & 0xFF;
             } else {
                 // unmapped
+                BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
             }
             val >>= 8;
         }

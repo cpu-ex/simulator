@@ -1,10 +1,11 @@
 #include "win.h"
 #include "../src/instr.h"
 
-#define TITLE_COLOR    1
-#define SUBTITLE_COLOR 2
-#define STANDOUT_COLOR 3
-#define FOCUS_COLOR    4
+#define TITLE_COLOR     1
+#define SUBTITLE_COLOR  2
+#define WARNING_COLOR   3
+#define HIGHLIGHT_COLOR 4
+#define STANDOUT_COLOR  5
 
 static WIN* win_base;
 
@@ -73,9 +74,9 @@ void show_splash_win() {
     char info[] = "-> press any key but 'h' to skip <-";
     mvwprintw(splash_box, 2, (40 - strlen(title)) / 2, title);
     mvwprintw(splash_box, 3, (40 - strlen(author)) / 2, author);
-    attron(COLOR_PAIR(STANDOUT_COLOR));
+    attron(COLOR_PAIR(WARNING_COLOR));
     mvprintw(13, (80 - strlen(info)) / 2, info);
-    attroff(COLOR_PAIR(STANDOUT_COLOR));
+    attroff(COLOR_PAIR(WARNING_COLOR));
     refresh();
     wrefresh(splash_box);
     // catch char h
@@ -244,16 +245,17 @@ void update_pc(CORE* core) {
     INSTR curr_instr = { .raw = op };
     disasm(curr_instr, asm_buf);
     // update
-    wprintw(win, "%-5u 0x%08X : %08X : %-24s", core->instr_counter, pc, op, asm_buf);
-    wattron(win, COLOR_PAIR(STANDOUT_COLOR));
+    wprintw(win, "%-8u 0x%08X : %08X : %-21s", core->instr_counter, pc, op, asm_buf);
+    wattron(win, COLOR_PAIR(WARNING_COLOR));
     switch (BROADCAST.decoder.type) {
     case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
     case STAT_HALT: wprintw(win, "%24s", "halt"); break;
     case STAT_STEP: wprintw(win, "%24s", "step"); break;
     case STAT_MEM_EXCEPTION: wprintw(win, "%24s", "mem exception"); break;
+    case STAT_INSTR_EXCEPTION: wprintw(win, "%24s", "instr exception"); break;
     default: wprintw(win, "%24s", "quit or unknow"); break;
     }
-    wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+    wattroff(win, COLOR_PAIR(WARNING_COLOR));
 }
 
 void update_reg(CORE* core) {
@@ -270,9 +272,9 @@ void update_reg(CORE* core) {
             wprintw(win, "%2s ", reg_name[regs[idx]]);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (win_base->reg_focus[regs[idx]])
-            wattron(win, COLOR_PAIR(FOCUS_COLOR));
+            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wprintw(win, "%8X\n", core->regs[regs[idx]]);
-        wattroff(win, COLOR_PAIR(FOCUS_COLOR));
+        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
     }
 }
 
@@ -284,9 +286,9 @@ void update_mem(CORE* core) {
     if (BROADCAST.decoder.type == STAT_MEM_EXCEPTION) {
         win_base->mem_start = BROADCAST.decoder.info & (~0xFF);
         win_base->mem_focus = BROADCAST.decoder.info;
-        wattron(win, COLOR_PAIR(STANDOUT_COLOR));
+        wattron(win, COLOR_PAIR(WARNING_COLOR));
         wprintw(win, "invalid access to 0x%08X", BROADCAST.decoder.info);
-        wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+        wattroff(win, COLOR_PAIR(WARNING_COLOR));
         wgetch(win);
         wclear(win);
     }
@@ -297,10 +299,13 @@ void update_mem(CORE* core) {
         if (offset % 0x10 == 0)
             wprintw(win, "0x%08X     ", addr + offset);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-        if ((addr + offset) / 0x10 == win_base->mem_focus / 0x10)
-            wattron(win, COLOR_PAIR(FOCUS_COLOR));
+        if (((addr + offset) & (~0xF)) == (win_base->mem_focus & (~0xF)))
+            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        if (((addr + offset) & (~0x3)) == core->pc)
+            wattron(win, COLOR_PAIR(STANDOUT_COLOR));
         wprintw(win, " %02X", core->load(addr + offset, 0, 0));
-        wattroff(win, COLOR_PAIR(FOCUS_COLOR));
+        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
         if (offset % 0x10 == 0xF)
             wprintw(win, "\n");
     }
@@ -348,8 +353,9 @@ void init_win(WIN* win) {
     if (has_colors()) start_color();
     init_pair(TITLE_COLOR, COLOR_BLUE, COLOR_BLACK);
     init_pair(SUBTITLE_COLOR, COLOR_CYAN, COLOR_BLACK);
-    init_pair(STANDOUT_COLOR, COLOR_RED, COLOR_BLACK);
-    init_pair(FOCUS_COLOR, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(WARNING_COLOR, COLOR_RED, COLOR_BLACK);
+    init_pair(HIGHLIGHT_COLOR, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(STANDOUT_COLOR, COLOR_YELLOW, COLOR_BLACK);
     // regist variables
     win->reg_set = REG_SET_DEF;
     memset(win->reg_focus, 0, 32);

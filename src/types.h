@@ -30,3 +30,4 @@ union broadcast {
 #define STAT_HALT 2
 #define STAT_STEP 3
 #define STAT_MEM_EXCEPTION 4
+#define STAT_INSTR_EXCEPTION 5

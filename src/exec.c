@@ -67,7 +67,7 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     // bgeu
     case 0b111: cmp = (a1 >= a2) ? 1 : 0; break;
     // unexpected
-    default: break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
     core->pc += cmp ? sext(imm, 12) : 4;
 }
@@ -139,7 +139,7 @@ void ARITH_I_EXEC(CORE *core, INSTR instr) {
     // andi
     case 0b111: val = ARITH_AND(a1, a2); break;
     // unexpected
-    default: break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
     core->regs[rd] = val;
     core->pc += 4;
@@ -173,7 +173,7 @@ void ARITH_EXEC(CORE *core, INSTR instr) {
     // and
     case 0b111: val = ARITH_AND(a1, a2); break;
     // unexpected
-    default: break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
     core->regs[rd] = val;
     core->pc += 4;
