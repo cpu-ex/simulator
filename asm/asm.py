@@ -1,7 +1,7 @@
 # assembler
 # pseudo code not supported
 
-import os
+import os, sys
 import decoder, encoder
 
 DEFAULT_PC = 0x10000
@@ -53,6 +53,7 @@ class ASM(object):
                 pass  # skip this currently
             else:
                 self.source.append(instr)
+                addr += 4
 
     def output(self):
         if not os.path.exists('../bin/'):
@@ -66,7 +67,7 @@ class ASM(object):
 
 if __name__ == '__main__':
     asm = ASM()
-    asm.load('test.s')
+    asm.load(sys.argv[1])
     asm.output()
     # tests
     # print(asm.decode('main:'))

@@ -18,7 +18,7 @@ def reg2idx(name: str) -> int:
     if (idx := reg.get(name, None)) is not None:
         return idx
     elif res := re.match(r'x(\d+)', name):
-        idx = res.groups()[0]
+        idx = int(res.groups()[0])
         if idx < 32:
             return idx
         else:
@@ -55,9 +55,9 @@ def auipc(instr: tuple, addr: int, tags: dict) -> str:
 # jal imm[20,10:1,11,19:12] rd 110111
 def jal(instr: tuple, addr: int, tags: dict) -> str:
     rd = reg2idx(instr[1])
-    imm = tag2offset(int(instr[2]), tags, addr)
+    imm = tag2offset(instr[2], tags, addr)
 
-    mc = 0b110111
+    mc = 0b1101111
     mc |= (rd & 0x1F) << 7
     mc |= ((imm & 0x000FF000) >> 12) << 12 # 19:12
     mc |= ((imm & 0x00000800) >> 11) << 20 # 11
@@ -83,9 +83,9 @@ def branch(instr: tuple, addr: int, tags: dict) -> str:
     name = instr[0]
     rs1 = reg2idx(instr[1])
     rs2 = reg2idx(instr[2])
-    imm = tag2offset(int(instr[3]), tags, addr)
+    imm = tag2offset(instr[3], tags, addr)
 
-    mc = 1100011
+    mc = 0b1100011
     mc |= ((imm & 0x00000800) >> 11) << 7 # 11
     mc |= ((imm & 0x0000001E) >>  1) << 8 # 4:1
     if name == 'BEQ':
