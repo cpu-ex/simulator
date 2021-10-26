@@ -22,7 +22,7 @@ void JAL_DISASM(INSTR instr, char* buffer) {
                 instr.j.imm19_12 << 12 |
                 instr.j.imm11 << 11 |
                 instr.j.imm10_1 << 1;
-    sprintf(buffer, "jal %s, %d", reg_name[rd], imm);
+    sprintf(buffer, "jal %s, %d", reg_name[rd], sext(imm, 20));
 }
 
 // jalr rd, rs1, imm
@@ -44,17 +44,17 @@ void BRANCH_DISASM(INSTR instr, char* buffer) {
     BYTE funct3 = instr.b.funct3;
     switch (funct3) {
     // beq
-    case 0b000: sprintf(buffer, "beq %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b000: sprintf(buffer, "beq %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // bne
-    case 0b001: sprintf(buffer, "bne %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b001: sprintf(buffer, "bne %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // blt
-    case 0b100: sprintf(buffer, "blt %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b100: sprintf(buffer, "blt %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // bge
-    case 0b101: sprintf(buffer, "bge %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b101: sprintf(buffer, "bge %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // bltu
-    case 0b110: sprintf(buffer, "bltu %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b110: sprintf(buffer, "bltu %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // bgeu
-    case 0b111: sprintf(buffer, "bgeu %s, %s, %d", reg_name[rs1], reg_name[rs2], imm); break;
+    case 0b111: sprintf(buffer, "bgeu %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // unexpected
     default: sprintf(buffer, "unexpected branch"); break;
     }

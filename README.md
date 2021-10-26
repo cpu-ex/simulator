@@ -26,8 +26,8 @@
 	
 - dis-assembler
 
-  - step1: `make disasm`
-  - step2: `./disasm fileName`
+	- step1: `make disasm`
+	- step2: `./disasm fileName`
   	
 		> binary code with same file name supposed to be in `./bin`
 		>
