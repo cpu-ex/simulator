@@ -1,22 +1,25 @@
 # assembler
 # pseudo code not supported
 
-import os, sys
+import os, argparse
 import decoder, encoder
 
 DEFAULT_PC = 0x10000
 
 class ASM(object):
 
-    def __init__(self) -> None:
+    def __init__(self, *opts) -> None:
         self.__decoders = decoder.decoder
         self.__encoders = encoder.encoder
 
         self.fileName = None
         self.source = list()
         self.tags = dict()
+        self.code = list()
+
+        self.verbose = opts[0]
     
-    def decode(self, instr: str) -> tuple:
+    def __decode(self, instr: str) -> tuple:
         for name, decoder in self.__decoders.items():
             if res := decoder.match(instr):
                 if name == 'TAG' or name == 'DIREC':
@@ -25,14 +28,16 @@ class ASM(object):
                     name, *info = res.groups()
                     return (name.upper(), *info)
         else:
-            pass #TODO: raise exception
+            raise RuntimeError(f'unrecognizable instruction : {instr}')
     
-    def encode(self, instr: tuple, addr: int) -> str:
-        print(f'encoding {instr}\t{hex(addr)}')
+    def __encode(self, instr: tuple, addr: int) -> str:
+        if self.verbose:
+            print(f'encoding {instr}\t{hex(addr)}')
         if encoder := self.__encoders.get(instr[0], None):
             return encoder(instr, addr, self.tags)
         else:
-            pass #TODO: raise exception
+            # not suppose to be here
+            raise RuntimeError(f'no matched encoder for current instruction : {instr}')
     
     def load(self, fileName: str) -> None:
         with open(fileName) as file:
@@ -45,7 +50,7 @@ class ASM(object):
             # skip empty lines
             if not line: continue
             # decode
-            instr = self.decode(line)
+            instr = self.__decode(line)
             name, *info = instr
             if name == 'TAG':
                 self.tags[info[0]] = addr
@@ -55,26 +60,42 @@ class ASM(object):
                 self.source.append(instr)
                 addr += 4
 
-    def output(self):
+    def __outputText(self) -> None:
+        # instruction only
+        with open(f'../bin/{self.fileName}.txt', 'w') as file:
+            for mc in self.code:
+                file.write(f'{bin(mc)[2:].zfill(32)}\n')
+    
+    def __outputBinary(self) -> None:
+        # output instruction
+        with open(f'../bin/{self.fileName}.code', 'wb') as file:
+            for mc in self.code:
+                file.write(mc.to_bytes(4, 'little'))
+        # output data TODO
+    
+    def save(self, binary: bool, text: bool) -> None:
+        # encode
+        for idx, instr, in enumerate(self.source):
+            addr = DEFAULT_PC + 4 * idx
+            self.code.append(self.__encode(instr, addr))
         if not os.path.exists('../bin/'):
             os.mkdir('../bin/')
-        buffer = list()
-        for idx, instr in enumerate(self.source):
-            addr = DEFAULT_PC + 4 * idx
-            buffer.append(self.encode(instr, addr))
-        with open(f'../bin/{self.fileName}.code', 'w') as file:
-            file.writelines('\n'.join(buffer))
+        # output binary file
+        if binary or (not (binary ^ text)):
+            self.__outputBinary()
+        # output text file
+        if text or (not (binary ^ text)):
+            self.__outputText()
 
 if __name__ == '__main__':
-    asm = ASM()
-    asm.load(sys.argv[1])
-    asm.output()
-    # tests
-    # print(asm.decode('main:'))
-    # print(asm.decode('.align 2'))
-    # print(asm.decode('lui a0, 100'))
-    # print(asm.decode('jal a0, loop'))
-    # print(asm.decode('beq s0, s1, 100'))
-    # print(asm.decode('lb t0, -8(a0)'))
-    # print(asm.decode('addi t0, t1, -100'))
-    # print(asm.decode('add s0, s1, s2'))
+    # parse arguments
+    parser = argparse.ArgumentParser(description='assembler for risc-v')
+    parser.add_argument('fileName', help='relative path to .s file needed')
+    parser.add_argument('-b', '--binary', action='store_true', required=False, help='export binary file')
+    parser.add_argument('-t', '--text', action='store_true', required=False, help='export text file')
+    parser.add_argument('-v', '--verbose', action='store_true', required=False)
+    args = parser.parse_args()
+    # decode + encode + output
+    asm = ASM(args.verbose)
+    asm.load(args.fileName)
+    asm.save(args.binary, args.text)

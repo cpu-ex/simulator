@@ -17,43 +17,40 @@ def reg2idx(name: str) -> int:
     }
     if (idx := reg.get(name, None)) is not None:
         return idx
-    elif res := re.match(r'x(\d+)', name):
+    if res := re.match(r'x(\d+)', name):
         idx = int(res.groups()[0])
         if idx < 32:
             return idx
-        else:
-            pass #TODO: raise exception
-    else:
-        pass #TODO: raise exception
+    raise RuntimeError(f'invalid register : {name}')
 
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
         return dst - addr
     else:
-        pass #TODO: raise exception
+        raise RuntimeError(f'no tag name : {name}')
 
 # lui imm[31:12] rd[5] 0110111
-def lui(instr: tuple, addr: int, tags: dict) -> str:
+def lui(instr: tuple, addr: int, tags: dict) -> int:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
 
     mc = 0b0110111
     mc |= (rd & 0x1F) << 7
     mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # auipc imm[31:12] rd[5] 0010111
-def auipc(instr: tuple, addr: int, tags: dict) -> str:
+def auipc(instr: tuple, addr: int, tags: dict) -> int:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
     
     mc = 0b0010111
     mc |= (rd & 0x1F) << 7
     mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # jal imm[20,10:1,11,19:12] rd 110111
-def jal(instr: tuple, addr: int, tags: dict) -> str:
+def jal(instr: tuple, addr: int, tags: dict) -> int:
     rd = reg2idx(instr[1])
     imm = tag2offset(instr[2], tags, addr)
 
@@ -63,10 +60,10 @@ def jal(instr: tuple, addr: int, tags: dict) -> str:
     mc |= ((imm & 0x00000800) >> 11) << 20 # 11
     mc |= ((imm & 0x000007FE) >>  1) << 21 # 10:1
     mc |= ((imm & 0x00100000) >> 20) << 31 # 20
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # jalr imm[11:0] rs1 000 rd 1100111
-def jalr(instr: tuple, addr: int, tags: dict) -> str:
+def jalr(instr: tuple, addr: int, tags: dict) -> int:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
     rs1 = reg2idx(instr[3])
@@ -76,10 +73,10 @@ def jalr(instr: tuple, addr: int, tags: dict) -> str:
     mc |= 0b000 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100011
-def branch(instr: tuple, addr: int, tags: dict) -> str:
+def branch(instr: tuple, addr: int, tags: dict) -> int:
     name = instr[0]
     rs1 = reg2idx(instr[1])
     rs2 = reg2idx(instr[2])
@@ -100,14 +97,17 @@ def branch(instr: tuple, addr: int, tags: dict) -> str:
         mc |= 0b110 << 12
     elif name == 'BGEU':
         mc |= 0b111 << 12
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable branch type : {name}')
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
     mc |= ((imm & 0x00001000) >> 12) << 31 # 12
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # load imm[11:0] rs1 funct3 rd 0000011
-def load(instr: tuple, addr: int, tags: dict) -> str:
+def load(instr: tuple, addr: int, tags: dict) -> int:
     name = instr[0]
     rd = reg2idx(instr[1])
     imm = int(instr[2])
@@ -125,12 +125,15 @@ def load(instr: tuple, addr: int, tags: dict) -> str:
         mc |= 0b100 << 12
     elif name == 'LHU':
         mc |= 0b101 << 12
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable load type : {name}')
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # store imm[11:5] rs2 rs1 funct3 imm[4:0] 0100011
-def store(instr: tuple, addr: int, tags: dict) -> str:
+def store(instr: tuple, addr: int, tags: dict) -> int:
     name = instr[0]
     rs2 = reg2idx(instr[1])
     imm = int(instr[2])
@@ -144,13 +147,16 @@ def store(instr: tuple, addr: int, tags: dict) -> str:
         mc |= 0b001 << 12
     elif name == 'SW':
         mc |= 0b010 << 12
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable store type : {name}')
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0xFE0) >> 5) << 25
-    return bin(mc)[2:].zfill(32)
+    return mc
 
 # arith_i imm[11:0] rs1 funct3 rd 0010011
-def arith_i(instr: tuple, addr: int, tags: dict) -> str:
+def arith_i(instr: tuple, addr: int, tags: dict) -> int:
     name = instr[0]
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
@@ -189,10 +195,13 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> str:
         mc |= 0b101 << 12
         mc |= (imm & 0x1F) << 20 # shamt
         mc |= 0b0100000 << 25
-    return bin(mc)[2:].zfill(32)
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable arith-i type : {name}')
+    return mc
 
 # arith funct7 rs2 rs1 funct3 rd 0110011
-def arith(instr: tuple, addr: int, tags: dict) -> str:
+def arith(instr: tuple, addr: int, tags: dict) -> int:
     name = instr[0]
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
@@ -232,7 +241,10 @@ def arith(instr: tuple, addr: int, tags: dict) -> str:
     elif name == 'AND':
         mc |= 0b111 << 12
         mc |= 0b0000000 << 25
-    return bin(mc)[2:].zfill(32)
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable arith type : {name}')
+    return mc
 
 encoder = {
     # pc

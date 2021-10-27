@@ -4,26 +4,22 @@
 static SIM* sim_base;
 
 ADDR load2mem(char* file_name, ADDR addr, void (*allocate)(u64)) {
-    FILE* file = fopen(file_name, "r");
+    FILE* file = fopen(file_name, "rb");
     if (file == NULL) {
         return 0;
     } else {
-        // calculate line num
+        // calculate file size
         fseek(file, 0, SEEK_END);
-        u64 len = ((u64)ftell(file) + 1) / 33;
+        u64 size = (u64)ftell(file);
         fseek(file, 0, SEEK_SET);
         // allocate mem
-        allocate(len * 4);
+        allocate(size);
         // read file
-        char buffer[33];
-        while (!feof(file)) {
-            fgets(buffer, 34, file);
-            buffer[32] = '\0';
-            if (strlen(buffer) == 32) {
-                sim_base->core->store(addr, str2int(buffer), 2);
-                addr += 4;
-            }
-            memset(buffer, 0, 32);
+        u8 byte;
+        for (int i = 0; i < size; i++) {
+            fread(&byte, 1, 1, file);
+            sim_base->core->store(addr, byte, 0);
+            addr++;
         }
         fclose(file);
         return addr;

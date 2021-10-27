@@ -2,14 +2,6 @@
 #include "types.h"
 
 #define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
-#define str2int(data) ({ \
-    u32 val = 0; \
-    for (int i = 0; i < 32; i++) { \
-        if (data[31 - i] == '1') \
-            val |= 1 << i; \
-    } \
-    val; \
-})
 
 typedef union instr {
     u32 raw;

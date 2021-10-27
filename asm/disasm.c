@@ -12,17 +12,18 @@ int main(int argc, char* argv[]) {
             printf("invalid file name: %s.\n", argv[1]);
             exit(-1);
         } else {
-            char input[33];
+            u32 input;
             char output[36];
-            while (!feof(code)) {
-                fgets(input, 34, code);
-                input[32] = '\0';
-                if (strlen(input) == 32) {
-                    INSTR instr = { .raw = str2int(input) };
-                    disasm(instr, output);
-                    printf("%s\t%s\n", input, output);
-                }
-                memset(input, 0, 32);
+            // calculate file size
+            fseek(code, 0, SEEK_END);
+            u64 size = ftell(code);
+            fseek(code, 0, SEEK_SET);
+            // disasm
+            for (int i = 0; i < size; i += 4) {
+                fread(&input, 1, 4, code);
+                INSTR instr = { .raw = input };
+                disasm(instr, output);
+                printf("0x%08X : %08X\t%s\n", 0x10000 + i, input, output);
                 memset(output, 0, 36);
             }
             fclose(code);
