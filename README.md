@@ -13,22 +13,29 @@
 - prerequisites
 	- gcc
 	- ncurses
+
 		> MacOS: supported
 		> 
 		> Ubuntu: run `sudo apt-get install libncurses5-dev`
+	
 	- python3.8
 
 - assembler
 	- step1: `cd ./asm`
 	- step2: check `python3 asm.py -h` for help
 	- step3: `python3 asm.py fileName.s`
+
 		> relative path to `.s` file needed
-	- step3: check outputs in `./bin`
+	
+	- step4: check outputs in `./bin`
+
+		> `xxd fileName.code` or `hexdump fileName.code` would be helpful
 	
 - dis-assembler
 
 	- step1: `make disasm`
 	- step2: `./disasm fileName`
+
 		> binary code with same file name supposed to be in `./bin`
 		>
 		> using stdout as output

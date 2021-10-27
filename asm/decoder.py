@@ -6,7 +6,8 @@ decoder = {
     # tag
     'TAG': re.compile(r'(\S+):'),
     # directive
-    'DIREC': re.compile(r'\.(.+)'),
+    'DIREC-DATA': re.compile(r'\.(\S+?)\s+(.+)'),
+    'DIREC-PLAIN': re.compile(r'\.(\S+)'),
     # pc rd, imm
     'LUI': re.compile(r'(lui)\s+(\S+),\s+(\d+)'),
     'AUIPC': re.compile(r'(auipc)\s+(\S+),\s+(\d+)'),

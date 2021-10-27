@@ -18,8 +18,7 @@ ADDR load2mem(char* file_name, ADDR addr, void (*allocate)(u64)) {
         u8 byte;
         for (int i = 0; i < size; i++) {
             fread(&byte, 1, 1, file);
-            sim_base->core->store(addr, byte, 0);
-            addr++;
+            sim_base->core->store(addr++, byte, 0);
         }
         fclose(file);
         return addr;

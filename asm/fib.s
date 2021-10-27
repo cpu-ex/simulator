@@ -1,5 +1,4 @@
     .text
-    .align 2
     .globl main
 main:
     addi a0, zero, 10
