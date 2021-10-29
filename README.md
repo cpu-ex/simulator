@@ -1,14 +1,17 @@
 # risc-v simulator
 
-## update log
+## 1. update log
 
 - [2021/10/08] first commit, main framework done, simple sample code in `main.c`,not fully tested.
 - [2021/10/10] GUI almost done, somehow functional.
 - [2021/10/24] support standard risc-v memory structure + disasm.
 - [2021/10/24] complete simple assembler without supporting directives and pseudo instructions
 - [2021/10/27] change the output code format from text file to binary, all related parts adapted
+- [2021/10/30] support some directives and pseudo instructions for assembler
 
-## how to build
+## 2. how to build
+
+***recommended workflow as well***
 
 - prerequisites
 	- gcc

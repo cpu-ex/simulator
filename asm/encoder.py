@@ -2,6 +2,11 @@
 
 import re
 
+def getHiLo(val: int) -> tuple:
+    high = ((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)
+    low = val & 0xFFF
+    return high << 12, low
+
 def reg2idx(name: str) -> int:
     reg = {
         'zero': 0,
@@ -30,27 +35,27 @@ def tag2offset(name: str, tags: dict, addr: int) -> int:
         raise RuntimeError(f'no tag name : {name}')
 
 # lui imm[31:12] rd[5] 0110111
-def lui(instr: tuple, addr: int, tags: dict) -> int:
+def lui(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
 
     mc = 0b0110111
     mc |= (rd & 0x1F) << 7
     mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return mc
+    return [mc]
 
 # auipc imm[31:12] rd[5] 0010111
-def auipc(instr: tuple, addr: int, tags: dict) -> int:
+def auipc(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
     
     mc = 0b0010111
     mc |= (rd & 0x1F) << 7
     mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return mc
+    return [mc]
 
 # jal imm[20,10:1,11,19:12] rd 110111
-def jal(instr: tuple, addr: int, tags: dict) -> int:
+def jal(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = tag2offset(instr[2], tags, addr)
 
@@ -60,10 +65,10 @@ def jal(instr: tuple, addr: int, tags: dict) -> int:
     mc |= ((imm & 0x00000800) >> 11) << 20 # 11
     mc |= ((imm & 0x000007FE) >>  1) << 21 # 10:1
     mc |= ((imm & 0x00100000) >> 20) << 31 # 20
-    return mc
+    return [mc]
 
 # jalr imm[11:0] rs1 000 rd 1100111
-def jalr(instr: tuple, addr: int, tags: dict) -> int:
+def jalr(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = int(instr[2])
     rs1 = reg2idx(instr[3])
@@ -73,10 +78,10 @@ def jalr(instr: tuple, addr: int, tags: dict) -> int:
     mc |= 0b000 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
-    return mc
+    return [mc]
 
 # branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100011
-def branch(instr: tuple, addr: int, tags: dict) -> int:
+def branch(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rs1 = reg2idx(instr[1])
     rs2 = reg2idx(instr[2])
@@ -104,10 +109,10 @@ def branch(instr: tuple, addr: int, tags: dict) -> int:
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
     mc |= ((imm & 0x00001000) >> 12) << 31 # 12
-    return mc
+    return [mc]
 
 # load imm[11:0] rs1 funct3 rd 0000011
-def load(instr: tuple, addr: int, tags: dict) -> int:
+def load(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rd = reg2idx(instr[1])
     imm = int(instr[2])
@@ -130,10 +135,10 @@ def load(instr: tuple, addr: int, tags: dict) -> int:
         raise RuntimeError(f'unrecognizable load type : {name}')
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
-    return mc
+    return [mc]
 
 # store imm[11:5] rs2 rs1 funct3 imm[4:0] 0100011
-def store(instr: tuple, addr: int, tags: dict) -> int:
+def store(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rs2 = reg2idx(instr[1])
     imm = int(instr[2])
@@ -153,10 +158,10 @@ def store(instr: tuple, addr: int, tags: dict) -> int:
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0xFE0) >> 5) << 25
-    return mc
+    return [mc]
 
 # arith_i imm[11:0] rs1 funct3 rd 0010011
-def arith_i(instr: tuple, addr: int, tags: dict) -> int:
+def arith_i(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
@@ -198,10 +203,10 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> int:
     else:
         # not suppose to be here
         raise RuntimeError(f'unrecognizable arith-i type : {name}')
-    return mc
+    return [mc]
 
 # arith funct7 rs2 rs1 funct3 rd 0110011
-def arith(instr: tuple, addr: int, tags: dict) -> int:
+def arith(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
@@ -244,7 +249,47 @@ def arith(instr: tuple, addr: int, tags: dict) -> int:
     else:
         # not suppose to be here
         raise RuntimeError(f'unrecognizable arith type : {name}')
-    return mc
+    return [mc]
+
+# pseudo
+def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
+    return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
+
+def pseudo_li(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, imm = instr
+    hi, lo = getHiLo(int(imm))
+    return lui(('LUI', rd, str(hi)), addr, tags) + \
+        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
+
+def pseudo_la(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, tag = instr
+    offset = tag2offset(tag, tags, addr)
+    hi, lo = getHiLo(offset)
+    return auipc(('AUIPC', rd, str(hi)), addr, tags) + \
+        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
+
+def pseudo_not(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return arith_i(('XORI', rd, rs, '-1'), addr, tags)
+
+def pseudo_mv(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return arith_i(('ADDI', rd, rs, '1'), addr, tags)
+
+def pseudo_j(instr: tuple, addr: int, tags: dict) -> list:
+    _, offset = instr
+    return jal(('JAL', 'zero', offset), addr, tags)
+
+def pseudo_jal(instr: tuple, addr: int, tags: dict) -> list:
+    _, offset = instr
+    return jal(('JAL', 'ra', offset), addr, tags)
+
+def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
+    _, rs = instr
+    return jalr(('JALR', 'ra', '0', rs), addr, tags)
+
+def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
+    return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
 
 encoder = {
     # pc
@@ -291,5 +336,15 @@ encoder = {
     'SRL': arith,
     'SRA': arith,
     'OR': arith,
-    'AND': arith
+    'AND': arith,
+    # pseudo
+    'PSEUDO-NOP': pseudo_nop,
+    'PSEUDO-LI': pseudo_li,
+    'PSEUDO-LA': pseudo_la,
+    'PSEUDO-NOT': pseudo_not,
+    'PSEUDO-MV': pseudo_mv,
+    'PSEUDO-J': pseudo_j,
+    'PSEUDO-JAL': pseudo_jal,
+    'PSEUDO-JALR': pseudo_jalr,
+    'PSEUDO-RET': pseudo_ret,
 }

@@ -24,8 +24,6 @@ class ASM(object):
         self.section = ASM.CODE_SECTION
         self.codeCounter = ASM.DEFAULT_PC + 0x8
         self.dataCounter = 0
-
-        self.decode = self.__decode
     
     def __decode(self, instr: str) -> tuple:
         for name, decoder in self.__decoders.items():
@@ -33,8 +31,8 @@ class ASM(object):
                 if name.startswith('TAG') or name.startswith('DIREC'):
                     return (name, *res.groups())
                 else:
-                    name, *info = res.groups()
-                    return (name.upper(), *info)
+                    _, *info = res.groups()
+                    return (name, *info)
         else:
             raise RuntimeError(f'unrecognizable instruction : {instr}')
     
@@ -99,7 +97,7 @@ class ASM(object):
                     raise RuntimeError(f'unsupported directive {name}')
             else:
                 self.code.append(instr)
-                self.codeCounter += 4
+                self.codeCounter += 8 if (name.endswith('LI') or name.endswith('LA')) else 4
 
     def __outputText(self) -> None:
         # instruction only
@@ -120,9 +118,10 @@ class ASM(object):
     def save(self, binary: bool, text: bool) -> None:
         # direct to start point
         if startAddr := self.codeTag.get(self.startTag, None):
-            self.code = [
-                ('AUIPC', 't1', str(startAddr >> 12)),
-                ('JALR', 'zero', str((startAddr - ASM.DEFAULT_PC) & 0xFFF), 't1')
+            hi, lo = encoder.getHiLo(startAddr - ASM.DEFAULT_PC)
+            self.code = [  # jump to start point
+                ('AUIPC', 't0', str(hi)),
+                ('JALR', 'zero', str(lo), 't0')
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag {self.startTag}')
@@ -130,8 +129,13 @@ class ASM(object):
         for tag, addr in self.dataTag.items():
             self.dataTag[tag] = addr + self.codeCounter
         # encode
-        encode = lambda idx, instr : self.__encode(instr, ASM.DEFAULT_PC + 4 * idx)
-        self.code = [encode(idx, instr) for idx, instr in enumerate(self.code)]
+        bc = list() # binary codes
+        addr = ASM.DEFAULT_PC
+        for instr in self.code:
+            mc = self.__encode(instr, addr) # machine codes
+            bc += mc
+            addr += len(mc) * 4
+        self.code = bc
         # prepare for output
         if not os.path.exists('../bin/'):
             os.mkdir('../bin/')

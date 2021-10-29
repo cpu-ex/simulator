@@ -9,8 +9,8 @@ decoder = {
     'DIREC-DATA': re.compile(r'\.(\S+?)\s+(.+)'),
     'DIREC-PLAIN': re.compile(r'\.(\S+)'),
     # pc rd, imm
-    'LUI': re.compile(r'(lui)\s+(\S+),\s+(\d+)'),
-    'AUIPC': re.compile(r'(auipc)\s+(\S+),\s+(\d+)'),
+    'LUI': re.compile(r'(lui)\s+(\S+),\s+(-?\d+)'),
+    'AUIPC': re.compile(r'(auipc)\s+(\S+),\s+(-?\d+)'),
     # jal rd, tag
     'JAL': re.compile(r'(jal)\s+(\S+),\s+(\S+)'),
     # jalr rd, offset(rs1)
@@ -52,5 +52,15 @@ decoder = {
     'SRL': re.compile(r'(srl)\s+(\S+),\s+(\S+),\s+(\S+)'),
     'SRA': re.compile(r'(sra)\s+(\S+),\s+(\S+),\s+(\S+)'),
     'OR': re.compile(r'(or)\s+(\S+),\s+(\S+),\s+(\S+)'),
-    'AND': re.compile(r'(and)\s+(\S+),\s+(\S+),\s+(\S+)')
+    'AND': re.compile(r'(and)\s+(\S+),\s+(\S+),\s+(\S+)'),
+    # pseudo
+    'PSEUDO-NOP': re.compile(r'(nop)'),
+    'PSEUDO-LI': re.compile(r'(li)\s+(\S+),\s+(-?\d+)'),
+    'PSEUDO-LA': re.compile(r'(la)\s+(\S+),\s+(\S+)'),
+    'PSEUDO-NOT': re.compile(r'(not)\s+(\S+),\s+(\S+)'),
+    'PSEUDO-MV': re.compile(r'(mv)\s+(\S+),\s+(\S+)'),
+    'PSEUDO-J': re.compile(r'(j)\s+(\S+)'),
+    'PSEUDO-JAL': re.compile(r'(jal)\s+(\S+)'),
+    'PSEUDO-JALR': re.compile(r'(jalr)\s+(\S+)'),
+    'PSEUDO-RET': re.compile(r'(ret)')
 }
