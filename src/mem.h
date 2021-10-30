@@ -23,6 +23,8 @@ typedef struct mmu {
     void (*write_byte)(ADDR, BYTE);
     void (*write_half)(ADDR, HALF);
     void (*write_word)(ADDR, WORD);
+
+    void (*reset)(void);
 } MMU;
 
 void init_mmu(MMU* mmu);

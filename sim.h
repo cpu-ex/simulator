@@ -11,4 +11,4 @@ typedef struct sim {
     void (*run)(void);
 } SIM;
 
-void init_sim(SIM* sim, ADDR pc);
+void init_sim(SIM* sim);

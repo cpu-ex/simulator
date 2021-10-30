@@ -5,7 +5,7 @@ int main(int argc, char* argv[]) {
         printf("no enough arguments.\n");
     } else {
         SIM sim;
-        init_sim(&sim, 0x10000);
+        init_sim(&sim);
         sim.load(argv[1]);
         sim.run();
     }

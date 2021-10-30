@@ -3,6 +3,8 @@
 
 static CORE* core_base;
 
+#define DEFAULT_PC 0x10000
+
 void step() {
     // fetch
     u32 raw = core_base->mmu->read_word(core_base->pc);
@@ -34,19 +36,32 @@ void store(ADDR addr, WORD val, int bytes) {
     }
 }
 
-void init_core(CORE* core, ADDR pc) {
-    core_base = core;
+void core_reset() {
+    // reset registers
+    core_base->pc = DEFAULT_PC;
+    for (int i = 0; i < 32; i++)
+        core_base->regs[i] = 0;
+    core_base->regs[sp] = STACK_POINTER;
+    // reset instruction counter
+    core_base->instr_counter = 0;
+    // call mem reset
+    core_base->mmu->reset();
+}
 
-    core->pc = pc;
+void init_core(CORE* core) {
+    core_base = core;
+    // init basic info
+    core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->regs[ra] = 0x0;
     core->regs[sp] = STACK_POINTER;
-
+    // init mmu
     static MMU mmu;
     init_mmu(&mmu);
     core->mmu = &mmu;
-
+    // assign interfaces
     core->load = load;
     core->store = store;
     core->step = step;
+    core->reset = core_reset;
 }

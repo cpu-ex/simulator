@@ -33,13 +33,14 @@ typedef struct core {
     REG pc;
     REG regs[32];
     
-    u64 instr_counter;
+    u32 instr_counter;
 
     MMU* mmu;
 
     WORD (*load)(ADDR, int ,int);
     void (*store)(ADDR, WORD, int);
     void (*step)(void);
+    void (*reset)(void);
 } CORE;
 
-void init_core(CORE* core, ADDR pc);
+void init_core(CORE* core);

@@ -82,6 +82,11 @@ void allocate_stack(u64 size) {
     mmu_base->stack = malloc(size * sizeof(BYTE));
 }
 
+void mmu_reset() {
+    // keep instr and data, reset stack
+    memset(mmu_base->stack, 0, mmu_base->stack_len * sizeof(BYTE));
+}
+
 void init_mmu(MMU* mmu) {
     mmu_base = mmu;
     // assign interfaces
@@ -94,4 +99,5 @@ void init_mmu(MMU* mmu) {
     mmu->write_byte = write_byte;
     mmu->write_half = write_half;
     mmu->write_word = write_word;
+    mmu->reset = mmu_reset;
 }

@@ -70,9 +70,17 @@ void run() {
             if (!sim_base->core->pc) {
                 // pc final return
                 BROADCAST(STAT_EXIT);
-            } else if ((signed)BROADCAST.decoder.info) {
+            } else if ((signed)BROADCAST.decoder.info > 0) {
+                // step forward
                 sim_base->core->step();
                 BROADCAST.decoder.info = (unsigned)((signed)BROADCAST.decoder.info - 1);
+            } else if ((signed)BROADCAST.decoder.info < 0) {
+                // roll back
+                signed remains = (signed)sim_base->core->instr_counter +
+                    (signed)BROADCAST.decoder.info;
+                sim_base->core->reset();
+                u32 steps = (remains < 0) ? 0 : (unsigned)remains;
+                BROADCAST(STAT_STEP | ((u64)steps << 32));
             } else {
                 BROADCAST(STAT_HALT);
             }
@@ -83,11 +91,11 @@ void run() {
     }
 }
 
-void init_sim(SIM* sim, ADDR pc) {
+void init_sim(SIM* sim) {
     sim_base = sim;
     // init core
     static CORE core;
-    init_core(&core, pc);
+    init_core(&core);
     sim->core = &core;
     // assign interfaces
     sim->load = load_file;
