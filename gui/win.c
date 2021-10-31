@@ -9,7 +9,81 @@
 
 static WIN* win_base;
 
-void show_main_win() {
+void update_pc(WINDOW* win, CORE* core) {
+    wclear(win);
+    // fetch pc and op
+    ADDR pc = core->pc;
+    WORD op = core->load(pc, 2, 0);
+    // disasm
+    char asm_buf[24];
+    INSTR curr_instr = { .raw = op };
+    disasm(curr_instr, asm_buf);
+    // update
+    wprintw(win, "%-8u 0x%08X : %08X : %-21s", core->instr_counter, pc, op, asm_buf);
+    wattron(win, COLOR_PAIR(WARNING_COLOR));
+    switch (BROADCAST.decoder.type) {
+    case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
+    case STAT_HALT: wprintw(win, "%24s", "halt"); break;
+    case STAT_STEP: wprintw(win, "%24s", "step"); break;
+    case STAT_MEM_EXCEPTION: wprintw(win, "%24s", "mem exception"); break;
+    case STAT_INSTR_EXCEPTION: wprintw(win, "%24s", "instr exception"); break;
+    default: wprintw(win, "%24s", "quit or unknow"); break;
+    }
+    wattroff(win, COLOR_PAIR(WARNING_COLOR));
+}
+
+void update_reg(WINDOW* win, CORE* core) {
+    wclear(win);
+
+    int count = reg_set[win_base->reg_set][0];
+    int* regs = reg_set[win_base->reg_set] + 1;
+    for (int idx = 0; idx < count; idx++) {
+        wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
+        if (regs[idx] == 8 && win_base->reg_set == REG_SET_DEF)
+            wprintw(win, "fp ");
+        else
+            wprintw(win, "%2s ", reg_name[regs[idx]]);
+        wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
+        if (win_base->reg_focus[regs[idx]])
+            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        wprintw(win, "%8X\n", core->regs[regs[idx]]);
+        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+    }
+}
+
+void update_mem(WINDOW* win, CORE* core) {
+    wclear(win);
+
+    // handle memory access exception
+    if (BROADCAST.decoder.type == STAT_MEM_EXCEPTION) {
+        win_base->mem_start = BROADCAST.decoder.info & (~0xFF);
+        win_base->mem_focus = BROADCAST.decoder.info;
+        wattron(win, COLOR_PAIR(WARNING_COLOR));
+        wprintw(win, "invalid access to 0x%08X", BROADCAST.decoder.info);
+        wattroff(win, COLOR_PAIR(WARNING_COLOR));
+        wgetch(win);
+        wclear(win);
+    }
+
+    ADDR addr = win_base->mem_start;
+    for (ADDR offset = 0; offset < 0x100; offset++) {
+        wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
+        if (offset % 0x10 == 0)
+            wprintw(win, "0x%08X     ", addr + offset);
+        wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
+        if (((addr + offset) & (~0xF)) == (win_base->mem_focus & (~0xF)))
+            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        if (((addr + offset) & (~0x3)) == core->pc)
+            wattron(win, COLOR_PAIR(STANDOUT_COLOR));
+        wprintw(win, " %02X", core->load(addr + offset, 0, 0));
+        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+        if (offset % 0x10 == 0xF)
+            wprintw(win, "\n");
+    }
+}
+
+void show_main_win(CORE* core) {
     // create outer windows (containers that never change)
     WINDOW* pc_outer = newwin(3, 80, 0, 0);
     WINDOW* reg_outer = newwin(18, 14, 3, 0);
@@ -29,22 +103,19 @@ void show_main_win() {
     wattron(mem_outer, COLOR_PAIR(TITLE_COLOR));
     wattron(com_outer, COLOR_PAIR(TITLE_COLOR));
     // create inner windows (contents that actually display unpdates)
-    if (!win_base->pc_win) {
-        static WINDOW* pc_inner; pc_inner = newwin(1, 78, 1, 1);
-        win_base->pc_win = pc_inner;
-    }
-    if (!win_base->reg_win) {
-        static WINDOW* reg_inner; reg_inner = newwin(16, 12, 4, 1);
-        win_base->reg_win = reg_inner;
-    }
-    if (!win_base->mem_win) {
-        static WINDOW* mem_inner; mem_inner = newwin(16, 64, 4, 15);
-        win_base->mem_win = mem_inner;
-    }
-    if (!win_base->com_win) {
-        static WINDOW* com_inner; com_inner = newwin(1, 77, 22, 2);
-        win_base->com_win = com_inner;
-    }
+    WINDOW* pc_inner = newwin(1, 78, 1, 1);
+    WINDOW* reg_inner = newwin(16, 12, 4, 1);
+    WINDOW* mem_inner = newwin(16, 64, 4, 15);
+    WINDOW* com_inner = newwin(1, 77, 22, 2);
+    // update contents
+    update_pc(pc_inner, core);
+    update_reg(reg_inner, core);
+    update_mem(mem_inner, core);
+    // refresh
+    refresh();
+    wrefresh(pc_inner);
+    wrefresh(reg_inner);
+    wrefresh(mem_inner);
 }
 
 void show_analysis_win(CORE* core) {
@@ -106,7 +177,6 @@ void show_splash_win() {
     if (getch() == 'h') {
         show_help_win();
     }
-    show_main_win();
 }
 
 typedef struct command {
@@ -132,10 +202,12 @@ COMMAND get_command() {
     // prepare a COMMAND struct
     COMMAND com;
     com.argc = 0;
+    // get instruction
+    char input[73], output[12][12];
+    WINDOW* com_win = newwin(1, 77, 22, 2);
+    wclear(com_win); wmove(com_win, 0, 0);
+    wgetstr(com_win, input);
     // split with space (exactly 1 space)
-    char input[73];
-    char output[12][12];
-    wgetstr(win_base->com_win, input);
     int counter = 0, argc = 0;
     strcat(input, " "); // add an end point
     for (int idx = 0; idx < strlen(input); idx++) {
@@ -173,8 +245,6 @@ COMMAND get_command() {
         } else {
             com.argc = 1;
             com.argv[0] = 'd'; // default reg set
-            refresh();
-            wgetch(win_base->com_win);
         }
     } else if (!strcmp(output[0], "mem")) {
         com.type = 'm';
@@ -263,115 +333,20 @@ STATE wait4command(CORE* core) {
     }
 }
 
-void update_pc(CORE* core) {
-    WINDOW *win = win_base->pc_win;
-    wclear(win);
-    // fetch pc and op
-    ADDR pc = core->pc;
-    WORD op = core->load(pc, 2, 0);
-    // disasm
-    char asm_buf[24];
-    INSTR curr_instr = { .raw = op };
-    disasm(curr_instr, asm_buf);
-    // update
-    wprintw(win, "%-8u 0x%08X : %08X : %-21s", core->instr_counter, pc, op, asm_buf);
-    wattron(win, COLOR_PAIR(WARNING_COLOR));
-    switch (BROADCAST.decoder.type) {
-    case STAT_EXIT: wprintw(win, "%24s", "exit"); break;
-    case STAT_HALT: wprintw(win, "%24s", "halt"); break;
-    case STAT_STEP: wprintw(win, "%24s", "step"); break;
-    case STAT_MEM_EXCEPTION: wprintw(win, "%24s", "mem exception"); break;
-    case STAT_INSTR_EXCEPTION: wprintw(win, "%24s", "instr exception"); break;
-    default: wprintw(win, "%24s", "quit or unknow"); break;
-    }
-    wattroff(win, COLOR_PAIR(WARNING_COLOR));
-}
-
-void update_reg(CORE* core) {
-    WINDOW* win = win_base->reg_win;
-    wclear(win);
-
-    int count = reg_set[win_base->reg_set][0];
-    int* regs = reg_set[win_base->reg_set] + 1;
-    for (int idx = 0; idx < count; idx++) {
-        wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
-        if (regs[idx] == 8 && win_base->reg_set == REG_SET_DEF)
-            wprintw(win, "fp ");
-        else
-            wprintw(win, "%2s ", reg_name[regs[idx]]);
-        wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-        if (win_base->reg_focus[regs[idx]])
-            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        wprintw(win, "%8X\n", core->regs[regs[idx]]);
-        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-    }
-}
-
-void update_mem(CORE* core) {
-    WINDOW* win = win_base->mem_win;
-    wclear(win);
-
-    // handle memory access exception
-    if (BROADCAST.decoder.type == STAT_MEM_EXCEPTION) {
-        win_base->mem_start = BROADCAST.decoder.info & (~0xFF);
-        win_base->mem_focus = BROADCAST.decoder.info;
-        wattron(win, COLOR_PAIR(WARNING_COLOR));
-        wprintw(win, "invalid access to 0x%08X", BROADCAST.decoder.info);
-        wattroff(win, COLOR_PAIR(WARNING_COLOR));
-        wgetch(win);
-        wclear(win);
-    }
-
-    ADDR addr = win_base->mem_start;
-    for (ADDR offset = 0; offset < 0x100; offset++) {
-        wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
-        if (offset % 0x10 == 0)
-            wprintw(win, "0x%08X     ", addr + offset);
-        wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-        if (((addr + offset) & (~0xF)) == (win_base->mem_focus & (~0xF)))
-            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        if (((addr + offset) & (~0x3)) == core->pc)
-            wattron(win, COLOR_PAIR(STANDOUT_COLOR));
-        wprintw(win, " %02X", core->load(addr + offset, 0, 0));
-        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
-        if (offset % 0x10 == 0xF)
-            wprintw(win, "\n");
-    }
-}
-
-void update_com(CORE* core) {
-    WINDOW *win = win_base->com_win;
-    wclear(win);
-    wmove(win, 0, 0);
-}
-
 STATE update(CORE* core) {
-    show_main_win();
-    update_pc(core);
-    update_reg(core);
-    update_mem(core);
-    update_com(core);
-    // refresh routine
-    refresh();
-    wrefresh(win_base->pc_win);
-    wrefresh(win_base->reg_win);
-    wrefresh(win_base->mem_win);
-    wrefresh(win_base->com_win);
+    show_main_win(core);
     // wait for a new command
     return wait4command(core);
 }
 
 void deinit() {
-    // at the end of program
-    // ncurses mode should be exited properly
+    // at the end of program ncurses mode should be exited properly
     endwin();
 }
 
 void init_win(WIN* win) {
     win_base = win;
     char title[] = " RISC-V simulator ";
-
     // resize the terminal to 80 * 24
     printf("\e[8;24;80t");
     // initialize ncurses mode, and end it in deinit()
@@ -390,7 +365,7 @@ void init_win(WIN* win) {
     memset(win->reg_focus, 0, 32);
     win->mem_start = 0x10000;
     win->mem_focus = 0xFFFFFFFF;
-
+    // assign interfaces
     win->update = update;
     win->deinit = deinit;
 

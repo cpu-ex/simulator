@@ -16,10 +16,6 @@ static int reg_set[4][17] = {
 };
 
 typedef struct win {
-    WINDOW* pc_win;
-    WINDOW* reg_win;
-    WINDOW* mem_win;
-    WINDOW* com_win;
     // display control
     char reg_set;
     char reg_focus[32];
