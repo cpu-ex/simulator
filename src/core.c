@@ -42,8 +42,9 @@ void core_reset() {
     for (int i = 0; i < 32; i++)
         core_base->regs[i] = 0;
     core_base->regs[sp] = STACK_POINTER;
-    // reset instruction counter
+    // reset instruction analysis
     core_base->instr_counter = 0;
+    memset(core_base->instr_analysis, 0, 10 * sizeof(u32));
     // call mem reset
     core_base->mmu->reset();
 }
@@ -53,6 +54,7 @@ void init_core(CORE* core) {
     // init basic info
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
+    memset(core->instr_analysis, 0, 10 * sizeof(u32));
     core->regs[ra] = 0x0;
     core->regs[sp] = STACK_POINTER;
     // init mmu

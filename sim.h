@@ -4,9 +4,10 @@
 #include "gui/win.h"
 
 typedef struct sim {
+    // attributes
     CORE* core;
     WIN* win;
-
+    // insterfaces
     void (*load)(char*);
     void (*run)(void);
 } SIM;

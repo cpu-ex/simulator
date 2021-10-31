@@ -191,34 +191,36 @@ void ENV_EXEC(CORE *core, INSTR instr) {
         // not implemented
         BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
     }
+
+    core->pc += 4;
 }
 
 void execute(CORE* core, INSTR instr) {
     switch (instr.decoder.opcode) {
     /* risc-v I */
     // lui
-    case 0b0110111: LUI_EXEC(core, instr); break;
+    case 0b0110111: LUI_EXEC(core, instr); core->instr_analysis[0]++; break;
     // auipc
-    case 0b0010111: AUIPC_EXEC(core, instr); break;
+    case 0b0010111: AUIPC_EXEC(core, instr); core->instr_analysis[1]++; break;
     // jal
-    case 0b1101111: JAL_EXEC(core, instr); break;
+    case 0b1101111: JAL_EXEC(core, instr); core->instr_analysis[2]++; break;
     // jalr
-    case 0b1100111: JALR_EXEC(core, instr); break;
+    case 0b1100111: JALR_EXEC(core, instr); core->instr_analysis[3]++; break;
     // branch
-    case 0b1100011: BRANCH_EXEC(core, instr); break;
+    case 0b1100011: BRANCH_EXEC(core, instr); core->instr_analysis[4]++; break;
     // load
-    case 0b0000011: LOAD_EXEC(core, instr); break;
+    case 0b0000011: LOAD_EXEC(core, instr); core->instr_analysis[5]++; break;
     // store
-    case 0b0100011: STORE_EXEC(core, instr); break;
+    case 0b0100011: STORE_EXEC(core, instr); core->instr_analysis[6]++; break;
     // arith I
-    case 0b0010011: ARITH_I_EXEC(core, instr); break;
+    case 0b0010011: ARITH_I_EXEC(core, instr); core->instr_analysis[7]++; break;
     // arith
-    case 0b0110011: ARITH_EXEC(core, instr); break;
+    case 0b0110011: ARITH_EXEC(core, instr); core->instr_analysis[8]++; break;
     // fence
-    case 0b0001111:
+    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     // env + csr
-    case 0b1110011: ENV_EXEC(core, instr); break;
+    case 0b1110011: ENV_EXEC(core, instr); core->instr_analysis[9]++; break;
     // unexpected
-    default: core->pc += 4; break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
 }

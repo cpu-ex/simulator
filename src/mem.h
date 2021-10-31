@@ -4,6 +4,7 @@
 #define STACK_POINTER 0xBFFFFFF0
 
 typedef struct mmu {
+    // attributes
     BYTE* instr_cache;
     BYTE* data_cache;
     BYTE* data_mem;
@@ -12,7 +13,7 @@ typedef struct mmu {
     u32 instr_len;
     u32 data_len;
     u32 stack_len;
-
+    // interfaces
     void (*allocate_instr)(u64);
     void (*allocate_data)(u64);
     void (*allocate_stack)(u64);
