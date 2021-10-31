@@ -30,13 +30,14 @@ static char* reg_name[32] = {
 };
 
 typedef struct core {
+    // attributes
     REG pc;
     REG regs[32];
-    
-    u32 instr_counter;
-
     MMU* mmu;
-
+    // analysis
+    u32 instr_counter;
+    u32 instr_analysis[10];
+    // interfaces
     WORD (*load)(ADDR, int ,int);
     void (*store)(ADDR, WORD, int);
     void (*step)(void);

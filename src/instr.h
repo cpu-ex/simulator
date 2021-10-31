@@ -3,6 +3,15 @@
 
 #define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
 
+static char* instr_name[10] = {
+    "lui", "auipc",
+    "jal", "jalr",
+    "branch",
+    "load", "store",
+    "arith", "arith_i",
+    "env/csr"
+};
+
 typedef union instr {
     u32 raw;
 

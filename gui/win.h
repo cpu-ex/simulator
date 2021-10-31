@@ -20,13 +20,12 @@ typedef struct win {
     WINDOW* reg_win;
     WINDOW* mem_win;
     WINDOW* com_win;
-
     // display control
     char reg_set;
     char reg_focus[32];
     ADDR mem_start;
     ADDR mem_focus;
-
+    // interfaces
     STATE (*update)(CORE* core);
     void (*deinit)(void);
 } WIN;

@@ -47,10 +47,32 @@ void show_main_win() {
     }
 }
 
+void show_analysis_win(CORE* core) {
+    clear();
+    attron(COLOR_PAIR(TITLE_COLOR));
+    box(stdscr, 0, 0);
+    mvprintw(0, 2, " Analysis ");
+    WINDOW* block1 = newwin(20, 17, 2, 2);
+    mvvline(2, 20, ACS_VLINE, 20);
+    WINDOW* block2 = newwin(20, 56, 2, 22);
+    attroff(COLOR_PAIR(TITLE_COLOR));
+    // block1: instruction
+    for (int i = 0; i < 10; i++)
+        mvwprintw(block1, i, 0, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
+    mvwprintw(block1, 19, 0, "%u in total", core->instr_counter);
+    // block2: reserved
+    mvwprintw(block2, 9, 24, "reserved");
+    // refresh
+    refresh();
+    wrefresh(block1);
+    wrefresh(block2);
+    getch();
+}
+
 void show_help_win() {
     clear();
-    WINDOW* help_win_outer = newwin(20, 70, 2, 5);
-    WINDOW* help_win_inner = newwin(18, 68, 3, 6);
+    WINDOW* help_win_outer = newwin(21, 70, 2, 5);
+    WINDOW* help_win_inner = newwin(19, 68, 3, 6);
     wattron(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     box(help_win_outer, 0, 0);
     mvwprintw(help_win_outer, 0, 2, " Instruction ");
@@ -58,9 +80,10 @@ void show_help_win() {
     mvwprintw(help_win_inner, 0, 3, "step [n]:\n\tmove on for n step,\n\tpositive for forward, negative for backwards\n\tdefault to infinity (loops util exit or exception)");
     mvwprintw(help_win_inner, 4, 3, "reg [d|a|s|t]:\n\tswitch register set, default to zero ~ a5");
     mvwprintw(help_win_inner, 6, 3, "reg [-][reg name]:\n\thighlight certain register,\n\tminus for setting back to normal,\n\tmutiple input supported");
-    mvwprintw(help_win_inner, 10, 3, "mem [address|tag]:\n\tswitch memory range, default to 0x10000\n\ttags like instr, data, stack are supported");
-    mvwprintw(help_win_inner, 13, 3, "help:\n\tshow help window");
-    mvwprintw(help_win_inner, 15, 3, "quit:\n\texit simulator");
+    mvwprintw(help_win_inner, 10, 3, "mem [address(hex)|tag]:\n\tswitch memory range, default to 0x10000\n\ttags like instr, data, stack are supported");
+    mvwprintw(help_win_inner, 13, 3, "analysis:\n\tshow analysis window");
+    mvwprintw(help_win_inner, 15, 3, "help:\n\tshow help window");
+    mvwprintw(help_win_inner, 17, 3, "quit:\n\texit simulator");
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);
@@ -174,6 +197,8 @@ COMMAND get_command() {
         }
     } else if (!strcmp(output[0], "help")) {
         com.type = 'h';
+    } else if (!strcmp(output[0], "analysis")) {
+        com.type = 'a';
     } else {
         // parse as step 1
         com.type = 's';
@@ -227,8 +252,12 @@ STATE wait4command(CORE* core) {
         win_base->mem_start = com.argc ? com.argv[0] & (~0xFF) : 0x10000;
         win_base->mem_focus = com.argc ? com.argv[0] : 0xFFFFFFFF;
         return STAT_HALT;
+    case 'a':
+        show_analysis_win(core);
+        return STAT_HALT;
     case 'h':
         show_help_win();
+        return STAT_HALT;
     default:
         return STAT_HALT;
     }
