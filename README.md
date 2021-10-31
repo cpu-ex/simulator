@@ -8,6 +8,7 @@
 - [2021/10/24] complete simple assembler without supporting directives and pseudo instructions
 - [2021/10/27] change the output code format from text file to binary, all related parts adapted
 - [2021/10/30] support some directives and pseudo instructions for assembler
+- [2021/10/31] implement instruction analysis
 
 ## 2. how to build
 
@@ -35,7 +36,6 @@
 		> `xxd fileName.code` or `hexdump fileName.code` would be helpful
 	
 - dis-assembler
-
 	- step1: `make disasm`
 	- step2: `./disasm fileName`
 
@@ -46,5 +46,9 @@
 - simulator
 	- step1: `make sim`
 	- step2: `./sim fileName`
+
 		> binary code with same file name supposed to be in `./bin`
-	- step3: `make clean`
+	
+	- step3: type `h` for help
+	- step4: type `quit` to exit simulator
+	- step5: `make clean`

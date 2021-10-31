@@ -152,11 +152,16 @@ if __name__ == '__main__':
     parser.add_argument('fileName', help='relative path to .s file needed')
     parser.add_argument('-b', '--binary', action='store_true', required=False, help='export binary file')
     parser.add_argument('-t', '--text', action='store_true', required=False, help='export text file')
+    parser.add_argument('--tags', action='store_true', required=False, help='print out tags')
     args = parser.parse_args()
     # decode + encode + output
     try:
         asm = ASM()
         asm.load(args.fileName)
         asm.save(args.binary, args.text)
+
+        if args.tags:
+            for tag, addr in {**asm.codeTag, **asm.dataTag}.items():
+                print(f'{tag=}\taddr={hex(addr)}')
     except RuntimeError as e:
         print(e)
