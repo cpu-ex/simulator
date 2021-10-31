@@ -11,9 +11,7 @@ static MMU* mmu_base;
 
 WORD mmu_read(ADDR addr, int loop) {
     WORD val = 0;
-    if (addr == 0x0) {
-        // pc final return
-    } else if (addr < 0x10000) {
+    if (addr < 0x10000) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
     } else {
         for (int i = loop - 1; i >= 0; i--) {

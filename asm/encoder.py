@@ -251,6 +251,12 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
         raise RuntimeError(f'unrecognizable arith type : {name}')
     return [mc]
 
+# env: ebreak
+def ebreak(instr: tuple, addr: int, tags: dict) -> list:
+    mc = 0b1110011
+    mc |= 1 << 20
+    return [mc]
+
 # pseudo
 def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
     return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
@@ -337,6 +343,8 @@ encoder = {
     'SRA': arith,
     'OR': arith,
     'AND': arith,
+    # env
+    'EBREAK': ebreak,
     # pseudo
     'PSEUDO-NOP': pseudo_nop,
     'PSEUDO-LI': pseudo_li,

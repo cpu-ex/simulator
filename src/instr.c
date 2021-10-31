@@ -176,6 +176,20 @@ void ARITH_DISASM(INSTR instr, char* buffer) {
     }
 }
 
+// env: ebreak
+void ENV_DISASM(INSTR instr, char* buffer) {
+    WORD imm = instr.i.imm;
+    BYTE funct3 = instr.i.funct3;
+
+    if ((imm == 1) && (funct3 == 0)) {
+        // ebreak
+        sprintf(buffer, "ebreak");
+    } else {
+        // not implemented
+        sprintf(buffer, "unexpected env or csr");
+    }
+}
+
 void disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* risc-v I */
@@ -198,9 +212,9 @@ void disasm(INSTR instr, char* buffer) {
     // arith
     case 0b0110011: ARITH_DISASM(instr, buffer);break;
     // fence
-    case 0b0001111:
+    case 0b0001111: sprintf(buffer, "unexpected instr (fence)"); break;
     // env + csr
-    case 0b1110011:
+    case 0b1110011: ENV_DISASM(instr, buffer); break;
     // unexpected
     default: sprintf(buffer, "unexpected instr"); break;
     }

@@ -31,12 +31,10 @@ final:
 
 main:
     la t0, const
-    lb a0, 0(t0)
+    lb a0, 0(t0) # load a0 from const field
     # or remove the data section
     # and use this instead: li a0, 10
-    addi sp, sp, -4
-    sw ra, 0(sp)
     jal fib # call fib(a0)
-    lw ra, 0(sp)
-    addi sp, sp, 4
-    ret
+    la t0, const
+    sw a0, 0(t0) # store a0 back to const field
+    ebreak

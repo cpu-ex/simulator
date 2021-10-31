@@ -53,6 +53,8 @@ decoder = {
     'SRA': re.compile(r'(sra)\s+(\S+),\s+(\S+),\s+(\S+)'),
     'OR': re.compile(r'(or)\s+(\S+),\s+(\S+),\s+(\S+)'),
     'AND': re.compile(r'(and)\s+(\S+),\s+(\S+),\s+(\S+)'),
+    # env
+    'EBREAK': re.compile(r'(ebreak)'),
     # pseudo
     'PSEUDO-NOP': re.compile(r'(nop)'),
     'PSEUDO-LI': re.compile(r'(li)\s+(\S+),\s+(-?\d+)'),

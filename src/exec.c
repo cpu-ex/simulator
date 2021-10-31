@@ -179,6 +179,20 @@ void ARITH_EXEC(CORE *core, INSTR instr) {
     core->pc += 4;
 }
 
+// env: ebreak
+void ENV_EXEC(CORE *core, INSTR instr) {
+    WORD imm = instr.i.imm;
+    BYTE funct3 = instr.i.funct3;
+
+    if ((imm == 1) && (funct3 == 0)) {
+        // ebreak
+        BROADCAST(STAT_EXIT);
+    } else {
+        // not implemented
+        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
+    }
+}
+
 void execute(CORE* core, INSTR instr) {
     switch (instr.decoder.opcode) {
     /* risc-v I */
@@ -199,11 +213,11 @@ void execute(CORE* core, INSTR instr) {
     // arith I
     case 0b0010011: ARITH_I_EXEC(core, instr); break;
     // arith
-    case 0b0110011: ARITH_EXEC(core, instr);break;
+    case 0b0110011: ARITH_EXEC(core, instr); break;
     // fence
     case 0b0001111:
     // env + csr
-    case 0b1110011:
+    case 0b1110011: ENV_EXEC(core, instr); break;
     // unexpected
     default: core->pc += 4; break;
     }

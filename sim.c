@@ -67,10 +67,7 @@ void run() {
             BROADCAST(sim_base->win->update(sim_base->core));
             break;
         case STAT_STEP:
-            if (!sim_base->core->pc) {
-                // pc final return
-                BROADCAST(STAT_EXIT);
-            } else if ((signed)BROADCAST.decoder.info > 0) {
+            if ((signed)BROADCAST.decoder.info > 0) {
                 // step forward
                 sim_base->core->step();
                 BROADCAST.decoder.info = (unsigned)((signed)BROADCAST.decoder.info - 1);
