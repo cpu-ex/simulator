@@ -2,6 +2,8 @@
 
 static MMU* mmu_base;
 
+#define STACK_POINTER 0xBFFFFFF0
+
 #define isInInstr(addr) ((addr) - 0x10000) < mmu_base->instr_len
 #define isInData(addr) ((addr) - 0x10000) < (mmu_base->instr_len + mmu_base->data_len)
 #define isInStack(addr) (STACK_POINTER - mmu_base->stack_len <= (addr)) && ((addr) < STACK_POINTER)

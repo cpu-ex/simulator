@@ -10,9 +10,9 @@ class ASM(object):
     CODE_SECTION = True
     DATA_SECTION = False
 
-    def __init__(self) -> None:
-        self.__decoders = decoder.decoder
-        self.__encoders = encoder.encoder
+    def __init__(self, forSim: bool=True) -> None:
+        self.__decoders = decoder.getDecoder(forSim)
+        self.__encoders = encoder.getEncoder(forSim)
 
         self.fileName = None
         self.code = list()
@@ -26,13 +26,13 @@ class ASM(object):
         self.dataCounter = 0
     
     def __decode(self, instr: str) -> tuple:
-        for name, decoder in self.__decoders.items():
+        for name, (decoder, length) in self.__decoders.items():
             if res := decoder.match(instr):
                 if name.startswith('TAG') or name.startswith('DIREC'):
-                    return (name, *res.groups())
+                    return (name, *res.groups()), length
                 else:
                     _, *info = res.groups()
-                    return (name, *info)
+                    return (name, *info), length
         else:
             raise RuntimeError(f'unrecognizable instruction : {instr}')
     
@@ -66,7 +66,7 @@ class ASM(object):
             # skip empty lines
             if not line: continue
             # decode
-            instr = self.__decode(line)
+            instr, length = self.__decode(line)
             name, *info = instr
             if name.startswith('TAG'):
                 if self.section == ASM.CODE_SECTION:
@@ -97,13 +97,17 @@ class ASM(object):
                     raise RuntimeError(f'unsupported directive {name}')
             else:
                 self.code.append(instr)
-                self.codeCounter += 8 if (name.endswith('LI') or name.endswith('LA')) else 4
+                self.codeCounter += 4 * length
 
     def __outputText(self) -> None:
-        # instruction only
-        with open(f'../bin/{self.fileName}.txt', 'w') as file:
+        # output instruction
+        with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
             for mc in self.code:
                 file.write(f'{bin(mc)[2:].zfill(32)}\n')
+        # output data
+        with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
+            for d in self.data:
+                file.write(f'{bin(d)[2:].zfill(23)}\n')
     
     def __outputBinary(self) -> None:
         # output instruction
@@ -152,11 +156,12 @@ if __name__ == '__main__':
     parser.add_argument('fileName', help='relative path to .s file needed')
     parser.add_argument('-b', '--binary', action='store_true', required=False, help='export binary file')
     parser.add_argument('-t', '--text', action='store_true', required=False, help='export text file')
+    parser.add_argument('--fpga', action='store_false', required=False, help='output codes for fpga, default to false (codes for simulator)')
     parser.add_argument('--tags', action='store_true', required=False, help='print out tags')
     args = parser.parse_args()
     # decode + encode + output
     try:
-        asm = ASM()
+        asm = ASM(forSim=args.fpga)
         asm.load(args.fileName)
         asm.save(args.binary, args.text)
 

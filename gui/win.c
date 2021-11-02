@@ -205,8 +205,8 @@ COMMAND get_command() {
     // get instruction
     char input[73], output[12][12];
     WINDOW* com_win = newwin(1, 77, 22, 2);
-    wclear(com_win); wmove(com_win, 0, 0);
-    wgetstr(com_win, input);
+    wclear(com_win);
+    mvwgetstr(com_win, 0, 0, input);
     // split with space (exactly 1 space)
     int counter = 0, argc = 0;
     strcat(input, " "); // add an end point

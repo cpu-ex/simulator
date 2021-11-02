@@ -251,11 +251,13 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
         raise RuntimeError(f'unrecognizable arith type : {name}')
     return [mc]
 
-# env: ebreak
-def ebreak(instr: tuple, addr: int, tags: dict) -> list:
-    mc = 0b1110011
-    mc |= 1 << 20
-    return [mc]
+# env
+# ebreak for sim: shift to exit mode
+def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
+    return [0b1110011 | (1 << 20)]
+# ebreak for fpga: infinity loop
+def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
+    return [0b1101111]
 
 # pseudo
 def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
@@ -344,7 +346,7 @@ encoder = {
     'OR': arith,
     'AND': arith,
     # env
-    'EBREAK': ebreak,
+    'EBREAK': None,
     # pseudo
     'PSEUDO-NOP': pseudo_nop,
     'PSEUDO-LI': pseudo_li,
@@ -356,3 +358,7 @@ encoder = {
     'PSEUDO-JALR': pseudo_jalr,
     'PSEUDO-RET': pseudo_ret,
 }
+
+def getEncoder(forSim: bool) -> dict:
+    encoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
+    return encoder

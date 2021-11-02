@@ -52,3 +52,7 @@
 	- step3: type `h` for help
 	- step4: type `quit` to exit simulator
 	- step5: `make clean`
+
+## 3. efficiency
+
+About 17000000 instructions per second

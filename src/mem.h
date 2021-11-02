@@ -1,8 +1,6 @@
 #pragma once
 #include "types.h"
 
-#define STACK_POINTER 0xBFFFFFF0
-
 typedef struct mmu {
     // attributes
     BYTE* instr_cache;
