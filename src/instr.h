@@ -8,8 +8,17 @@ static char* instr_name[10] = {
     "jal", "jalr",
     "branch",
     "load", "store",
-    "arith", "arith_i",
+    "arith_i", "arith",
     "env/csr"
+};
+
+enum instr_type {
+    LUI = 0, AUIPC,
+    JAL, JALR,
+    BRANCH,
+    LOAD, STORE,
+    ARITH_I, ARITH,
+    ENV_CSR
 };
 
 typedef union instr {
