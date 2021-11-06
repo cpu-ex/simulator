@@ -28,6 +28,15 @@ def reg2idx(name: str) -> int:
             return idx
     raise RuntimeError(f'invalid register : {name}')
 
+def imm2int(imm: str) -> int:
+    try:
+        try:
+            return int(imm, base=10)
+        except ValueError:
+            return int(imm, base=16)
+    except ValueError:
+        raise RuntimeError(f'invalid digital value : {imm}')
+
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
         return dst - addr
@@ -37,7 +46,7 @@ def tag2offset(name: str, tags: dict, addr: int) -> int:
 # lui imm[31:12] rd[5] 0110111
 def lui(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
-    imm = int(instr[2])
+    imm = imm2int(instr[2])
 
     mc = 0b0110111
     mc |= (rd & 0x1F) << 7
@@ -47,7 +56,7 @@ def lui(instr: tuple, addr: int, tags: dict) -> list:
 # auipc imm[31:12] rd[5] 0010111
 def auipc(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
-    imm = int(instr[2])
+    imm = imm2int(instr[2])
     
     mc = 0b0010111
     mc |= (rd & 0x1F) << 7
@@ -70,7 +79,7 @@ def jal(instr: tuple, addr: int, tags: dict) -> list:
 # jalr imm[11:0] rs1 000 rd 1100111
 def jalr(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
-    imm = int(instr[2])
+    imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
 
     mc = 0b1100111
@@ -115,7 +124,7 @@ def branch(instr: tuple, addr: int, tags: dict) -> list:
 def load(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rd = reg2idx(instr[1])
-    imm = int(instr[2])
+    imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
 
     mc = 0b0000011
@@ -141,7 +150,7 @@ def load(instr: tuple, addr: int, tags: dict) -> list:
 def store(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rs2 = reg2idx(instr[1])
-    imm = int(instr[2])
+    imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
 
     mc = 0b0100011
@@ -165,7 +174,7 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> list:
     name = instr[0]
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
-    imm = int(instr[3])
+    imm = imm2int(instr[3])
 
     mc = 0b0010011
     mc |= (rd & 0x1F) << 7
@@ -265,7 +274,7 @@ def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
 
 def pseudo_li(instr: tuple, addr: int, tags: dict) -> list:
     _, rd, imm = instr
-    hi, lo = getHiLo(int(imm))
+    hi, lo = getHiLo(imm2int(imm))
     return lui(('LUI', rd, str(hi)), addr, tags) + \
         arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
 

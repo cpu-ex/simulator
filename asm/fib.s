@@ -30,7 +30,7 @@ final:
     ret
 
 main:
-    li sp, 3221225456
+    li sp, 0xBFFFFFF0
     la t0, const
     lb a0, 0(t0) # load a0 from const field
     # or remove the data section
