@@ -8,6 +8,9 @@ decoder = {
     # directive
     'DIREC-DATA': (re.compile(r'\.(\S+?)\s+(.+)'), 1),
     'DIREC-PLAIN': (re.compile(r'\.(\S+)'), 1),
+
+
+    # RV32I
     # pc rd, imm
     'LUI': (re.compile(r'(lui)\s+(\S+),\s+(-?\S+)'), 1),
     'AUIPC': (re.compile(r'(auipc)\s+(\S+),\s+(-?\S+)'), 1),
@@ -64,7 +67,15 @@ decoder = {
     'PSEUDO-J': (re.compile(r'(j)\s+(\S+)'), 1),
     'PSEUDO-JAL': (re.compile(r'(jal)\s+(\S+)'), 1),
     'PSEUDO-JALR': (re.compile(r'(jalr)\s+(\S+)'), 1),
-    'PSEUDO-RET': (re.compile(r'(ret)'), 1)
+    'PSEUDO-RET': (re.compile(r'(ret)'), 1),
+
+
+    # RV32M
+    'MUL': (re.compile(r'(add)\s+(\S+),\s+(\S+),\s+(\S+)'), 1),
+    'DIV': (re.compile(r'(div)\s+(\S+),\s+(\S+),\s+(\S+)'), 1),
+    'DIVU': (re.compile(r'(divu)\s+(\S+),\s+(\S+),\s+(\S+)'), 1),
+    'REM': (re.compile(r'(rem)\s+(\S+),\s+(\S+),\s+(\S+)'), 1),
+    'REMU': (re.compile(r'(remu)\s+(\S+),\s+(\S+),\s+(\S+)'), 1),
 }
 
 # ebreak for sim

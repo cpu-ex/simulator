@@ -225,6 +225,7 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
     mc |= (rd & 0x1F) << 7
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
+    # RV32I
     if name == 'ADD':
         mc |= 0b000 << 12
         mc |= 0b0000000 << 25
@@ -255,6 +256,22 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
     elif name == 'AND':
         mc |= 0b111 << 12
         mc |= 0b0000000 << 25
+    # RV32M
+    elif name == 'MUL':
+        mc |= 0b000 << 12
+        mc |= 0b0000001 << 25
+    elif name == 'DIV':
+        mc |= 0b100 << 12
+        mc |= 0b0000001 << 25
+    elif name == 'DIVU':
+        mc |= 0b101 << 12
+        mc |= 0b0000001 << 25
+    elif name == 'REM':
+        mc |= 0b110 << 12
+        mc |= 0b0000001 << 25
+    elif name == 'REMU':
+        mc |= 0b111 << 12
+        mc |= 0b0000001 << 25
     else:
         # not suppose to be here
         raise RuntimeError(f'unrecognizable arith type : {name}')
@@ -309,6 +326,7 @@ def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
     return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
 
 encoder = {
+    # RV32I
     # pc
     'LUI': lui,
     'AUIPC': auipc,
@@ -366,6 +384,14 @@ encoder = {
     'PSEUDO-JAL': pseudo_jal,
     'PSEUDO-JALR': pseudo_jalr,
     'PSEUDO-RET': pseudo_ret,
+
+
+    # RV32M
+    'MUL': arith,
+    'DIV': arith,
+    'DIVU': arith,
+    'REM': arith,
+    'REMU': arith,
 }
 
 def getEncoder(forSim: bool) -> dict:

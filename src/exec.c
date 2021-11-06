@@ -100,7 +100,9 @@ void STORE_EXEC(CORE* core, INSTR instr) {
     core->pc += 4;
 }
 
-#define ARITH_ADD(a1, a2, funct7) ((funct7) ? ((a1) - (a2)) : ((a1) + (a2)))
+// RV32I
+#define ARITH_ADD(a1, a2) (a1) + (a2)
+#define ARITH_SUB(a1, a2) (a1) - (a2)
 #define ARITH_SLL(a1, a2) ((a1) << ((a2) & 0b11111)) // only take lower 5 bits as shift amount
 #define ARITH_SLT(a1, a2) (((signed)(a1) < (signed)(a2)) ? 1 : 0)
 #define ARITH_SLTU(a1, a2) (((a1) < (a2)) ? 1 : 0)
@@ -110,6 +112,12 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 #define ARITH_SR(a1, a2, funct7) ((funct7) ? ARITH_SRA((a1), (a2)) : ARITH_SRL((a1), (a2)))
 #define ARITH_OR(a1, a2) ((a1) | (a2))
 #define ARITH_AND(a1, a2) ((a1) & (a2))
+// RV32M
+#define ARITH_MUL(a1, a2) (a1) * (a2)
+#define ARITH_DIV(a1, a2) ((signed)(a1)) / ((signed)(a2))
+#define ARITH_DIVU(a1, a2) (a1) / (a2)
+#define ARITH_REM(a1, a2) ((signed)(a1)) % ((signed)(a2))
+#define ARITH_REMU(a1, a2) (a1) % (a2)
 
 // arith with immediate variants
 // addi, slli, slti, sltiu, xori, srli, srai, ori, andi
@@ -123,7 +131,7 @@ void ARITH_I_EXEC(CORE *core, INSTR instr) {
     WORD a1 = core->regs[rs1], a2 = sext(imm, 11);
     switch (funct3) {
     // addi
-    case 0b000: val = ARITH_ADD(a1, a2, 0); break;
+    case 0b000: val = ARITH_ADD(a1, a2); break;
     // slli (legal when shamt[5] = 0, but not implemented)
     case 0b001: val = ARITH_SLL(a1, a2); break;
     // slti
@@ -132,8 +140,14 @@ void ARITH_I_EXEC(CORE *core, INSTR instr) {
     case 0b011: val = ARITH_SLTU(a1, a2); break;
     // xori
     case 0b100: val = ARITH_XOR(a1, a2); break;
-    // srli & srai (same with slli)
-    case 0b101: val = ARITH_SR(a1, a2, a2 & 0xFE0); break;
+    // srli + srai (same with slli)
+    case 0b101:
+        switch (a2 >> 5) {
+            case 0b0000000: val = ARITH_SRL(a1, a2); break;
+            case 0b0100000: val = ARITH_SRA(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
     // ori
     case 0b110: val = ARITH_OR(a1, a2); break;
     // andi
@@ -145,7 +159,8 @@ void ARITH_I_EXEC(CORE *core, INSTR instr) {
     core->pc += 4;
 }
 
-// arith: add, sub, sll, slt, sltu, xor, srl, sra, or, and
+// arith (RV32I + RV32M)
+// add, sub, sll, slt, sltu, xor, srl, sra, or, and
 void ARITH_EXEC(CORE *core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
@@ -156,22 +171,54 @@ void ARITH_EXEC(CORE *core, INSTR instr) {
     WORD val = 0;
     WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
     switch (funct3) {
-    // add & sub
-    case 0b000: val = ARITH_ADD(a1, a2, funct7); break;
+    // add + sub + mul
+    case 0b000:
+        switch (funct7) {
+            case 0b0000000: val = ARITH_ADD(a1, a2); break;
+            case 0b0100000: val = ARITH_SUB(a1, a2); break;
+            case 0b0000001: val = ARITH_MUL(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
     // sll
     case 0b001: val = ARITH_SLL(a1, a2); break;
     // slt
     case 0b010: val = ARITH_SLT(a1, a2); break;
     // sltu
     case 0b011: val = ARITH_SLTU(a1, a2); break;
-    // xor
-    case 0b100: val = ARITH_XOR(a1, a2); break;
-    // srl & sra
-    case 0b101: val = ARITH_SR(a1, a2, funct7); break;
-    // or
-    case 0b110: val = ARITH_OR(a1, a2); break;
-    // and
-    case 0b111: val = ARITH_AND(a1, a2); break;
+    // xor + div
+    case 0b100:
+        switch (funct7) {
+            case 0b0000000: val = ARITH_XOR(a1, a2); break;
+            case 0b0000001: val = ARITH_DIV(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
+    // srl + sra + divu
+    case 0b101:
+        switch (funct7) {
+            case 0b0000000: val = ARITH_SRL(a1, a2); break;
+            case 0b0100000: val = ARITH_SRA(a1, a2); break;
+            case 0b0000001: val = ARITH_DIVU(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
+    // or + rem
+    case 0b110:
+        switch (funct7) {
+            case 0b0000000: val = ARITH_OR(a1, a2); break;
+            case 0b0000001: val = ARITH_REM(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
+    // and + remu
+    case 0b111:
+        switch (funct7) {
+            case 0b0000000: val = ARITH_AND(a1, a2); break;
+            case 0b0000001: val = ARITH_REMU(a1, a2); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        }
+        break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
@@ -199,28 +246,62 @@ void execute(CORE* core, INSTR instr) {
     switch (instr.decoder.opcode) {
     /* risc-v I */
     // lui
-    case 0b0110111: LUI_EXEC(core, instr); core->instr_analysis[0]++; break;
+    case 0b0110111:
+        LUI_EXEC(core, instr);
+        core->instr_analysis[LUI]++;
+        break;
     // auipc
-    case 0b0010111: AUIPC_EXEC(core, instr); core->instr_analysis[1]++; break;
+    case 0b0010111:
+        AUIPC_EXEC(core, instr);
+        core->instr_analysis[AUIPC]++;
+        break;
     // jal
-    case 0b1101111: JAL_EXEC(core, instr); core->instr_analysis[2]++; break;
+    case 0b1101111:
+        JAL_EXEC(core, instr);
+        core->instr_analysis[JAL]++;
+        break;
     // jalr
-    case 0b1100111: JALR_EXEC(core, instr); core->instr_analysis[3]++; break;
+    case 0b1100111:
+        JALR_EXEC(core, instr);
+        core->instr_analysis[JALR]++;
+        break;
     // branch
-    case 0b1100011: BRANCH_EXEC(core, instr); core->instr_analysis[4]++; break;
+    case 0b1100011:
+        BRANCH_EXEC(core, instr);
+        core->instr_analysis[BRANCH]++;
+        break;
     // load
-    case 0b0000011: LOAD_EXEC(core, instr); core->instr_analysis[5]++; break;
+    case 0b0000011:
+        LOAD_EXEC(core, instr);
+        core->instr_analysis[LOAD]++;
+        break;
     // store
-    case 0b0100011: STORE_EXEC(core, instr); core->instr_analysis[6]++; break;
+    case 0b0100011:
+        STORE_EXEC(core, instr);
+        core->instr_analysis[STORE]++;
+        break;
     // arith I
-    case 0b0010011: ARITH_I_EXEC(core, instr); core->instr_analysis[7]++; break;
+    case 0b0010011:
+        ARITH_I_EXEC(core, instr);
+        core->instr_analysis[ARITH_I]++;
+        break;
     // arith
-    case 0b0110011: ARITH_EXEC(core, instr); core->instr_analysis[8]++; break;
+    case 0b0110011:
+        ARITH_EXEC(core, instr);
+        core->instr_analysis[ARITH]++;
+        break;
     // fence
-    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    case 0b0001111:
+        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
+        break;
     // env + csr
-    case 0b1110011: ENV_EXEC(core, instr); core->instr_analysis[9]++; break;
+    case 0b1110011:
+        ENV_EXEC(core, instr);
+        core->instr_analysis[ENV_CSR]++;
+        break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default:
+        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
+        break;
     }
 }

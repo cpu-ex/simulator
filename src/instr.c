@@ -135,7 +135,7 @@ void ARITH_I_DISASM(INSTR instr, char* buffer) {
     }
 }
 
-// arith rd, rs1, rs2
+// arith rd, rs1, rs2 (RV32I + RV32M)
 void ARITH_DISASM(INSTR instr, char* buffer) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
@@ -143,12 +143,13 @@ void ARITH_DISASM(INSTR instr, char* buffer) {
     BYTE funct3 = instr.r.funct3;
     BYTE funct7 = instr.r.funct7;
     switch (funct3) {
-    // add + sub
+    // add + sub + mul
     case 0b000:
-        if (funct7) {
-            sprintf(buffer, "sub %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]);
-        } else {
-            sprintf(buffer, "add %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]);
+        switch (funct7) {
+            case 0b0000000: sprintf(buffer, "add %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0100000: sprintf(buffer, "sub %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0000001: sprintf(buffer, "mul %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            default: sprintf(buffer, "unexpected arith"); break;
         }
         break;
     // sll
@@ -157,20 +158,39 @@ void ARITH_DISASM(INSTR instr, char* buffer) {
     case 0b010: sprintf(buffer, "slt %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
     // sltu
     case 0b011: sprintf(buffer, "sltu %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
-    // xor
-    case 0b100: sprintf(buffer, "xor %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
-    // srl + sra
-    case 0b101:
-        if (funct7) {
-            sprintf(buffer, "sra %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]);
-        } else {
-            sprintf(buffer, "srl %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]);
+    // xor + div
+    case 0b100:
+        switch (funct7) {
+            case 0b0000000: sprintf(buffer, "xor %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0000001: sprintf(buffer, "div %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            default: sprintf(buffer, "unexpected arith"); break;
         }
         break;
-    // or
-    case 0b110: sprintf(buffer, "or %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
-    // and
-    case 0b111: sprintf(buffer, "and %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+    // srl + sra + divu
+    case 0b101:
+        switch (funct7) {
+            case 0b0000000: sprintf(buffer, "srl %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0100000: sprintf(buffer, "sra %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0000001: sprintf(buffer, "divu %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            default: sprintf(buffer, "unexpected arith"); break;
+        }
+        break;
+    // or + rem
+    case 0b110:
+        switch (funct7) {
+            case 0b0000000: sprintf(buffer, "or %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0000001: sprintf(buffer, "rem %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            default: sprintf(buffer, "unexpected arith"); break;
+        }
+        break;
+    // and + remu
+    case 0b111:
+        switch (funct7) {
+            case 0b0000000: sprintf(buffer, "and %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            case 0b0000001: sprintf(buffer, "remu %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
+            default: sprintf(buffer, "unexpected arith"); break;
+        }
+        break;
     // unexpected
     default: sprintf(buffer, "unexpected arith"); break;
     }
