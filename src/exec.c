@@ -109,7 +109,6 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 #define ARITH_XOR(a1, a2) ((a1) ^ (a2))
 #define ARITH_SRL(a1, a2) ((a1) >> ((a2) & 0b11111)) // same with sll
 #define ARITH_SRA(a1, a2) (unsigned)(((signed)(a1)) >> ((a2)&0b11111)) // same with sll
-#define ARITH_SR(a1, a2, funct7) ((funct7) ? ARITH_SRA((a1), (a2)) : ARITH_SRL((a1), (a2)))
 #define ARITH_OR(a1, a2) ((a1) | (a2))
 #define ARITH_AND(a1, a2) ((a1) & (a2))
 // RV32M
@@ -238,8 +237,6 @@ void ENV_EXEC(CORE *core, INSTR instr) {
         // not implemented
         BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
     }
-
-    core->pc += 4;
 }
 
 void execute(CORE* core, INSTR instr) {

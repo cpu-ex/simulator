@@ -58,7 +58,7 @@ class ASM(object):
 
     def load(self, fileName: str) -> None:
         with open(fileName) as file:
-            self.fileName = fileName.split('.')[0]
+            self.fileName = fileName.split('/')[-1].split('.')[0]
             # remove all unnecessary parts like space\n\t and comments
             raw = [line.lstrip().rstrip().split('#')[0] for line in file]
         # remove empty lines and seprate tags and instructions
@@ -82,15 +82,15 @@ class ASM(object):
                 elif name == 'text':
                     self.section = ASM.CODE_SECTION
                 elif name == 'byte':
-                    data = ASM.pack2word([int(x) & 0xFF for x in info[1].split(',')], 1)
+                    data = ASM.pack2word([encoder.imm2int(x) & 0xFF for x in info[1].split(',')], 1)
                     self.data += data
                     self.dataCounter += len(data) * 4
                 elif name == 'half':
-                    data = ASM.pack2word([int(x) & 0xFFFF for x in info[1].split(',')], 2)
+                    data = ASM.pack2word([encoder.imm2int(x) & 0xFFFF for x in info[1].split(',')], 2)
                     self.data += data
                     self.dataCounter += len(data) * 4
                 elif name == 'word':
-                    data = [int(x) & 0xFFFFFFFF for x in info[1].split(',')]
+                    data = [encoder.imm2int(x) & 0xFFFFFFFF for x in info[1].split(',')]
                     self.data += data
                     self.dataCounter += len(data) * 4
                 else:
