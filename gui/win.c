@@ -40,9 +40,9 @@ void update_reg(WINDOW* win, CORE* core) {
     for (int idx = 0; idx < count; idx++) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (regs[idx] == 8 && win_base->reg_set == REG_SET_DEF)
-            wprintw(win, "fp ");
+            wprintw(win, "fp   ");
         else
-            wprintw(win, "%2s ", reg_name[regs[idx]]);
+            wprintw(win, "%-4s ", reg_name[regs[idx]]);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (win_base->reg_focus[regs[idx]])
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
@@ -69,7 +69,7 @@ void update_mem(WINDOW* win, CORE* core) {
     for (ADDR offset = 0; offset < 0x100; offset++) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (offset % 0x10 == 0)
-            wprintw(win, "0x%08X     ", addr + offset);
+            wprintw(win, "0x%08X   ", addr + offset);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (((addr + offset) & (~0xF)) == (win_base->mem_focus & (~0xF)))
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
@@ -86,8 +86,8 @@ void update_mem(WINDOW* win, CORE* core) {
 void show_main_win(CORE* core) {
     // create outer windows (containers that never change)
     WINDOW* pc_outer = newwin(3, 80, 0, 0);
-    WINDOW* reg_outer = newwin(18, 14, 3, 0);
-    WINDOW* mem_outer = newwin(18, 66, 3, 14);
+    WINDOW* reg_outer = newwin(18, 16, 3, 0);
+    WINDOW* mem_outer = newwin(18, 64, 3, 16);
     WINDOW* com_outer = newwin(3, 80, 21, 0);
     // box the containers
     wattron(pc_outer, COLOR_PAIR(TITLE_COLOR));
@@ -104,8 +104,8 @@ void show_main_win(CORE* core) {
     wattron(com_outer, COLOR_PAIR(TITLE_COLOR));
     // create inner windows (contents that actually display unpdates)
     WINDOW* pc_inner = newwin(1, 78, 1, 1);
-    WINDOW* reg_inner = newwin(16, 12, 4, 1);
-    WINDOW* mem_inner = newwin(16, 64, 4, 15);
+    WINDOW* reg_inner = newwin(16, 14, 4, 1);
+    WINDOW* mem_inner = newwin(16, 62, 4, 17);
     WINDOW* com_inner = newwin(1, 77, 22, 2);
     // update contents
     update_pc(pc_inner, core);
