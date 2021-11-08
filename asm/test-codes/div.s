@@ -48,37 +48,37 @@ test05:
   li x29, 0x80000000
   bne x30, x29, fail
 
-test06:
-  li a1, 6
-  li x1, 0x80000000
-  li x2, 0xffffffff
-  div x30, x1, x2
-  li x29, 0x80000000
-  bne x30, x29, fail
+# test06:
+#   li a1, 6
+#   li x1, 0x80000000
+#   li x2, 0xffffffff
+#   div x30, x1, x2
+#   li x29, 0x80000000
+#   bne x30, x29, fail
 
-test07:
-  li a1, 7
-  li x1, 0x80000000
-  li x2, 0x00000000
-  div x30, x1, x2
-  li x29, 0xffffffff
-  bne x30, x29, fail
+# test07:
+#   li a1, 7
+#   li x1, 0x80000000
+#   li x2, 0x00000000
+#   div x30, x1, x2
+#   li x29, 0xffffffff
+#   bne x30, x29, fail
 
-test08:
-  li a1, 8
-  li x1, 0x00000001
-  li x2, 0x00000000
-  div x30, x1, x2
-  li x29, 0xffffffff
-  bne x30, x29, fail
+# test08:
+#   li a1, 8
+#   li x1, 0x00000001
+#   li x2, 0x00000000
+#   div x30, x1, x2
+#   li x29, 0xffffffff
+#   bne x30, x29, fail
 
-test09:
-  li a1, 9
-  li x1, 0x00000000
-  li x2, 0x00000000
-  div x30, x1, x2
-  li x29, 0xffffffff
-  bne x30, x29, fail
+# test09:
+#   li a1, 9
+#   li x1, 0x00000000
+#   li x2, 0x00000000
+#   div x30, x1, x2
+#   li x29, 0xffffffff
+#   bne x30, x29, fail
 
 success:
   li a0, 0
