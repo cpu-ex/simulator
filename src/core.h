@@ -49,10 +49,11 @@ typedef struct core {
     // attributes
     REG pc;
     REG regs[32];
+    REG fregs[32];
     MMU* mmu;
     // analysis
     u32 instr_counter;
-    u32 instr_analysis[10];
+    u32 instr_analysis[21];
     // interfaces
     WORD (*load)(ADDR, int ,int);
     void (*store)(ADDR, WORD, int);

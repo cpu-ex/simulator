@@ -365,7 +365,7 @@ void disasm(INSTR instr, char* buffer) {
     // f-arith (seperating for better analysis)
     case 0b1010011:
         switch (instr.r.funct7) {
-        // fadd + fsub
+        // fadd
         case 0b0000000: FADD_DISASM(instr, buffer); break;
         // fsub
         case 0b0000100: FSUB_DISASM(instr, buffer); break;

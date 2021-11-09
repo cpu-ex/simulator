@@ -1,4 +1,5 @@
 #include "exec.h"
+#include "fpu.h"
 
 // lui: load upper immediate
 void LUI_EXEC(CORE* core, INSTR instr) {
@@ -241,7 +242,7 @@ void ENV_EXEC(CORE *core, INSTR instr) {
 
 void execute(CORE* core, INSTR instr) {
     switch (instr.decoder.opcode) {
-    /* risc-v I */
+    /* RV32I + RV32M */
     // lui
     case 0b0110111:
         LUI_EXEC(core, instr);
@@ -295,6 +296,73 @@ void execute(CORE* core, INSTR instr) {
     case 0b1110011:
         ENV_EXEC(core, instr);
         core->instr_analysis[ENV_CSR]++;
+        break;
+    
+
+    /* RV32F */
+    // f-load
+    case 0b0000111:
+        FLW_EXEC(core, instr);
+        core->instr_analysis[F_LOAD]++;
+        break;
+    // f-store
+    case 0b0100111:
+        FSW_EXEC(core, instr);
+        core->instr_analysis[F_STORE]++;
+        break;
+    // f-arith (seprating for better analysis)
+    case 0b1010011:
+        switch (instr.r.funct7) {
+        // fadd
+        case 0b0000000:
+            FADD_EXEC(core, instr);
+            core->instr_analysis[FADD]++;
+            break;
+        // fsub
+        case 0b0000100:
+            FSUB_EXEC(core, instr);
+            core->instr_analysis[FSUB]++;
+            break;
+        // fmul
+        case 0b0001000:
+            FMUL_EXEC(core, instr);
+            core->instr_analysis[FMUL]++;
+            break;
+        // fdiv + fsqrt
+        case 0b0001100:
+            if (instr.r.rs2) {
+                FDIV_EXEC(core, instr);
+                core->instr_analysis[FDIV]++;
+            } else {
+                FSQRT_EXEC(core, instr);
+                core->instr_analysis[FSQRT]++;
+            }
+            break;
+        // fcmp
+        case 0b1010000:
+            FCMP_EXEC(core, instr);
+            core->instr_analysis[FCMP]++;
+            break;
+        // fcvt2s
+        case 0b1100000:
+            FCVT2S_EXEC(core, instr);
+            core->instr_analysis[FCVT2S]++;
+            break;
+        // fcvt2w
+        case 0b1101000:
+            FCVT2W_EXEC(core, instr);
+            core->instr_analysis[FCVT2W]++;
+            break;
+        // fsgnj
+        case 0b0010000:
+            FSGNJ_EXEC(core, instr);
+            core->instr_analysis[FSGNJ]++;
+            break;
+        // unexpected
+        default:
+            BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
+            break;
+        }
         break;
     // unexpected
     default:
