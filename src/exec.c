@@ -313,6 +313,16 @@ void execute(CORE* core, INSTR instr) {
     // f-arith (seprating for better analysis)
     case 0b1010011:
         switch (instr.r.funct7) {
+        // f-mv to integer from float
+        case 0b1110000:
+            FMV2I_EXEC(core, instr);
+            core->instr_analysis[FMV2I]++;
+            break;
+        // f-mv to float from integer
+        case 0b1111000:
+            FMV2F_EXEC(core, instr);
+            core->instr_analysis[FMV2F]++;
+            break;
         // fadd
         case 0b0000000:
             FADD_EXEC(core, instr);
@@ -343,15 +353,15 @@ void execute(CORE* core, INSTR instr) {
             FCMP_EXEC(core, instr);
             core->instr_analysis[FCMP]++;
             break;
-        // fcvt2s
+        // fcvt to integer from float
         case 0b1100000:
-            FCVT2S_EXEC(core, instr);
-            core->instr_analysis[FCVT2S]++;
+            FCVT2I_EXEC(core, instr);
+            core->instr_analysis[FCVT2I]++;
             break;
-        // fcvt2w
+        // fcvt to float from integer
         case 0b1101000:
-            FCVT2W_EXEC(core, instr);
-            core->instr_analysis[FCVT2W]++;
+            FCVT2F_EXEC(core, instr);
+            core->instr_analysis[FCVT2F]++;
             break;
         // fsgnj
         case 0b0010000:

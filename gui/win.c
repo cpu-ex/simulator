@@ -41,12 +41,17 @@ void update_reg(WINDOW* win, CORE* core) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (regs[idx] == 8 && win_base->reg_set == REG_SET_DEF)
             wprintw(win, "fp   ");
-        else
+        else if (regs[idx] < 32)
             wprintw(win, "%-4s ", reg_name[regs[idx]]);
+        else
+            wprintw(win, "%-4s ", freg_name[regs[idx] - 32]);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (win_base->reg_focus[regs[idx]])
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        wprintw(win, "%8X\n", core->regs[regs[idx]]);
+        if (regs[idx] < 32)
+            wprintw(win, "%8X\n", core->regs[regs[idx]]);
+        else
+            wprintw(win, "%8.3f\n", *(float*)&(core->fregs[regs[idx] - 32]));
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
     }
 }
@@ -123,16 +128,20 @@ void show_analysis_win(CORE* core) {
     attron(COLOR_PAIR(TITLE_COLOR));
     box(stdscr, 0, 0);
     mvprintw(0, 2, " Analysis ");
-    WINDOW* block1 = newwin(20, 17, 2, 2);
-    mvvline(2, 20, ACS_VLINE, 20);
-    WINDOW* block2 = newwin(20, 56, 2, 22);
+    WINDOW* block1 = newwin(20, 35, 2, 2);
+    mvvline(2, 38, ACS_VLINE, 20);
+    WINDOW* block2 = newwin(20, 38, 2, 40);
     attroff(COLOR_PAIR(TITLE_COLOR));
     // block1: instruction
+    mvwprintw(block1, 0, 0, "RV32I & RV32M");
     for (int i = 0; i < 10; i++)
-        mvwprintw(block1, i, 0, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
+        mvwprintw(block1, i + 2, 0, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
+    mvwprintw(block1, 0, 18, "RV32F");
+    for (int i = 10; i < 23; i++)
+        mvwprintw(block1, i - 10 + 2, 18, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 19, 0, "%u in total", core->instr_counter);
     // block2: reserved
-    mvwprintw(block2, 9, 24, "reserved");
+    mvwprintw(block2, 9, 15, "reserved");
     // refresh
     refresh();
     wrefresh(block1);
@@ -149,7 +158,7 @@ void show_help_win() {
     mvwprintw(help_win_outer, 0, 2, " Instruction ");
     wattroff(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     mvwprintw(help_win_inner, 0, 3, "step [n]:\n\tmove on for n step,\n\tpositive for forward, negative for backwards\n\tdefault to infinity (loops util exit or exception)");
-    mvwprintw(help_win_inner, 4, 3, "reg [d|a|s|t]:\n\tswitch register set, default to zero ~ a5");
+    mvwprintw(help_win_inner, 4, 3, "reg [d|a|s|t|fa|fs|ft]:\n\tswitch register set, [d]default to zero ~ a5");
     mvwprintw(help_win_inner, 6, 3, "reg [-][reg name]:\n\thighlight certain register,\n\tminus for setting back to normal,\n\tmutiple input supported");
     mvwprintw(help_win_inner, 10, 3, "mem [address(hex)|tag]:\n\tswitch memory range, default to 0x10000\n\ttags like instr, data, stack are supported");
     mvwprintw(help_win_inner, 13, 3, "analysis:\n\tshow analysis window");
@@ -186,13 +195,21 @@ typedef struct command {
 } COMMAND;
 
 int reg2idx(char* reg) {
+    // special fp
     if (!strcmp(reg, "fp"))
         return 8;
-    int idx;
-    for (idx = 0; idx < 32; idx++)
+    // try regs and fregs
+    for (int idx = 0; idx < 32; idx++) {
         if (!strcmp(reg, reg_name[idx]))
-            break;
-    return idx;
+            return idx;
+        if (!strcmp(reg, freg_name[idx]))
+            return 32 + idx;
+    }
+    // convert d|a|s|t|fa|fs|ft into a int number
+    int val = 0;
+    for (int idx = 0; idx < strlen(reg); idx++)
+        val += reg[idx];
+    return val;
 }
 
 COMMAND get_command() {
@@ -240,7 +257,7 @@ COMMAND get_command() {
                 } else {
                     idx = reg2idx(output[i]);
                 }
-                com.argv[i - 1] = idx == 32 ? output[i][0] : (flag * idx);
+                com.argv[i - 1] = flag * idx;
             }
         } else {
             com.argc = 1;
@@ -299,7 +316,13 @@ STATE wait4command(CORE* core) {
                 win_base->reg_set = REG_SET_S;
             } else if (arg == 't') {
                 win_base->reg_set = REG_SET_T;
-            } else if (32 > arg && arg > -32) {
+            } else if (arg == 'f' + 'a') {
+                win_base->reg_set = REG_SET_FA;
+            } else if (arg == 'f' + 's') {
+                win_base->reg_set = REG_SET_FS;
+            } else if (arg == 'f' + 't') {
+                win_base->reg_set = REG_SET_FT;
+            } else if (64 > arg && arg > -64) {
                 if (arg > 0)
                     win_base->reg_focus[arg] = 1;
                 else

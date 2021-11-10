@@ -53,7 +53,7 @@ void init_core(CORE* core) {
     // init basic info
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
-    memset(core->instr_analysis, 0, 10 * sizeof(u32));
+    memset(core->instr_analysis, 0, 23 * sizeof(u32));
     // init mmu
     static MMU mmu;
     init_mmu(&mmu);

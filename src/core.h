@@ -53,7 +53,7 @@ typedef struct core {
     MMU* mmu;
     // analysis
     u32 instr_counter;
-    u32 instr_analysis[21];
+    u32 instr_analysis[23];
     // interfaces
     WORD (*load)(ADDR, int ,int);
     void (*store)(ADDR, WORD, int);

@@ -81,8 +81,8 @@ decoder = {
     # RV32F
     'FLW': (re.compile(r'(flw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
     'FSW': (re.compile(r'(fsw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
-    'FMVXW': (re.compile(r'(fmv\.w\.x)\s+(\S+),\s*(\S+)'), 1),
-    'FMVWX': (re.compile(r'(fmv\.x\.w)\s+(\S+),\s*(\S+)'), 1),
+    'FMVXW': (re.compile(r'(fmv\.x\.w)\s+(\S+),\s*(\S+)'), 1),
+    'FMVWX': (re.compile(r'(fmv\.w\.x)\s+(\S+),\s*(\S+)'), 1),
     'FADD': (re.compile(r'(fadd)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'FSUB': (re.compile(r'(fsub)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'FMUL': (re.compile(r'(fmul)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),

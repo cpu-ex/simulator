@@ -1,6 +1,6 @@
 # encoder
 
-import re
+import re, struct
 
 def getHiLo(val: int) -> tuple:
     high = ((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)
@@ -47,6 +47,13 @@ def imm2int(imm: str) -> int:
             return int(imm, base=16)
     except ValueError:
         raise RuntimeError(f'invalid digital value : {imm}')
+
+def fimm2int(imm: str) -> int:
+    try:
+        bytes = struct.pack('<f', float(imm))
+        return struct.unpack('<I', bytes)[0]
+    except ValueError:
+        raise RuntimeError(f'invalid float value : {imm}')
 
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
@@ -165,7 +172,7 @@ def store(instr: tuple, addr: int, tags: dict) -> list:
     rs1 = reg2idx(instr[3])
 
     mc = 0b0100011
-    mc |= (imm & 0xF) << 7 # [4:0]
+    mc |= (imm & 0x1F) << 7 # [4:0]
     if name == 'SB':
         mc |= 0b000 << 12
     elif name == 'SH':
@@ -355,8 +362,8 @@ def f_store(instr: tuple, addr: int, tags: dict) -> list:
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
 
-    mc = 0b0100011
-    mc |= (imm & 0xF) << 7 # [4:0]
+    mc = 0b0100111
+    mc |= (imm & 0x1F) << 7 # [4:0]
     mc |= 0b010 << 12
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20

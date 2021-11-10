@@ -46,6 +46,24 @@ void FSW_EXEC(CORE* core, INSTR instr) {
     }
 }
 
+// f-mv to integer from float (loose check)
+void FMV2I_EXEC(CORE* core, INSTR instr) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+
+    core->regs[rd] = core->fregs[rs1];
+    core->pc += 4;
+}
+
+// f-mv to float from integer (loose check)
+void FMV2F_EXEC(CORE* core, INSTR instr) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+
+    core->fregs[rd] = core->regs[rs1];
+    core->pc += 4;
+}
+
 // fadd
 void FADD_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
@@ -139,8 +157,8 @@ void FCMP_EXEC(CORE* core, INSTR instr) {
     core->pc += 4;
 }
 
-// fcvt2s float convert to single from (unsigned)word
-void FCVT2S_EXEC(CORE* core, INSTR instr) {
+// fcvt2f convert to float from (unsigned)integer
+void FCVT2F_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
@@ -159,8 +177,8 @@ void FCVT2S_EXEC(CORE* core, INSTR instr) {
     core->pc += 4;
 }
 
-// fcvt2w float convert to (unsigned)word from single
-void FCVT2W_EXEC(CORE* core, INSTR instr) {
+// fcvt2i convert to (unsigned)integer from float
+void FCVT2I_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;

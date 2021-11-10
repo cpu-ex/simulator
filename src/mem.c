@@ -8,7 +8,7 @@ static MMU* mmu_base;
 #define isInData(addr) ((addr) - 0x10000) < (mmu_base->instr_len + mmu_base->data_len)
 #define isInStack(addr) (STACK_POINTER - mmu_base->stack_len <= (addr)) && ((addr) < STACK_POINTER)
 #define map2instr(addr) (addr) - 0x10000
-#define map2data(addr) (addr) - 0x10000
+#define map2data(addr) (addr) - 0x10000 - mmu_base->instr_len
 #define map2stack(addr) mmu_base->stack_len - (STACK_POINTER - (addr))
 
 WORD mmu_read(ADDR addr, int loop) {
