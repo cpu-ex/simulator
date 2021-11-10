@@ -93,6 +93,10 @@ class ASM(object):
                     data = [encoder.imm2int(x) & 0xFFFFFFFF for x in info[1].split(',')]
                     self.data += data
                     self.dataCounter += len(data) * 4
+                elif name == 'float':
+                    data = [encoder.fimm2int(x) & 0xFFFFFFFF for x in info[1].split(',')]
+                    self.data += data
+                    self.dataCounter += len(data) * 4
                 else:
                     raise RuntimeError(f'unsupported directive {name}')
             else:

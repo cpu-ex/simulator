@@ -15,7 +15,7 @@ ADDR load2mem(char* file_name, ADDR addr, void (*allocate)(u64)) {
         // allocate mem
         allocate(size);
         // read file
-        u8 byte;
+        u8 byte = 0;
         for (int i = 0; i < size; i++) {
             fread(&byte, 1, 1, file);
             sim_base->core->store(addr++, byte, 0);

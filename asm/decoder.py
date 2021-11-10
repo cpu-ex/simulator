@@ -76,6 +76,28 @@ decoder = {
     'DIVU': (re.compile(r'(divu)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'REM': (re.compile(r'(rem)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'REMU': (re.compile(r'(remu)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+
+
+    # RV32F
+    'FLW': (re.compile(r'(flw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
+    'FSW': (re.compile(r'(fsw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
+    'FMVXW': (re.compile(r'(fmv\.x\.w)\s+(\S+),\s*(\S+)'), 1),
+    'FMVWX': (re.compile(r'(fmv\.w\.x)\s+(\S+),\s*(\S+)'), 1),
+    'FADD': (re.compile(r'(fadd)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FSUB': (re.compile(r'(fsub)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FMUL': (re.compile(r'(fmul)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FDIV': (re.compile(r'(fdiv)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FSQRT': (re.compile(r'(fsqrt)\s+(\S+),\s*(\S+)'), 1),
+    'FEQ': (re.compile(r'(feq)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FLT': (re.compile(r'(flt)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FLE': (re.compile(r'(fle)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FCVTSW': (re.compile(r'(fcvt\.s\.w)\s+(\S+),\s*(\S+)'), 1),
+    'FCVTWS': (re.compile(r'(fcvt\.w\.s)\s+(\S+),\s*(\S+)'), 1),
+    'FCVTSWU': (re.compile(r'(fcvt\.s\.wu)\s+(\S+),\s*(\S+)'), 1),
+    'FCVTWUS': (re.compile(r'(fcvt\.wu\.s)\s+(\S+),\s*(\S+)'), 1),
+    'FSGNJ': (re.compile(r'(fsgnj)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FSGNJN': (re.compile(r'(fsgnjn)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'FSGNJX': (re.compile(r'(fsgnjx)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
 }
 
 # ebreak for sim

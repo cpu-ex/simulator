@@ -3,13 +3,17 @@
 
 #define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
 
-static char* instr_name[10] = {
+static char* instr_name[23] = {
     "lui", "auipc",
     "jal", "jalr",
     "branch",
     "load", "store",
     "arith_i", "arith",
-    "env/csr"
+    "env/csr",
+    "f-load", "f-store",
+    "fmv2i", "fmv2f",
+    "fadd", "fsub", "fmul", "fdiv", "fsqrt", "fcmp",
+    "fcvt2f", "fcvt2i", "fsgnj"
 };
 
 enum instr_type {
@@ -18,7 +22,11 @@ enum instr_type {
     BRANCH,
     LOAD, STORE,
     ARITH_I, ARITH,
-    ENV_CSR
+    ENV_CSR,
+    F_LOAD, F_STORE,
+    FMV2I, FMV2F,
+    FADD, FSUB, FMUL, FDIV, FSQRT, FCMP,
+    FCVT2F, FCVT2I, FSGNJ
 };
 
 typedef union instr {

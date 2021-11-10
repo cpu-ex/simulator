@@ -210,9 +210,143 @@ void ENV_DISASM(INSTR instr, char* buffer) {
     }
 }
 
+// f-load rd, offset(rs1)
+void FLW_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.i.rd;
+    WORD imm = instr.i.imm;
+    BYTE rs1 = instr.i.rs1;
+    BYTE funct3 = instr.i.funct3;
+    switch (funct3) {
+    // flw
+    case 0b010: sprintf(buffer, "flw %s, %d(%s)", freg_name[rd], sext(imm, 11), reg_name[rs1]); break;
+    // unexpected
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
+// f-store rs2, offset(rs1)
+void FSW_DISASM(INSTR instr, char* buffer) {
+    WORD imm = instr.s.imm11_5 << 5 |
+                instr.s.imm4_0;
+    BYTE rs1 = instr.s.rs1;
+    BYTE rs2 = instr.s.rs2;
+    BYTE funct3 = instr.s.funct3;
+    switch (funct3) {
+    // fsw
+    case 0b010: sprintf(buffer, "fsw %s, %d(%s)", freg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
+    // unexpected
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
+// f-mv to integer from float (loose check)
+void FMV2I_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    sprintf(buffer, "fmv.x.w %s, %s", reg_name[rd], freg_name[rs1]);
+}
+
+// f-mv to float from integer (loose check)
+void FMV2F_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    sprintf(buffer, "fmv.w.x %s, %s", freg_name[rd], reg_name[rs1]);
+}
+
+// fadd rd, rs1, rs2
+void FADD_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    sprintf(buffer, "fadd %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]);
+}
+
+// fsub rd, rs1, rs2
+void FSUB_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    sprintf(buffer, "fsub %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]);
+}
+
+// fmul rd, rs1, rs2
+void FMUL_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    sprintf(buffer, "fmul %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]);
+}
+
+// fdiv rd, rs1, rs2
+void FDIV_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    sprintf(buffer, "fdiv %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]);
+}
+
+// fsqrt rd, rs1
+void FSQRT_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    sprintf(buffer, "fsqrt %s, %s", freg_name[rd], freg_name[rs1]);
+}
+
+// fcmp rd, rs1, rs2
+void FCMP_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    BYTE funct3 = instr.r.funct3;
+    switch (funct3) {
+    case 0b010: sprintf(buffer, "feq %s, %s, %s", reg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    case 0b001: sprintf(buffer, "flt %s, %s, %s", reg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    case 0b000: sprintf(buffer, "fle %s, %s, %s", reg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
+// fcvt2f rd, rs1
+void FCVT2F_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    switch (rs2) {
+    case 0b00000: sprintf(buffer, "fcvt.s.w %s, %s", freg_name[rd], reg_name[rs1]); break;
+    case 0b00001: sprintf(buffer, "fcvt.s.wu %s, %s", freg_name[rd], reg_name[rs1]); break;
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
+// fcvt2i rd, rs1
+void FCVT2I_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    switch (rs2) {
+    case 0b00000: sprintf(buffer, "fcvt.w.s %s, %s", reg_name[rd], freg_name[rs1]); break;
+    case 0b00001: sprintf(buffer, "fcvt.wu.s %s, %s", reg_name[rd], freg_name[rs1]); break;
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
+// fsgnj rd, rs1, rs2
+void FSGNJ_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.r.rd;
+    BYTE rs1 = instr.r.rs1;
+    BYTE rs2 = instr.r.rs2;
+    BYTE funct3 = instr.r.funct3;
+    switch (funct3) {
+    case 0b000: sprintf(buffer, "fsgnj %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    case 0b001: sprintf(buffer, "fsgnjn %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    case 0b010: sprintf(buffer, "fsgnjx %s, %s, %s", freg_name[rd], freg_name[rs1], freg_name[rs2]); break;
+    default: sprintf(buffer, "unexpected load"); break;
+    }
+}
+
 void disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
-    /* risc-v I */
+    /* RV32I + RV32M */
     // lui
     case 0b0110111: LUI_DISASM(instr, buffer); break;
     // auipc
@@ -235,6 +369,46 @@ void disasm(INSTR instr, char* buffer) {
     case 0b0001111: sprintf(buffer, "unexpected instr (fence)"); break;
     // env + csr
     case 0b1110011: ENV_DISASM(instr, buffer); break;
+    
+    
+    /* RV32F */
+    // f-load
+    case 0b0000111: FLW_DISASM(instr, buffer); break;
+    // f-store
+    case 0b0100111: FSW_DISASM(instr, buffer); break;
+    // f-arith (seperating for better analysis)
+    case 0b1010011:
+        switch (instr.r.funct7) {
+        // f-mv to integer from float
+        case 0b1110000: FMV2I_DISASM(instr, buffer); break;
+        // f-mv to float from integer
+        case 0b1111000: FMV2F_DISASM(instr, buffer); break;
+        // fadd
+        case 0b0000000: FADD_DISASM(instr, buffer); break;
+        // fsub
+        case 0b0000100: FSUB_DISASM(instr, buffer); break;
+        // fmul
+        case 0b0001000: FMUL_DISASM(instr, buffer); break;
+        // fdiv + fsqrt
+        case 0b0001100:
+            if (instr.r.rs2) {
+                FDIV_DISASM(instr, buffer);
+            } else {
+                FSQRT_DISASM(instr, buffer);
+            }
+            break;
+        // f-cmp
+        case 0b1010000: FCMP_DISASM(instr, buffer); break;
+        // fcvt to integer from float
+        case 0b1100000: FCVT2I_DISASM(instr, buffer); break;
+        // fcvt to float from integer
+        case 0b1101000: FCVT2F_DISASM(instr, buffer); break;
+        // fsgnj
+        case 0b0010000: FSGNJ_DISASM(instr, buffer); break;
+        // unexpected
+        default: sprintf(buffer, "unexpected instr"); break;
+        }
+        break;
     // unexpected
     default: sprintf(buffer, "unexpected instr"); break;
     }

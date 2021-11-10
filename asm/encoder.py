@@ -1,6 +1,6 @@
 # encoder
 
-import re
+import re, struct
 
 def getHiLo(val: int) -> tuple:
     high = ((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)
@@ -20,9 +20,20 @@ def reg2idx(name: str) -> int:
         's2': 18, 's3': 19, 's4': 20, 's5': 21, 's6': 22, 's7': 23, 's8': 24, 's9': 25, 's10': 26, 's11': 27,
         't3': 28, 't4': 29, 't5': 30, 't6': 31
     }
+
+    freg = {
+        'ft0': 0, 'ft1': 1, 'ft2': 2, 'ft3': 3, 'ft4': 4, 'ft5': 5, 'ft6': 6, 'ft7': 7,
+        'fs0': 8, 'fs1': 9,
+        'fa0': 10, 'fa1': 11, 'fa2': 12, 'fa3': 13, 'fa4': 14, 'fa5': 15, 'fa6': 16, 'fa7': 17,
+        'fs2': 18, 'fs3': 19, 'fs4': 20, 'fs5': 21, 'fs6': 22, 'fs7': 23, 'fs8': 24, 'fs9': 25, 'fs10': 26, 'fs11': 27,
+        'ft8': 28, 'ft9': 29, 'ft10': 30, 'ft11': 31
+    }
+
     if (idx := reg.get(name, None)) is not None:
         return idx
-    if res := re.match(r'x(\d+)', name):
+    elif (idx := freg.get(name, None)) is not None:
+        return idx
+    elif res := re.match(r'[xf](\d+)', name):
         idx = int(res.groups()[0])
         if idx < 32:
             return idx
@@ -36,6 +47,13 @@ def imm2int(imm: str) -> int:
             return int(imm, base=16)
     except ValueError:
         raise RuntimeError(f'invalid digital value : {imm}')
+
+def fimm2int(imm: str) -> int:
+    try:
+        bytes = struct.pack('<f', float(imm))
+        return struct.unpack('<I', bytes)[0]
+    except ValueError:
+        raise RuntimeError(f'invalid float value : {imm}')
 
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
@@ -154,7 +172,7 @@ def store(instr: tuple, addr: int, tags: dict) -> list:
     rs1 = reg2idx(instr[3])
 
     mc = 0b0100011
-    mc |= (imm & 0xF) << 7 # [4:0]
+    mc |= (imm & 0x1F) << 7 # [4:0]
     if name == 'SB':
         mc |= 0b000 << 12
     elif name == 'SH':
@@ -325,6 +343,100 @@ def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
 def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
     return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
 
+# f-load imm[11:0] rs1 010 rd 0000111
+def f_load(instr: tuple, addr: int, tags: dict) -> list:
+    rd = reg2idx(instr[1])
+    imm = imm2int(instr[2])
+    rs1 = reg2idx(instr[3])
+
+    mc = 0b0000111
+    mc |= (rd & 0x1F) << 7
+    mc |= 0b010 << 12
+    mc |= (rs1 & 0x1F) << 15
+    mc |= (imm & 0xFFF) << 20
+    return [mc]
+
+# f-store imm[11:5] rs2 rs1 010 imm[4:0] 0100111
+def f_store(instr: tuple, addr: int, tags: dict) -> list:
+    rs2 = reg2idx(instr[1])
+    imm = imm2int(instr[2])
+    rs1 = reg2idx(instr[3])
+
+    mc = 0b0100111
+    mc |= (imm & 0x1F) << 7 # [4:0]
+    mc |= 0b010 << 12
+    mc |= (rs1 & 0x1F) << 15
+    mc |= (rs2 & 0x1F) << 20
+    mc |= ((imm & 0xFE0) >> 5) << 25
+    return [mc]
+
+# f-arith funct7 rs2/funct5 rs1 rm/funct3 rd 1010011
+def f_arith(instr: tuple, addr: int, tags: dict) -> list:
+    name = instr[0]
+    rd = reg2idx(instr[1])
+    rs1 = reg2idx(instr[2])
+    try:
+        rs2 = reg2idx(instr[3])
+    except IndexError:
+        rs2 = 0
+    
+    mc = 0b1010011
+    mc |= (rd & 0x1F) << 7
+    mc |= (rs1 & 0x1F) << 15
+    # rm field ignored
+    if name == 'FMVXW':
+        mc |= 0b000 << 12
+        mc |= 0b1110000 << 25
+    elif name == 'FMVWX':
+        mc |= 0b000 << 12
+        mc |= 0b1111000 << 25
+    elif name == 'FADD':
+        mc |= 0b0000000 << 25
+    elif name == 'FSUB':
+        mc |= 0b0000100 << 25
+    elif name == 'FMUL':
+        mc |= 0b0001000 << 25
+    elif name == 'FDIV':
+        mc |= 0b0001100 << 25
+    elif name == 'FSQRT':
+        rs2 = 0b00000
+        mc |= 0b0001100 << 25
+    elif name == 'FEQ':
+        mc |= 0b010 << 12
+        mc |= 0b1010000 << 25
+    elif name == 'FLT':
+        mc |= 0b001 << 12
+        mc |= 0b1010000 << 25
+    elif name == 'FLE':
+        mc |= 0b000 << 12
+        mc |= 0b1010000 << 25
+    elif name == 'FCVTSW':
+        rs2 = 0b00000
+        mc |= 0b1101000 << 25
+    elif name == 'FCVTWS':
+        rs2 = 0b00000
+        mc |= 0b1100000 << 25
+    elif name == 'FCVTSWU':
+        rs2 = 0b00001
+        mc |= 0b1101000 << 25
+    elif name == 'FCVTWUS':
+        rs2 = 0b00001
+        mc |= 0b1100000 << 25
+    elif name == 'FSGNJ':
+        mc |= 0b000 << 12
+        mc |= 0b0010000 << 25
+    elif name == 'FSGNJN':
+        mc |= 0b001 << 12
+        mc |= 0b0010000 << 25
+    elif name == 'FSGNJX':
+        mc |= 0b010 << 12
+        mc |= 0b0010000 << 25
+    else:
+        # not suppose to be here
+        raise RuntimeError(f'unrecognizable arith type : {name}')
+    mc |= (rs2 & 0x1F) << 20
+    return [mc]
+
 encoder = {
     # RV32I
     # pc
@@ -392,6 +504,28 @@ encoder = {
     'DIVU': arith,
     'REM': arith,
     'REMU': arith,
+
+
+    # RV32F
+    'FLW': f_load,
+    'FSW': f_store,
+    'FMVXW': f_arith,
+    'FMVWX': f_arith,
+    'FADD': f_arith,
+    'FSUB': f_arith,
+    'FMUL': f_arith,
+    'FDIV': f_arith,
+    'FSQRT': f_arith,
+    'FEQ': f_arith,
+    'FLT': f_arith,
+    'FLE': f_arith,
+    'FCVTSW': f_arith,
+    'FCVTWS': f_arith,
+    'FCVTSWU': f_arith,
+    'FCVTWUS': f_arith,
+    'FSGNJ': f_arith,
+    'FSGNJN': f_arith,
+    'FSGNJX': f_arith,
 }
 
 def getEncoder(forSim: bool) -> dict:
