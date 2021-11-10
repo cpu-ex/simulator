@@ -9,6 +9,7 @@
 - [2021/10/27] change the output code format from text file to binary, all related parts adapted
 - [2021/10/30] support some directives and pseudo instructions for assembler
 - [2021/10/31] implement instruction analysis
+- [2021/11/09] support RV32M and RV32F
 
 ## 2. how to build
 
