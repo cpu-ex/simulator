@@ -3,10 +3,15 @@
 
 typedef struct mmu {
     // attributes
-    BYTE* instr_cache;
-    BYTE* data_cache;
+    BYTE* instr_mem;
     BYTE* data_mem;
     BYTE* stack;
+
+    // MMIO
+    WORD uart_in;
+    WORD uart_in_valid;
+    WORD uart_out_valid;
+    WORD uart_out;
 
     u32 instr_len;
     u32 data_len;
@@ -16,13 +21,10 @@ typedef struct mmu {
     void (*allocate_data)(u64);
     void (*allocate_stack)(u64);
 
-    BYTE (*read_byte)(ADDR);
-    HALF (*read_half)(ADDR);
-    WORD (*read_word)(ADDR);
-    void (*write_byte)(ADDR, BYTE);
-    void (*write_half)(ADDR, HALF);
-    void (*write_word)(ADDR, WORD);
-
+    BYTE (*read_instr)(ADDR);
+    BYTE (*read_data)(ADDR);
+    void (*write_instr)(ADDR, BYTE);
+    void (*write_data)(ADDR, BYTE);
     void (*reset)(void);
 } MMU;
 

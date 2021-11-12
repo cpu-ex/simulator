@@ -3,43 +3,47 @@
 
 static SIM* sim_base;
 
-ADDR load2mem(char* file_name, ADDR addr, void (*allocate)(u64)) {
+u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
     if (file == NULL) {
         return 0;
     } else {
-        // calculate file size
         fseek(file, 0, SEEK_END);
         u64 size = (u64)ftell(file);
-        fseek(file, 0, SEEK_SET);
-        // allocate mem
-        allocate(size);
-        // read file
-        u8 byte = 0;
-        for (int i = 0; i < size; i++) {
-            fread(&byte, 1, 1, file);
-            sim_base->core->store(addr++, byte, 0);
-        }
         fclose(file);
-        return addr;
+        return size;
     }
+}
+
+void load2mem(char* file_name, u64 file_size, ADDR addr, void (*loader)(ADDR, BYTE)) {
+    FILE *file = fopen(file_name, "rb");
+    u8 byte = 0;
+    for (int i = 0; i < file_size; i++) {
+        fread(&byte, 1, 1, file);
+        loader(addr++, byte);
+    }
+    fclose(file);
 }
 
 void load_file(char* file_name) {
     char code_name[36], data_name[36];
     sprintf(code_name, "./bin/%s.code", file_name);
     sprintf(data_name, "./bin/%s.data", file_name);
+    u64 file_size;
     // load instr
-    ADDR addr = 0x10000;
-    addr = load2mem(code_name, addr, sim_base->core->mmu->allocate_instr);
-    if (!addr) {
+    file_size = get_file_size(code_name);
+    if (file_size) {
+        sim_base->core->mmu->allocate_instr(0x100 + file_size);
+        load2mem(code_name, file_size, DEFAULT_PC, sim_base->core->mmu->write_instr);
+    } else {
         printf("invalid file name: %s.\n", file_name);
         exit(-1);
     }
     // load data
-    addr = load2mem(data_name, addr, sim_base->core->mmu->allocate_data);
-    if (!addr) {
-        sim_base->core->mmu->allocate_data(0x100);
+    file_size = get_file_size(data_name);
+    if (file_size) {
+        sim_base->core->mmu->allocate_data(file_size);
+        load2mem(data_name, file_size, 0, sim_base->core->mmu->write_data);
     }
     // set stack
     sim_base->core->mmu->allocate_stack(0x200);

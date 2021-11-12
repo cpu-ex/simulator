@@ -11,6 +11,9 @@
 #define REG_SET_FS  5
 #define REG_SET_FT  6
 
+#define MEM_INSTR 1
+#define MEM_DATA  0
+
 static int reg_set[7][17] = {
     {16, zero, ra, sp, gp, tp, t0, t1, t2, fp, s1, a0, a1, a2, a3, a4, a5},
     {8, a0, a1, a2, a3, a4, a5, a6, a7},
@@ -23,8 +26,9 @@ static int reg_set[7][17] = {
 
 typedef struct win {
     // display control
-    char reg_set;
-    char reg_focus[64];
+    u8 reg_set;
+    u8 reg_focus[64];
+    u8 mem_type;
     ADDR mem_start;
     ADDR mem_focus;
     // interfaces

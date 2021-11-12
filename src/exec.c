@@ -83,8 +83,9 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
     // funct3: 000 -> lb, 001 -> lh, 010 -> lw
     //         100 -> lbu, 101 -> lhu
     int bytes = funct3 & 0b011;
-    int sign = ~(funct3 & 0b100);
-    core->regs[rd] = core->load(core->regs[rs1] + sext(imm, 11), bytes, sign);
+    int sign = !(funct3 >> 2);
+    WORD val = core->load_data(core->regs[rs1] + sext(imm, 11), bytes, sign);
+    core->regs[rd] = val;
     core->pc += 4;
 }
 
@@ -97,7 +98,7 @@ void STORE_EXEC(CORE* core, INSTR instr) {
     BYTE funct3 = instr.s.funct3;
 
     // funct3: 000 -> sb, 001 -> sh, 010 -> sw
-    core->store(core->regs[rs1] + sext(imm, 11), core->regs[rs2], funct3);
+    core->store_data(core->regs[rs1] + sext(imm, 11), core->regs[rs2], funct3);
     core->pc += 4;
 }
 

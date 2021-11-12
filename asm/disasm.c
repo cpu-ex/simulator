@@ -19,12 +19,18 @@ int main(int argc, char* argv[]) {
             u64 size = ftell(code);
             fseek(code, 0, SEEK_SET);
             // disasm
-            for (int i = 0; i < size; i += 4) {
-                fread(&input, 1, 4, code);
-                INSTR instr = { .raw = input };
-                disasm(instr, output);
-                printf("0x%08X : %08X\t%s\n", 0x10000 + i, input, output);
-                memset(output, 0, 36);
+            for (int i = 0; i < size; i++) {
+                u8 byte;
+                fread(&byte, 1, 1, code);
+                input <<= 8;
+                input |= byte;
+                if (i % 4 == 3) {
+                    INSTR instr = { .raw = input };
+                    disasm(instr, output);
+                    printf("0x%08X : %08X\t%s\n", 0x100 + i / 4 * 4, input, output);
+                    input = 0;
+                    memset(output, 0, 36);
+                }
             }
             fclose(code);
         }

@@ -2,6 +2,8 @@
 #include "types.h"
 #include "mem.h"
 
+#define DEFAULT_PC 0x100
+
 enum reg {
     zero = 0,
     ra,
@@ -55,8 +57,10 @@ typedef struct core {
     u32 instr_counter;
     u32 instr_analysis[23];
     // interfaces
-    WORD (*load)(ADDR, int ,int);
-    void (*store)(ADDR, WORD, int);
+    WORD (*load_instr)(ADDR);
+    WORD (*load_data)(ADDR, int ,int);
+    void (*store_instr)(ADDR, WORD);
+    void (*store_data)(ADDR, WORD, int);
     void (*step)(void);
     void (*reset)(void);
 } CORE;

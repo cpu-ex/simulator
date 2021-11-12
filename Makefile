@@ -5,7 +5,7 @@ objs = $(patsubst %.c, %.o, $(srcs))
 all: sim disasm
 
 sim: $(objs)
-	gcc -o $@ $^ -lncurses
+	gcc -o $@ $^ -lncurses -lm
 
 disasm: ./asm/disasm.o ./src/instr.o
 	gcc -o $@ $^

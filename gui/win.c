@@ -13,7 +13,7 @@ void update_pc(WINDOW* win, CORE* core) {
     wclear(win);
     // fetch pc and op
     ADDR pc = core->pc;
-    WORD op = core->load(pc, 2, 0);
+    WORD op = core->load_instr(pc);
     // disasm
     char asm_buf[24];
     INSTR curr_instr = { .raw = op };
@@ -71,6 +71,7 @@ void update_mem(WINDOW* win, CORE* core) {
     }
 
     ADDR addr = win_base->mem_start;
+    BYTE (*load)(ADDR) = win_base->mem_type ? core->mmu->read_instr : core->mmu->read_data;
     for (ADDR offset = 0; offset < 0x100; offset++) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (offset % 0x10 == 0)
@@ -78,9 +79,9 @@ void update_mem(WINDOW* win, CORE* core) {
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (((addr + offset) & (~0xF)) == (win_base->mem_focus & (~0xF)))
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        if (((addr + offset) & (~0x3)) == core->pc)
+        if (win_base->mem_type && ((addr + offset) & (~0x3)) == core->pc)
             wattron(win, COLOR_PAIR(STANDOUT_COLOR));
-        wprintw(win, " %02X", core->load(addr + offset, 0, 0));
+        wprintw(win, " %02X", load(addr + offset));
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
         if (offset % 0x10 == 0xF)
@@ -101,7 +102,7 @@ void show_main_win(CORE* core) {
     wattron(com_outer, COLOR_PAIR(TITLE_COLOR));
     box(pc_outer, 0, 0); mvwprintw(pc_outer, 0, 2, " PC "); wrefresh(pc_outer);
     box(reg_outer, 0, 0); mvwprintw(reg_outer, 0, 2, " Register "); wrefresh(reg_outer);
-    box(mem_outer, 0, 0); mvwprintw(mem_outer, 0, 2, " Memory "); wrefresh(mem_outer);
+    box(mem_outer, 0, 0); mvwprintw(mem_outer, 0, 2, win_base->mem_type ? " Memory: instruction " : " Memory: data "); wrefresh(mem_outer);
     box(com_outer, 0, 0); mvwprintw(com_outer, 0, 2, " Input "); wrefresh(com_outer);
     wattroff(pc_outer, COLOR_PAIR(TITLE_COLOR));
     wattroff(reg_outer, COLOR_PAIR(TITLE_COLOR));
@@ -151,8 +152,8 @@ void show_analysis_win(CORE* core) {
 
 void show_help_win() {
     clear();
-    WINDOW* help_win_outer = newwin(21, 70, 2, 5);
-    WINDOW* help_win_inner = newwin(19, 68, 3, 6);
+    WINDOW* help_win_outer = newwin(20, 70, 2, 5);
+    WINDOW* help_win_inner = newwin(18, 68, 3, 6);
     wattron(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     box(help_win_outer, 0, 0);
     mvwprintw(help_win_outer, 0, 2, " Instruction ");
@@ -160,10 +161,10 @@ void show_help_win() {
     mvwprintw(help_win_inner, 0, 3, "step [n]:\n\tmove on for n step,\n\tpositive for forward, negative for backwards\n\tdefault to infinity (loops util exit or exception)");
     mvwprintw(help_win_inner, 4, 3, "reg [d|a|s|t|fa|fs|ft]:\n\tswitch register set, [d]default to zero ~ a5");
     mvwprintw(help_win_inner, 6, 3, "reg [-][reg name]:\n\thighlight certain register,\n\tminus for setting back to normal,\n\tmutiple input supported");
-    mvwprintw(help_win_inner, 10, 3, "mem [address(hex)|tag]:\n\tswitch memory range, default to 0x10000\n\ttags like instr, data, stack are supported");
-    mvwprintw(help_win_inner, 13, 3, "analysis:\n\tshow analysis window");
-    mvwprintw(help_win_inner, 15, 3, "help:\n\tshow help window");
-    mvwprintw(help_win_inner, 17, 3, "quit:\n\texit simulator");
+    mvwprintw(help_win_inner, 10, 3, "instr|data [address(hex)]:\n\tswitch memory range, example: instr 0x100");
+    mvwprintw(help_win_inner, 12, 3, "analysis:\n\tshow analysis window");
+    mvwprintw(help_win_inner, 14, 3, "help:\n\tshow help window");
+    mvwprintw(help_win_inner, 16, 3, "quit:\n\texit simulator");
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);
@@ -263,24 +264,27 @@ COMMAND get_command() {
             com.argc = 1;
             com.argv[0] = 'd'; // default reg set
         }
-    } else if (!strcmp(output[0], "mem")) {
+    } else if (!strcmp(output[0], "instr")) {
         com.type = 'm';
+        com.argv[0] = 'i';
         if (argc > 1) {
-            com.argc = 1;
-            if (!strcmp(output[1], "instr")) {
-                com.argv[0] = 0;
-            } else if (!strcmp(output[1], "data")) {
-                com.argv[0] = 1;
-            } else if (!strcmp(output[1], "stack")) {
-                com.argv[0] = 2;
-            } else {
-                com.argv[0] = 0;
-                sscanf(output[1], "0x%X", com.argv);
-                if (!com.argv[0]) // not recognizable
-                    com.argc = 0;
-            }
+            com.argc = 2;
+            sscanf(output[1], "0x%X", com.argv + 1);
+            if (!com.argv[1]) // not recognizable
+                com.argc = 1;
         } else {
-            com.argc = 0;
+            com.argc = 1;
+        }
+    } else if (!strcmp(output[0], "data")) {
+        com.type = 'm';
+        com.argv[0] = 'd';
+        if (argc > 1) {
+            com.argc = 2;
+            sscanf(output[1], "0x%X", com.argv + 1);
+            if (!com.argv[0]) // not recognizable
+                com.argc = 1;
+        } else {
+            com.argc = 1;
         }
     } else if (!strcmp(output[0], "help")) {
         com.type = 'h';
@@ -331,19 +335,9 @@ STATE wait4command(CORE* core) {
         }
         return STAT_HALT;
     case 'm':
-        if (com.argc) {
-            switch (com.argv[0]) {
-            // instructions
-            case 0: com.argv[0] = 0x10000; break;
-            // data
-            case 1: com.argv[0] = 0x10000 + core->mmu->instr_len; break;
-            // stack
-            case 2: com.argv[0] = core->regs[sp]; break;
-            default: break;
-            }
-        }
-        win_base->mem_start = com.argc ? com.argv[0] & (~0xFF) : 0x10000;
-        win_base->mem_focus = com.argc ? com.argv[0] : 0xFFFFFFFF;
+        win_base->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
+        win_base->mem_start = com.argc > 1 ? com.argv[1] & (~0xFF) : (win_base->mem_type ? 0x100 : 0);
+        win_base->mem_focus = com.argc > 1 ? com.argv[1] : 0xFFFFFFFF;
         return STAT_HALT;
     case 'a':
         show_analysis_win(core);
@@ -386,7 +380,8 @@ void init_win(WIN* win) {
     // regist variables
     win->reg_set = REG_SET_DEF;
     memset(win->reg_focus, 0, 32);
-    win->mem_start = 0x10000;
+    win->mem_type = MEM_INSTR;
+    win->mem_start = DEFAULT_PC;
     win->mem_focus = 0xFFFFFFFF;
     // assign interfaces
     win->update = update;

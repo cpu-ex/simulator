@@ -6,7 +6,7 @@ import decoder, encoder
 
 class ASM(object):
 
-    DEFAULT_PC = 0x10000
+    DEFAULT_PC = 0x100
     CODE_SECTION = True
     DATA_SECTION = False
 
@@ -48,9 +48,10 @@ class ASM(object):
     def pack2word(data: list, bitLen: int) -> list:
         words = list()
         size = 4 // bitLen
-        for i in range(len(data) // size + 1):
+        data += [0] * ((len(data) // size + 1) * size - len(data))
+        for i in range(len(data) // size):
             val = 0
-            for d in reversed(data[i * size: (i + 1) * size]):
+            for d in data[i * size: (i + 1) * size]:
                 val <<= bitLen * 8
                 val |= d
             words.append(val & 0xFFFFFFFF)
@@ -111,31 +112,32 @@ class ASM(object):
         # output data
         with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
             for d in self.data:
-                file.write(f'{bin(d)[2:].zfill(23)}\n')
+                file.write(f'{bin(d)[2:].zfill(32)}\n')
     
     def __outputBinary(self) -> None:
         # output instruction
         with open(f'../bin/{self.fileName}.code', 'wb') as file:
             for mc in self.code:
-                file.write(struct.pack('<I', mc))
+                file.write(struct.pack('>I', mc))
         # output data
         with open(f'../bin/{self.fileName}.data', 'wb') as file:
             for d in self.data:
-                file.write(struct.pack('<I', d))
+                file.write(struct.pack('>I', d))
     
     def save(self, binary: bool, text: bool) -> None:
         # direct to start point
         if startAddr := self.codeTag.get(self.startTag, None):
             hi, lo = encoder.getHiLo(startAddr - ASM.DEFAULT_PC)
-            self.code = [  # jump to start point
+            self.code = [
+                # jump to start point
                 ('AUIPC', 't0', str(hi)),
                 ('JALR', 'zero', str(lo), 't0')
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag {self.startTag}')
-        # remap data tags
-        for tag, addr in self.dataTag.items():
-            self.dataTag[tag] = addr + self.codeCounter
+        # remap data tags (disused)
+        # for tag, addr in self.dataTag.items():
+        #     self.dataTag[tag] = addr + self.codeCounter
         # encode
         bc = list() # binary codes
         addr = ASM.DEFAULT_PC

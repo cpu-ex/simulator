@@ -3,11 +3,9 @@
 
 static CORE* core_base;
 
-#define DEFAULT_PC 0x10000
-
 void step() {
     // fetch
-    u32 raw = core_base->mmu->read_word(core_base->pc);
+    u32 raw = core_base->load_instr(core_base->pc);
     // decode
     INSTR curr_instr = { .raw = raw };
     // execute
@@ -16,23 +14,37 @@ void step() {
     core_base->instr_counter += 1;
 }
 
-WORD load(ADDR addr, int bytes, int sign) {
+WORD core_load_instr(ADDR addr) {
+    addr &= ~0x3;
     WORD val = 0;
-    switch (bytes) {
-    case 0: val = (WORD)core_base->mmu->read_byte(addr); break;
-    case 1: val = (WORD)core_base->mmu->read_half(addr); break;
-    case 2: val = (WORD)core_base->mmu->read_word(addr); break;
-    default: BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32)); break; // unexpected
+    for (int i = 0; i < 4; i++) {
+        val <<= 8;
+        val |= core_base->mmu->read_instr(addr + i);
+    }
+    return val;
+}
+
+WORD core_load_data(ADDR addr, int bytes, int sign) {
+    WORD val = 0;
+    for (int i = 0; i < (1 << bytes); i++) {
+        val <<= 8;
+        val |= core_base->mmu->read_data(addr + i);
     }
     return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
 }
 
-void store(ADDR addr, WORD val, int bytes) {
-    switch (bytes) {
-    case 0: core_base->mmu->write_byte(addr, (BYTE)val); break;
-    case 1: core_base->mmu->write_half(addr, (HALF)val); break;
-    case 2: core_base->mmu->write_word(addr, (WORD)val); break;
-    default: BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32)); break; // unexpected
+void core_store_instr(ADDR addr, WORD val) {
+    addr &= ~0x3;
+    for (int i = 3; i >= 0; i--) {
+        core_base->mmu->write_instr(addr + i, val & 0xFF);
+        val >>= 8;
+    }
+}
+
+void core_store_data(ADDR addr, WORD val, int bytes) {
+    for (int i = (1 << bytes) - 1; i >= 0; i--) {
+        core_base->mmu->write_data(addr + i, val & 0xFF);
+        val >>= 8;
     }
 }
 
@@ -59,8 +71,10 @@ void init_core(CORE* core) {
     init_mmu(&mmu);
     core->mmu = &mmu;
     // assign interfaces
-    core->load = load;
-    core->store = store;
+    core->load_instr = core_load_instr;
+    core->load_data = core_load_data;
+    core->store_instr = core_store_instr;
+    core->store_data = core_store_data;
     core->step = step;
     core->reset = core_reset;
 }
