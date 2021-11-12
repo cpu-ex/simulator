@@ -179,6 +179,8 @@ def store(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b001 << 12
     elif name == 'SW':
         mc |= 0b010 << 12
+    elif name == 'SWI':
+        mc |= 0b011 << 12
     else:
         # not suppose to be here
         raise RuntimeError(f'unrecognizable store type : {name}')
@@ -526,6 +528,9 @@ encoder = {
     'FSGNJ': f_arith,
     'FSGNJN': f_arith,
     'FSGNJX': f_arith,
+
+    # special
+    'SWI': store,
 }
 
 def getEncoder(forSim: bool) -> dict:

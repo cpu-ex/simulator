@@ -97,8 +97,10 @@ void STORE_EXEC(CORE* core, INSTR instr) {
     BYTE rs2 = instr.s.rs2;
     BYTE funct3 = instr.s.funct3;
 
-    // funct3: 000 -> sb, 001 -> sh, 010 -> sw
-    core->store_data(core->regs[rs1] + sext(imm, 11), core->regs[rs2], funct3);
+    if (funct3 == 0b011)
+        core->store_instr(core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
+    else // funct3: 000 -> sb, 001 -> sh, 010 -> sw
+        core->store_data(core->regs[rs1] + sext(imm, 11), core->regs[rs2], funct3);
     core->pc += 4;
 }
 

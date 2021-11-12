@@ -96,6 +96,8 @@ void STORE_DISASM(INSTR instr, char* buffer) {
     case 0b001: sprintf(buffer, "sh %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
     // sw
     case 0b010: sprintf(buffer, "sw %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
+    // swi
+    case 0b011: sprintf(buffer, "swi %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
     // unexpected
     default: sprintf(buffer, "unexpected store"); break;
     }
