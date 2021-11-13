@@ -2,6 +2,13 @@
 #include <ncurses.h>
 #include "../src/types.h"
 #include "../src/core.h"
+#include "../src/instr.h"
+
+#define TITLE_COLOR     1
+#define SUBTITLE_COLOR  2
+#define WARNING_COLOR   3
+#define HIGHLIGHT_COLOR 4
+#define STANDOUT_COLOR  5
 
 #define REG_SET_DEF 0
 #define REG_SET_A   1
@@ -24,7 +31,7 @@ static int reg_set[7][17] = {
     {12, 32 + ft0, 32 + ft1, 32 + ft2, 32 + ft3, 32 + ft4, 32 + ft5, 32 + ft6, 32 + ft7, 32 + ft8, 32 + ft9, 32 + ft10, 32 + ft11}
 };
 
-typedef struct win {
+typedef struct gui {
     // display control
     u8 reg_set;
     u8 reg_focus[64];
@@ -34,6 +41,6 @@ typedef struct win {
     // interfaces
     STATE (*update)(CORE* core);
     void (*deinit)(void);
-} WIN;
+} GUI;
 
-void init_win(WIN* win);
+void init_gui(GUI* win);

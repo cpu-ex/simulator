@@ -51,24 +51,24 @@ void load_file(char* file_name) {
 
 void run() {
     // init GUI
-    static WIN win;
-    init_win(&win);
-    sim_base->win = &win;
+    static GUI gui;
+    init_gui(&gui);
+    sim_base->gui = &gui;
     // main loop of simulator
     while (1) {
         switch (BROADCAST.decoder.type) {
         case STAT_QUIT:
-            sim_base->win->deinit();
+            sim_base->gui->deinit();
             return;
         case STAT_EXIT:
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
-            BROADCAST(sim_base->win->update(sim_base->core));
+            BROADCAST(sim_base->gui->update(sim_base->core));
             if (BROADCAST.decoder.type != STAT_QUIT)
                 BROADCAST(STAT_EXIT);
             break;
         case STAT_HALT:
-            BROADCAST(sim_base->win->update(sim_base->core));
+            BROADCAST(sim_base->gui->update(sim_base->core));
             break;
         case STAT_STEP:
             if ((signed)BROADCAST.decoder.info > 0) {

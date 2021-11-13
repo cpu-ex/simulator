@@ -15,6 +15,7 @@ core.o: mem.h
 exec.o, win.o: core.h
 exec.o: instr.h
 disasm.o: types.h instr.h
+gui.o: splashWin.h helpWin.h mainWin.h analysisWin.h
 
 .PHONY: clean
 clean:
