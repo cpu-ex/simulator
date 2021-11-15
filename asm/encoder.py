@@ -305,6 +305,14 @@ def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
 def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
     return [0b1101111]
 
+
+# ecall for sim: activate actual program and jump to it
+def ecall_sim(instr: tuple, addr: int, tags: dict) -> list:
+    return [0b1110011]
+# ecall for fpga: just jump to actual program
+def ecall_fpga(instr: tuple, addr: int, tags: dict) -> list:
+    return jalr(('JALR', 'zero', '0', 'zero'), addr, tags)
+
 # pseudo
 def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
     return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
@@ -488,6 +496,7 @@ encoder = {
     'AND': arith,
     # env
     'EBREAK': None,
+    'ECALL': None,
     # pseudo
     'PSEUDO-NOP': pseudo_nop,
     'PSEUDO-LI': pseudo_li,
@@ -535,4 +544,5 @@ encoder = {
 
 def getEncoder(forSim: bool) -> dict:
     encoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
+    encoder['ECALL'] = ecall_sim if forSim else ecall_fpga
     return encoder

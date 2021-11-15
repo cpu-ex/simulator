@@ -57,7 +57,8 @@ decoder = {
     'OR': (re.compile(r'(or)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'AND': (re.compile(r'(and)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     # env
-    'EBREAK': None,
+    'EBREAK': (re.compile(r'(ebreak)'), 1),
+    'ECALL': (re.compile(r'(ecall)'), 1),
     # pseudo
     'PSEUDO-NOP': (re.compile(r'(nop)'), 1),
     'PSEUDO-LI': (re.compile(r'(li)\s+(\S+),\s*(-?\S+)'), 2),
@@ -103,11 +104,5 @@ decoder = {
     'SWI': (re.compile(r'(swi)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
 }
 
-# ebreak for sim
-ebreak_sim = (re.compile(r'(ebreak)'), 1)
-# ebreak for fpga
-ebreak_fpga = (re.compile(r'(ebreak)'), 1)
-
 def getDecoder(forSim: bool) -> dict:
-    decoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
     return decoder

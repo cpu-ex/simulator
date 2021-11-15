@@ -1,17 +1,13 @@
 #pragma once
 #include "types.h"
 
+#define STACK_POINTER  0x03FFFFF0
+
 typedef struct mmu {
     // attributes
     BYTE* instr_mem;
     BYTE* data_mem;
     BYTE* stack;
-
-    // MMIO
-    WORD uart_in;
-    WORD uart_in_valid;
-    WORD uart_out_valid;
-    WORD uart_out;
 
     u32 instr_len;
     u32 data_len;

@@ -203,12 +203,11 @@ void ENV_DISASM(INSTR instr, char* buffer) {
     WORD imm = instr.i.imm;
     BYTE funct3 = instr.i.funct3;
 
-    if ((imm == 1) && (funct3 == 0)) {
-        // ebreak
-        sprintf(buffer, "ebreak");
-    } else {
-        // not implemented
-        sprintf(buffer, "unexpected env or csr");
+    switch (funct3) {
+    // env
+    case 0b000: sprintf(buffer, imm ? "ebreak" : "ecall"); break;
+    // unexpected
+    default: sprintf(buffer, "unexpected env or csr"); break;
     }
 }
 

@@ -124,7 +124,7 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 
 // arith with immediate variants
 // addi, slli, slti, sltiu, xori, srli, srai, ori, andi
-void ARITH_I_EXEC(CORE *core, INSTR instr) {
+void ARITH_I_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.i.rd;
     WORD imm = instr.i.imm;
     BYTE rs1 = instr.i.rs1;
@@ -164,7 +164,7 @@ void ARITH_I_EXEC(CORE *core, INSTR instr) {
 
 // arith (RV32I + RV32M)
 // add, sub, sll, slt, sltu, xor, srl, sra, or, and
-void ARITH_EXEC(CORE *core, INSTR instr) {
+void ARITH_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
@@ -230,16 +230,23 @@ void ARITH_EXEC(CORE *core, INSTR instr) {
 }
 
 // env: ebreak
-void ENV_EXEC(CORE *core, INSTR instr) {
+void ENV_EXEC(CORE* core, INSTR instr) {
     WORD imm = instr.i.imm;
     BYTE funct3 = instr.i.funct3;
 
-    if ((imm == 1) && (funct3 == 0)) {
+    switch (funct3) {
+    // env
+    if (imm) {
         // ebreak
         BROADCAST(STAT_EXIT);
     } else {
-        // not implemented
-        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
+        // ecall
+        printf("ecall here");
+        core->pc = DEFAULT_PC;
+        BROADCAST(STAT_HALT);
+    }
+    // unexpected
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
 }
 

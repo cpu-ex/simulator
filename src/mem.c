@@ -2,12 +2,6 @@
 
 static MMU* mmu_base;
 
-#define STACK_POINTER  0x03FFFFF0
-#define UART_IN        0x03FFFFF0
-#define UART_IN_VALID  0x03FFFFF4
-#define UART_OUT_VALID 0x03FFFFF8
-#define UART_OUT       0x03FFFFFC
-
 #define isInData(addr) (addr) < mmu_base->data_len
 #define isInStack(addr) (STACK_POINTER - mmu_base->stack_len <= (addr)) && ((addr) < STACK_POINTER)
 
@@ -25,14 +19,6 @@ BYTE mmu_read_data(ADDR addr) {
         return mmu_base->data_mem[addr];
     } else if (isInStack(addr)) {
         return mmu_base->stack[STACK_POINTER - addr - 1];
-    } else if (addr == UART_IN) {
-        return mmu_base->uart_in;
-    } else if (addr == UART_IN_VALID) {
-        return mmu_base->uart_in_valid;
-    } else if (addr == UART_OUT_VALID) {
-        return mmu_base->uart_out_valid;
-    } else if (addr == UART_OUT) {
-        return mmu_base->uart_out;
     } else {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
         return 0;
@@ -52,14 +38,6 @@ void mmu_write_data(ADDR addr, BYTE val) {
         mmu_base->data_mem[addr] = val;
     } else if (isInStack(addr)) {
         mmu_base->stack[STACK_POINTER - addr - 1] = val;
-    } else if (addr == UART_IN) {
-        mmu_base->uart_in = val;
-    } else if (addr == UART_IN_VALID) {
-        mmu_base->uart_in_valid = val;
-    } else if (addr == UART_OUT_VALID) {
-        mmu_base->uart_out_valid = val;
-    } else if (addr == UART_OUT) {
-        mmu_base->uart_out = val;
     } else {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
     }

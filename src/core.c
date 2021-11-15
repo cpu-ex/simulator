@@ -26,9 +26,23 @@ WORD core_load_instr(ADDR addr) {
 
 WORD core_load_data(ADDR addr, int bytes, int sign) {
     WORD val = 0;
-    for (int i = 0; i < (1 << bytes); i++) {
-        val <<= 8;
-        val |= core_base->mmu->read_data(addr + i);
+    switch (addr & (~0x3)) {
+    case UART_IN: val = core_base->uart_in; break;
+    case UART_IN_VALID:
+        val = core_base->uart_in_valid;
+        core_base->uart_in_valid = 0;
+        break;
+    case UART_OUT_VALID:
+        val = core_base->uart_out_valid;
+        core_base->uart_out_valid = 0;
+        break;
+    case UART_OUT: val = core_base->uart_out; break;
+    default:
+        for (int i = 0; i < (1 << bytes); i++) {
+            val <<= 8;
+            val |= core_base->mmu->read_data(addr + i);
+        }
+        break;
     }
     return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
 }
@@ -42,9 +56,17 @@ void core_store_instr(ADDR addr, WORD val) {
 }
 
 void core_store_data(ADDR addr, WORD val, int bytes) {
-    for (int i = (1 << bytes) - 1; i >= 0; i--) {
-        core_base->mmu->write_data(addr + i, val & 0xFF);
-        val >>= 8;
+    switch (addr & (~0x3)) {
+    case UART_IN: core_base->uart_in = val; break;
+    case UART_IN_VALID: core_base->uart_in_valid = val; break;
+    case UART_OUT_VALID: core_base->uart_out_valid = val; break;
+    case UART_OUT: core_base->uart_out = val; break;
+    default:
+        for (int i = (1 << bytes) - 1; i >= 0; i--) {
+            core_base->mmu->write_data(addr + i, val & 0xFF);
+            val >>= 8;
+        }
+        break;
     }
 }
 
