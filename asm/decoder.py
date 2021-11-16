@@ -59,16 +59,6 @@ decoder = {
     # env
     'EBREAK': (re.compile(r'(ebreak)'), 1),
     'ECALL': (re.compile(r'(ecall)'), 1),
-    # pseudo
-    'PSEUDO-NOP': (re.compile(r'(nop)'), 1),
-    'PSEUDO-LI': (re.compile(r'(li)\s+(\S+),\s*(-?\S+)'), 2),
-    'PSEUDO-LA': (re.compile(r'(la)\s+(\S+),\s*(\S+)'), 2),
-    'PSEUDO-NOT': (re.compile(r'(not)\s+(\S+),\s*(\S+)'), 1),
-    'PSEUDO-MV': (re.compile(r'(mv)\s+(\S+),\s*(\S+)'), 1),
-    'PSEUDO-J': (re.compile(r'(j)\s+(\S+)'), 1),
-    'PSEUDO-JAL': (re.compile(r'(jal)\s+(\S+)'), 1),
-    'PSEUDO-JALR': (re.compile(r'(jalr)\s+(\S+)'), 1),
-    'PSEUDO-RET': (re.compile(r'(ret)'), 1),
 
 
     # RV32M
@@ -100,6 +90,20 @@ decoder = {
     'FSGNJN': (re.compile(r'(fsgnjn)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'FSGNJX': (re.compile(r'(fsgnjx)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
 
+
+    # pseudo
+    'PSEUDO-NOP': (re.compile(r'(nop)'), 1),
+    'PSEUDO-LI': (re.compile(r'(li)\s+(\S+),\s*(-?\S+)'), 2),
+    'PSEUDO-LA': (re.compile(r'(la)\s+(\S+),\s*(\S+)'), 2),
+    'PSEUDO-NOT': (re.compile(r'(not)\s+(\S+),\s*(\S+)'), 1),
+    'PSEUDO-MV': (re.compile(r'(mv)\s+(\S+),\s*(\S+)'), 1),
+    'PSEUDO-J': (re.compile(r'(j)\s+(\S+)'), 1),
+    'PSEUDO-JAL': (re.compile(r'(jal)\s+(\S+)'), 1),
+    'PSEUDO-JALR': (re.compile(r'(jalr)\s+(\S+)'), 1),
+    'PSEUDO-RET': (re.compile(r'(ret)'), 1),
+    'PSEUDO-FMV': (re.compile(r'(fmv)\s+(\S+),\s*(\S+)'), 1),
+    'PSEUDO-FABS': (re.compile(r'(fabs)\s+(\S+),\s*(\S+)'), 1),
+    'PSEUDO-FNEG': (re.compile(r'(fneg)\s+(\S+),\s*(\S+)'), 1),
     # special
     'SWI': (re.compile(r'(swi)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
 }

@@ -305,53 +305,12 @@ def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
 def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
     return [0b1101111]
 
-
 # ecall for sim: activate actual program and jump to it
 def ecall_sim(instr: tuple, addr: int, tags: dict) -> list:
     return [0b1110011]
 # ecall for fpga: just jump to actual program
 def ecall_fpga(instr: tuple, addr: int, tags: dict) -> list:
     return jalr(('JALR', 'zero', '0', 'zero'), addr, tags)
-
-# pseudo
-def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
-    return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
-
-def pseudo_li(instr: tuple, addr: int, tags: dict) -> list:
-    _, rd, imm = instr
-    hi, lo = getHiLo(imm2int(imm))
-    return lui(('LUI', rd, str(hi)), addr, tags) + \
-        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
-
-def pseudo_la(instr: tuple, addr: int, tags: dict) -> list:
-    _, rd, tag = instr
-    offset = tag2offset(tag, tags, addr)
-    hi, lo = getHiLo(offset)
-    return auipc(('AUIPC', rd, str(hi)), addr, tags) + \
-        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
-
-def pseudo_not(instr: tuple, addr: int, tags: dict) -> list:
-    _, rd, rs = instr
-    return arith_i(('XORI', rd, rs, '-1'), addr, tags)
-
-def pseudo_mv(instr: tuple, addr: int, tags: dict) -> list:
-    _, rd, rs = instr
-    return arith_i(('ADDI', rd, rs, '1'), addr, tags)
-
-def pseudo_j(instr: tuple, addr: int, tags: dict) -> list:
-    _, offset = instr
-    return jal(('JAL', 'zero', offset), addr, tags)
-
-def pseudo_jal(instr: tuple, addr: int, tags: dict) -> list:
-    _, offset = instr
-    return jal(('JAL', 'ra', offset), addr, tags)
-
-def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
-    _, rs = instr
-    return jalr(('JALR', 'ra', '0', rs), addr, tags)
-
-def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
-    return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
 
 # f-load imm[11:0] rs1 010 rd 0000111
 def f_load(instr: tuple, addr: int, tags: dict) -> list:
@@ -447,6 +406,58 @@ def f_arith(instr: tuple, addr: int, tags: dict) -> list:
     mc |= (rs2 & 0x1F) << 20
     return [mc]
 
+# pseudo
+def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
+    return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
+
+def pseudo_li(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, imm = instr
+    hi, lo = getHiLo(imm2int(imm))
+    return lui(('LUI', rd, str(hi)), addr, tags) + \
+        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
+
+def pseudo_la(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, tag = instr
+    offset = tag2offset(tag, tags, addr)
+    hi, lo = getHiLo(offset)
+    return auipc(('AUIPC', rd, str(hi)), addr, tags) + \
+        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
+
+def pseudo_not(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return arith_i(('XORI', rd, rs, '-1'), addr, tags)
+
+def pseudo_mv(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return arith_i(('ADDI', rd, rs, '1'), addr, tags)
+
+def pseudo_j(instr: tuple, addr: int, tags: dict) -> list:
+    _, offset = instr
+    return jal(('JAL', 'zero', offset), addr, tags)
+
+def pseudo_jal(instr: tuple, addr: int, tags: dict) -> list:
+    _, offset = instr
+    return jal(('JAL', 'ra', offset), addr, tags)
+
+def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
+    _, rs = instr
+    return jalr(('JALR', 'ra', '0', rs), addr, tags)
+
+def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
+    return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
+
+def pseudo_fmv(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return f_arith(('FSGNJ', rd, rs, rs), addr, tags)
+
+def pseudo_fabs(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return f_arith(('FSGNJX', rd, rs, rs), addr, tags)
+
+def pseudo_fneg(instr: tuple, addr: int, tags: dict) -> list:
+    _, rd, rs = instr
+    return f_arith(('FSGNJN', rd, rs, rs), addr, tags)
+
 encoder = {
     # RV32I
     # pc
@@ -497,17 +508,7 @@ encoder = {
     # env
     'EBREAK': None,
     'ECALL': None,
-    # pseudo
-    'PSEUDO-NOP': pseudo_nop,
-    'PSEUDO-LI': pseudo_li,
-    'PSEUDO-LA': pseudo_la,
-    'PSEUDO-NOT': pseudo_not,
-    'PSEUDO-MV': pseudo_mv,
-    'PSEUDO-J': pseudo_j,
-    'PSEUDO-JAL': pseudo_jal,
-    'PSEUDO-JALR': pseudo_jalr,
-    'PSEUDO-RET': pseudo_ret,
-
+    
 
     # RV32M
     'MUL': arith,
@@ -538,6 +539,20 @@ encoder = {
     'FSGNJN': f_arith,
     'FSGNJX': f_arith,
 
+
+    # pseudo
+    'PSEUDO-NOP': pseudo_nop,
+    'PSEUDO-LI': pseudo_li,
+    'PSEUDO-LA': pseudo_la,
+    'PSEUDO-NOT': pseudo_not,
+    'PSEUDO-MV': pseudo_mv,
+    'PSEUDO-J': pseudo_j,
+    'PSEUDO-JAL': pseudo_jal,
+    'PSEUDO-JALR': pseudo_jalr,
+    'PSEUDO-RET': pseudo_ret,
+    'PSEUDO-FMV': None,
+    'PSEUDO-FABS': None,
+    'PSEUDO-FNEG': None,
     # special
     'SWI': store,
 }
