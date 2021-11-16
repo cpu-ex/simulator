@@ -42,11 +42,8 @@ void load_file(char* file_name) {
     // load data
     file_size = get_file_size(data_name);
     if (file_size) {
-        sim_base->core->mmu->allocate_data(file_size);
         load2mem(data_name, file_size, 0, sim_base->core->mmu->write_data);
     }
-    // set stack
-    sim_base->core->mmu->allocate_stack(0x200);
 }
 
 void run() {

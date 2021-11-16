@@ -71,6 +71,8 @@ void core_store_data(ADDR addr, WORD val, int bytes) {
 }
 
 void core_reset() {
+    // call mem reset
+    core_base->mmu->reset(core_base->regs[sp]);
     // reset registers
     core_base->pc = DEFAULT_PC;
     for (int i = 0; i < 32; i++)
@@ -78,8 +80,6 @@ void core_reset() {
     // reset instruction analysis
     core_base->instr_counter = 0;
     memset(core_base->instr_analysis, 0, 10 * sizeof(u32));
-    // call mem reset
-    core_base->mmu->reset();
 }
 
 void init_core(CORE* core) {

@@ -1,6 +1,6 @@
 #pragma once
 #include "types.h"
-#include "mem.h"
+#include "mmu.h"
 
 #define DEFAULT_PC     0x100
 #define UART_IN        0x03FFFFF0

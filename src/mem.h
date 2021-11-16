@@ -1,27 +1,18 @@
 #pragma once
 #include "types.h"
 
-#define STACK_POINTER  0x03FFFFF0
+// address
+// 31 ~ 26 (6 ): disused
+// 25 ~ 18 (8 ): 1st index
+// 17 ~ 8  (10): 2nd index
+// 7  ~ 1  (8 ): page
 
-typedef struct mmu {
-    // attributes
-    BYTE* instr_mem;
-    BYTE* data_mem;
-    BYTE* stack;
-
-    u32 instr_len;
-    u32 data_len;
-    u32 stack_len;
+typedef struct mem {
+    BYTE** data[0x100];
     // interfaces
-    void (*allocate_instr)(u64);
-    void (*allocate_data)(u64);
-    void (*allocate_stack)(u64);
+    BYTE (*read_byte)(ADDR);
+    void (*write_byte)(ADDR, BYTE);
+    void (*reset_stack)(ADDR);
+} MEM;
 
-    BYTE (*read_instr)(ADDR);
-    BYTE (*read_data)(ADDR);
-    void (*write_instr)(ADDR, BYTE);
-    void (*write_data)(ADDR, BYTE);
-    void (*reset)(void);
-} MMU;
-
-void init_mmu(MMU* mmu);
+void init_mem(MEM* mem);

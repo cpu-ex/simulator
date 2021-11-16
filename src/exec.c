@@ -235,16 +235,17 @@ void ENV_EXEC(CORE* core, INSTR instr) {
     BYTE funct3 = instr.i.funct3;
 
     switch (funct3) {
-    // env
-    if (imm) {
-        // ebreak
-        BROADCAST(STAT_EXIT);
-    } else {
-        // ecall
-        printf("ecall here");
-        core->pc = DEFAULT_PC;
-        BROADCAST(STAT_HALT);
-    }
+    case 0b000:
+        // env
+        if (imm) {
+            // ebreak
+            BROADCAST(STAT_EXIT);
+        } else {
+            // ecall
+            core->pc = DEFAULT_PC;
+            BROADCAST(STAT_HALT);
+        }
+        break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }

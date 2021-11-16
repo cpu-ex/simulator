@@ -1,77 +1,65 @@
 #include "mem.h"
 
-static MMU* mmu_base;
+#define MAX_ADDR 0x04000000
 
-#define isInData(addr) (addr) < mmu_base->data_len
-#define isInStack(addr) (STACK_POINTER - mmu_base->stack_len <= (addr)) && ((addr) < STACK_POINTER)
+static MEM* mem_base;
 
-BYTE mmu_read_instr(ADDR addr) {
-    if (addr < mmu_base->instr_len) {
-        return mmu_base->instr_mem[addr];
-    } else {
+typedef union addr_helper {
+    u32 raw;
+
+    struct addr_decoder {
+        u16 offset: 8;
+        u16 index2: 10;
+        u16 index1: 8;
+        u16 padding: 6;
+    } __attribute__((packed)) d;
+} ADDR_HELPER;
+
+void mem_assure_page(ADDR addr) {
+    ADDR_HELPER helper = { .raw = addr };
+    if (!mem_base->data[helper.d.index1]) {
+        mem_base->data[helper.d.index1] = (BYTE**)malloc(0x400 * sizeof(BYTE*));
+    }
+    if (!mem_base->data[helper.d.index1][helper.d.index2]) {
+        mem_base->data[helper.d.index1][helper.d.index2] = (BYTE*)malloc(0x100 * sizeof(BYTE));
+    }
+}
+
+BYTE mem_read_byte(ADDR addr) {
+    ADDR_HELPER helper = { .raw = addr };
+    if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+        return 0;
+    } else if (mem_base->data[helper.d.index1] && mem_base->data[helper.d.index1][helper.d.index2]) {
+        return mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset];
+    } else {
         return 0;
     }
 }
 
-BYTE mmu_read_data(ADDR addr) {
-    if (isInData(addr)) {
-        return mmu_base->data_mem[addr];
-    } else if (isInStack(addr)) {
-        return mmu_base->stack[STACK_POINTER - addr - 1];
-    } else {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
-        return 0;
+void mem_reset_stack(ADDR addr) {
+    ADDR_HELPER helper;
+    for (; addr < MAX_ADDR; addr++) {
+        helper.raw = addr;
+        mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = 0;
     }
 }
 
-void mmu_write_instr(ADDR addr, BYTE val) {
-    if (addr < mmu_base->instr_len) {
-        mmu_base->instr_mem[addr] = val;
-    } else {
+void mem_write_byte(ADDR addr, BYTE val) {
+    if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+    } else {
+        mem_assure_page(addr);
+        ADDR_HELPER helper = { .raw = addr };
+        mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = val;
     }
 }
 
-void mmu_write_data(ADDR addr, BYTE val) {
-    if (isInData(addr)) {
-        mmu_base->data_mem[addr] = val;
-    } else if (isInStack(addr)) {
-        mmu_base->stack[STACK_POINTER - addr - 1] = val;
-    } else {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
-    }
-}
-
-void allocate_instr(u64 size) {
-    mmu_base->instr_len = size;
-    mmu_base->instr_mem = malloc(size * sizeof(BYTE));
-}
-
-void allocate_data(u64 size) {
-    mmu_base->data_len = size;
-    mmu_base->data_mem = malloc(size * sizeof(BYTE));
-}
-
-void allocate_stack(u64 size) {
-    mmu_base->stack_len = size;
-    mmu_base->stack = malloc(size * sizeof(BYTE));
-}
-
-void mmu_reset() {
-    // keep instr and data, reset stack
-    memset(mmu_base->stack, 0, mmu_base->stack_len * sizeof(BYTE));
-}
-
-void init_mmu(MMU* mmu) {
-    mmu_base = mmu;
+void init_mem(MEM* mem) {
+    mem_base = mem;
+    memset(mem->data, 0, 0x100 * sizeof(BYTE**));
     // assign interfaces
-    mmu->allocate_instr = allocate_instr;
-    mmu->allocate_data = allocate_data;
-    mmu->allocate_stack = allocate_stack;
-    mmu->read_instr = mmu_read_instr;
-    mmu->read_data = mmu_read_data;
-    mmu->write_instr = mmu_write_instr;
-    mmu->write_data = mmu_write_data;
-    mmu->reset = mmu_reset;
+    mem->read_byte = mem_read_byte;
+    mem->write_byte = mem_write_byte;
+    mem->reset_stack = mem_reset_stack;
 }
