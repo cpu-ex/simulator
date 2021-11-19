@@ -167,13 +167,13 @@ STATE wait4command(CORE* core) {
     }
 }
 
-STATE update(CORE* core) {
+STATE gui_update(CORE* core) {
     show_main_win(gui_base, core);
     // wait for a new command
     return wait4command(core);
 }
 
-void deinit() {
+void gui_deinit() {
     // at the end of program ncurses mode should be exited properly
     endwin();
 }
@@ -201,8 +201,8 @@ void init_gui(GUI* gui) {
     gui->mem_start = DEFAULT_PC;
     gui->mem_focus = 0xFFFFFFFF;
     // assign interfaces
-    gui->update = update;
-    gui->deinit = deinit;
+    gui->update = gui_update;
+    gui->deinit = gui_deinit;
 
     show_splash_win();
     // catch char h
