@@ -1,11 +1,13 @@
 #pragma once
 #include "types.h"
 #include "mem.h"
+#include "cache.h"
 
 typedef struct mmu {
     // attributes
-    BYTE* instr_mem;
     u32 instr_len;
+    BYTE* instr_mem;
+    CACHE* data_cache;
     MEM* data_mem;
     // interfaces
     void (*allocate_instr)(u64);

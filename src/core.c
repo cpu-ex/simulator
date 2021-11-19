@@ -3,7 +3,7 @@
 
 static CORE* core_base;
 
-void step() {
+void core_step() {
     // fetch
     u32 raw = core_base->load_instr(core_base->pc);
     // decode
@@ -97,6 +97,6 @@ void init_core(CORE* core) {
     core->load_data = core_load_data;
     core->store_instr = core_store_instr;
     core->store_data = core_store_data;
-    core->step = step;
+    core->step = core_step;
     core->reset = core_reset;
 }
