@@ -34,11 +34,10 @@ BYTE mmu_read_data(ADDR addr) {
 void mmu_write_data(ADDR addr, BYTE val) {
     // cache miss
     if (!mmu_base->data_cache->write_byte(addr, val)) {
-        // load certain block (updated) to cache
-        // TODO: change to write-allocate
-        mmu_base->data_mem->write_byte(addr, val);
+        // write allocate
         mmu_base->data_cache->load_block(addr, mmu_base->data_mem->read_byte,
             mmu_base->data_mem->write_byte);
+        mmu_base->data_cache->write_byte(addr, val);
     }
 }
 
@@ -66,7 +65,7 @@ void init_mmu(MMU* mmu) {
     mmu->allocate_instr = mmu_allocate_instr;
     mmu->read_instr = mmu_read_instr;
     mmu->write_instr = mmu_write_instr;
-    mmu->read_data = mmu->data_mem->read_byte;
-    mmu->write_data = mmu->data_mem->write_byte;
+    mmu->read_data = mmu_read_data;
+    mmu->write_data = mmu_write_data;
     mmu->reset = mmu_reset;
 }

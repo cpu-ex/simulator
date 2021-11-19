@@ -107,20 +107,27 @@ u8 cache_write_byte(ADDR addr, BYTE byte) {
 
 void cache_load_block(ADDR addr, BYTE (*reader)(ADDR), void (*writer)(ADDR, BYTE)) {
     int block_idx = cache_get_empty_block(addr);
-    CACHE_ADDR_HELPER helper = {.raw = addr};
+    CACHE_ADDR_HELPER helper;
     // write back
     if (block_idx < 0) {
         // all blocks occupied
         block_idx = cache_get_replacable_block(addr);
-        for (int offset = 0; offset < BLOCK_SIZE; offset++) {
-            helper.d.offset = offset;
-            writer(helper.raw, cache_base->blocks[block_idx].data[offset]);
+        if (cache_base->blocks[block_idx].modified) {
+            helper.d.tag = cache_base->blocks[block_idx].tag;
+            helper.d.set_idx = cache_base->blocks[block_idx].set_idx;
+            for (int offset = 0; offset < BLOCK_SIZE; offset++) {
+                helper.d.offset = offset;
+                writer(helper.raw, cache_base->blocks[block_idx].data[offset]);
+                cache_base->blocks[block_idx].data[offset] = 0;
+            }
         }
     }
     // load block
+    helper.raw = addr;
     cache_base->blocks[block_idx].valid = 1;
     cache_base->blocks[block_idx].modified = 0;
     cache_base->blocks[block_idx].start_point = cache_base->reference_counter;
+    cache_base->blocks[block_idx].last_referenced = cache_base->read_counter;
     cache_base->blocks[block_idx].tag = helper.d.tag;
     cache_base->blocks[block_idx].set_idx = helper.d.set_idx;
     for (int offset = 0; offset < BLOCK_SIZE; offset++) {

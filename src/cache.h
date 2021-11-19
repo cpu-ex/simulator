@@ -8,14 +8,14 @@
 #define LOG(n)   (((n) < 1 << 16) ? LOG_8(n) : (16 + LOG_8((n) >> 16)))
 
 // customizable variables
-#define BLOCK_SIZE    16
-#define ASSOCIATIVITY 4 // aka way
-#define CACHE_FIFO
-// #define CACHE_LRU
+#define BLOCK_SIZE    4
+#define ASSOCIATIVITY 2 // aka way
+// #define CACHE_FIFO
+#define CACHE_LRU
 // #define CACHE_RR // round robin
 
 // constants
-#define CACHE_SIZE  (1 << 24) // without tags
+#define CACHE_SIZE  (1 << 4) // without tags
 #define BLOCK_NUM   (CACHE_SIZE / BLOCK_SIZE)
 #define SET_NUM     (CACHE_SIZE / BLOCK_SIZE / ASSOCIATIVITY)
 #define OFFSET_LEN  LOG(BLOCK_SIZE)
