@@ -15,6 +15,7 @@ typedef struct mmu {
     void (*write_instr)(ADDR, BYTE);
     BYTE (*read_data)(ADDR);
     void (*write_data)(ADDR, BYTE);
+    BYTE (*sneak)(ADDR, u8);
     void (*reset)(ADDR);
 } MMU;
 

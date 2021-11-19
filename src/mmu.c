@@ -41,6 +41,19 @@ void mmu_write_data(ADDR addr, BYTE val) {
     }
 }
 
+BYTE mmu_sneak(ADDR addr, u8 type) {
+    if (type) {
+        // instr
+        return mmu_read_instr(addr);
+    } else {
+        // data
+        BYTE val;
+        if (!mmu_base->data_cache->sneak(addr, &val))
+            val = mmu_base->data_mem->read_byte(addr);
+        return val;
+    }
+}
+
 void mmu_allocate_instr(u64 size) {
     mmu_base->instr_len = size;
     mmu_base->instr_mem = malloc(size * sizeof(BYTE));
@@ -67,5 +80,6 @@ void init_mmu(MMU* mmu) {
     mmu->write_instr = mmu_write_instr;
     mmu->read_data = mmu_read_data;
     mmu->write_data = mmu_write_data;
+    mmu->sneak = mmu_sneak;
     mmu->reset = mmu_reset;
 }

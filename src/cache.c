@@ -65,10 +65,11 @@ int cache_get_replacable_block(ADDR addr) {
     #else // 1st entry
     block_idx = start_idx;
     #endif
+    fprintf(stderr, "%u\n", block_idx);
     return block_idx;
 }
 
-u8 cache_read_byte(ADDR addr, BYTE* byte) {
+u8 cache_read_byte(ADDR addr, BYTE* val) {
     cache_base->reference_counter++;
     cache_base->read_counter++;
     int block_idx = cache_get_valid_block(addr);
@@ -80,13 +81,13 @@ u8 cache_read_byte(ADDR addr, BYTE* byte) {
         // hit
         cache_base->hit_counter++;
         CACHE_ADDR_HELPER helper = { .raw = addr };
-        *byte = cache_base->blocks[block_idx].data[helper.d.offset];
+        *val = cache_base->blocks[block_idx].data[helper.d.offset];
         cache_base->blocks[block_idx].last_referenced = cache_base->reference_counter;
         return 1;
     }
 }
 
-u8 cache_write_byte(ADDR addr, BYTE byte) {
+u8 cache_write_byte(ADDR addr, BYTE val) {
     cache_base->reference_counter++;
     cache_base->write_counter++;
     int block_idx = cache_get_valid_block(addr);
@@ -98,7 +99,7 @@ u8 cache_write_byte(ADDR addr, BYTE byte) {
         // hit
         cache_base->hit_counter++;
         CACHE_ADDR_HELPER helper = { .raw = addr };
-        cache_base->blocks[block_idx].data[helper.d.offset] = byte;
+        cache_base->blocks[block_idx].data[helper.d.offset] = val;
         cache_base->blocks[block_idx].modified = 1;
         cache_base->blocks[block_idx].last_referenced = cache_base->reference_counter;
         return 1;
@@ -136,6 +137,20 @@ void cache_load_block(ADDR addr, BYTE (*reader)(ADDR), void (*writer)(ADDR, BYTE
     }
 }
 
+// get data without incrementing counters
+u8 cache_sneak(ADDR addr, BYTE* val) {
+    int block_idx = cache_get_valid_block(addr);
+    if (block_idx < 0) {
+        // miss
+        return 0;
+    } else {
+        // hit
+        CACHE_ADDR_HELPER helper = { .raw = addr };
+        *val = cache_base->blocks[block_idx].data[helper.d.offset];
+        return 1;
+    }
+}
+
 void cache_reset() {
     cache_base->hit_counter = 0;
     cache_base->miss_counter = 0;
@@ -152,9 +167,11 @@ void init_cache(CACHE* cache) {
     //     exit(-1);
     // }
     cache_base = cache;
+    cache_reset();
     // assign interfaces
     cache->read_byte = cache_read_byte;
     cache->write_byte = cache_write_byte;
+    cache->sneak = cache_sneak;
     cache->load_block = cache_load_block;
     cache->reset = cache_reset;
 }

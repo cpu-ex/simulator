@@ -8,14 +8,14 @@
 #define LOG(n)   (((n) < 1 << 16) ? LOG_8(n) : (16 + LOG_8((n) >> 16)))
 
 // customizable variables
-#define BLOCK_SIZE    4
-#define ASSOCIATIVITY 2 // aka way
+#define BLOCK_SIZE    64 // in bytes
+#define ASSOCIATIVITY 8 // aka way
 // #define CACHE_FIFO
 #define CACHE_LRU
 // #define CACHE_RR // round robin
 
 // constants
-#define CACHE_SIZE  (1 << 4) // without tags
+#define CACHE_SIZE  (1 << 12) // without tags
 #define BLOCK_NUM   (CACHE_SIZE / BLOCK_SIZE)
 #define SET_NUM     (CACHE_SIZE / BLOCK_SIZE / ASSOCIATIVITY)
 #define OFFSET_LEN  LOG(BLOCK_SIZE)
@@ -43,6 +43,7 @@ typedef struct cache {
     // interfaces
     u8 (*read_byte)(ADDR, BYTE*);
     u8 (*write_byte)(ADDR, BYTE);
+    u8 (*sneak)(ADDR, BYTE*);
     void (*load_block)(ADDR, BYTE (*)(ADDR), void (*)(ADDR, BYTE));
     void (*reset)(void);
 } CACHE;

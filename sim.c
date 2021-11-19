@@ -41,7 +41,7 @@ void sim_load_file(char* file_name) {
     // load data
     file_size = get_file_size(data_name);
     if (file_size) {
-        load2mem(data_name, file_size, 0, sim_base->core->mmu->write_data);
+        load2mem(data_name, file_size, 0, sim_base->core->mmu->data_mem->write_byte);
     }
 }
 
