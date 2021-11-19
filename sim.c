@@ -1,5 +1,4 @@
 #include "sim.h"
-#include "src/instr.h"
 
 static SIM* sim_base;
 
@@ -25,7 +24,7 @@ void load2mem(char* file_name, u64 file_size, ADDR addr, void (*loader)(ADDR, BY
     fclose(file);
 }
 
-void load_file(char* file_name) {
+void sim_load_file(char* file_name) {
     char code_name[36], data_name[36];
     sprintf(code_name, "./bin/%s.code", file_name);
     sprintf(data_name, "./bin/%s.data", file_name);
@@ -42,11 +41,11 @@ void load_file(char* file_name) {
     // load data
     file_size = get_file_size(data_name);
     if (file_size) {
-        load2mem(data_name, file_size, 0, sim_base->core->mmu->write_data);
+        load2mem(data_name, file_size, 0, sim_base->core->mmu->data_mem->write_byte);
     }
 }
 
-void run() {
+void sim_run() {
     // init GUI
     static GUI gui;
     init_gui(&gui);
@@ -96,8 +95,8 @@ void init_sim(SIM* sim) {
     init_core(&core);
     sim->core = &core;
     // assign interfaces
-    sim->load = load_file;
-    sim->run = run;
+    sim->load = sim_load_file;
+    sim->run = sim_run;
     // broadcast state
     BROADCAST(STAT_HALT);
 }

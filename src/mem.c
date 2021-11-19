@@ -4,7 +4,7 @@
 
 static MEM* mem_base;
 
-typedef union addr_helper {
+typedef union mem_addr_helper {
     u32 raw;
 
     struct addr_decoder {
@@ -13,10 +13,10 @@ typedef union addr_helper {
         u16 index1: 8;
         u16 padding: 6;
     } __attribute__((packed)) d;
-} ADDR_HELPER;
+} MEM_ADDR_HELPER;
 
 void mem_assure_page(ADDR addr) {
-    ADDR_HELPER helper = { .raw = addr };
+    MEM_ADDR_HELPER helper = { .raw = addr };
     if (!mem_base->data[helper.d.index1]) {
         mem_base->data[helper.d.index1] = (BYTE**)malloc(0x400 * sizeof(BYTE*));
     }
@@ -26,7 +26,7 @@ void mem_assure_page(ADDR addr) {
 }
 
 BYTE mem_read_byte(ADDR addr) {
-    ADDR_HELPER helper = { .raw = addr };
+    MEM_ADDR_HELPER helper = { .raw = addr };
     if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
         return 0;
@@ -37,21 +37,21 @@ BYTE mem_read_byte(ADDR addr) {
     }
 }
 
-void mem_reset_stack(ADDR addr) {
-    ADDR_HELPER helper;
-    for (; addr < MAX_ADDR; addr++) {
-        helper.raw = addr;
-        mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = 0;
-    }
-}
-
 void mem_write_byte(ADDR addr, BYTE val) {
     if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
     } else {
         mem_assure_page(addr);
-        ADDR_HELPER helper = { .raw = addr };
+        MEM_ADDR_HELPER helper = { .raw = addr };
         mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = val;
+    }
+}
+
+void mem_reset_stack(ADDR addr) {
+    MEM_ADDR_HELPER helper;
+    for (; addr < MAX_ADDR; addr++) {
+        helper.raw = addr;
+        mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = 0;
     }
 }
 

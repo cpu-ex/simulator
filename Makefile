@@ -11,7 +11,7 @@ disasm: ./asm/disasm.o ./src/instr.o
 	gcc -o $@ $^
 
 $(objs): types.h
-mmu.o: mem.h
+mmu.o: mem.h cache.h
 core.o: mmu.h
 exec.o, win.o: core.h
 exec.o: instr.h

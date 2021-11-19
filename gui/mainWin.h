@@ -62,7 +62,7 @@ void update_mem(GUI* gui, WINDOW* win, CORE* core) {
     }
 
     ADDR addr = gui->mem_start;
-    BYTE (*load)(ADDR) = gui->mem_type ? core->mmu->read_instr : core->mmu->read_data;
+    // BYTE (*load)(ADDR) = gui->mem_type ? core->mmu->read_instr : core->mmu->read_data;
     for (ADDR offset = 0; offset < 0x100; offset++) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         if (offset % 0x10 == 0)
@@ -72,7 +72,8 @@ void update_mem(GUI* gui, WINDOW* win, CORE* core) {
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         if (gui->mem_type && ((addr + offset) & (~0x3)) == core->pc)
             wattron(win, COLOR_PAIR(STANDOUT_COLOR));
-        wprintw(win, " %02X", load(addr + offset));
+        // wprintw(win, " %02X", load(addr + offset));
+        wprintw(win, " %02X", core->mmu->sneak(addr + offset, gui->mem_type));
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
         if (offset % 0x10 == 0xF)
