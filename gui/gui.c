@@ -3,6 +3,7 @@
 #include "helpWin.h"
 #include "mainWin.h"
 #include "analysisWin.h"
+#include "cacheWin.h"
 
 static GUI* gui_base;
 
@@ -107,6 +108,8 @@ COMMAND get_command() {
         com.type = 'h';
     } else if (!strcmp(output[0], "analysis")) {
         com.type = 'a';
+    } else if (!strcmp(output[0], "cache")) {
+        com.type = 'c';
     } else {
         // parse as step 1
         com.type = 's';
@@ -158,6 +161,9 @@ STATE wait4command(CORE* core) {
         return STAT_HALT;
     case 'a':
         show_analysis_win(core);
+        return STAT_HALT;
+    case 'c':
+        show_cache_win(core);
         return STAT_HALT;
     case 'h':
         show_help_win();

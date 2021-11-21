@@ -2,16 +2,6 @@
 
 static CACHE* cache_base;
 
-typedef union cache_addr_helper {
-    u32 raw;
-
-    struct addr_decoder {
-        u32 offset : OFFSET_LEN;
-        u32 set_idx : SET_IDX_LEN;
-        u32 tag :    TAG_LEN;
-    } __attribute__((packed)) d;
-} CACHE_ADDR_HELPER;
-
 // #define is_valid_setting (((TAG_LEN / 8 + BLOCK_SIZE) * BLOCK_NUM) <= CACHE_SIZE ? 1 : 0)
 
 int cache_get_valid_block(ADDR addr) {

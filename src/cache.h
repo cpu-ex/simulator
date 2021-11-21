@@ -22,6 +22,16 @@
 #define SET_IDX_LEN LOG(SET_NUM)
 #define TAG_LEN     (32 - SET_IDX_LEN - OFFSET_LEN)
 
+typedef union cache_addr_helper {
+    u32 raw;
+
+    struct addr_decoder {
+        u32 offset : OFFSET_LEN;
+        u32 set_idx : SET_IDX_LEN;
+        u32 tag :    TAG_LEN;
+    } __attribute__((packed)) d;
+} CACHE_ADDR_HELPER;
+
 typedef struct cache_block {
     u8 valid;
     u8 modified;

@@ -11,6 +11,8 @@
 - [2021/10/31] implement instruction analysis
 - [2021/11/09] support RV32M and RV32F
 - [2021/11/12] have every related parts customized
+- [2021/11/19] support main memory with a cache system
+- [2021/11/21] visualize the cache structure
 
 ## 2. how to build
 

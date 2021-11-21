@@ -16,7 +16,7 @@ core.o: mmu.h
 exec.o, win.o: core.h
 exec.o: instr.h
 disasm.o: types.h instr.h
-gui.o: splashWin.h helpWin.h mainWin.h analysisWin.h
+gui.o: splashWin.h helpWin.h mainWin.h analysisWin.h cacheWin.h
 
 .PHONY: clean
 clean:
