@@ -48,11 +48,8 @@ void mem_write_byte(ADDR addr, BYTE val) {
 }
 
 void mem_reset_stack(ADDR addr) {
-    MEM_ADDR_HELPER helper;
-    for (; addr < MAX_ADDR; addr++) {
-        helper.raw = addr;
-        mem_base->data[helper.d.index1][helper.d.index2][helper.d.offset] = 0;
-    }
+    for (; addr < MAX_ADDR; addr++)
+        mem_base->write_byte(addr, 0);
 }
 
 void init_mem(MEM* mem) {

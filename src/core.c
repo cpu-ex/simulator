@@ -75,11 +75,13 @@ void core_reset() {
     core_base->mmu->reset(core_base->regs[sp]);
     // reset registers
     core_base->pc = DEFAULT_PC;
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++) {
         core_base->regs[i] = 0;
+        core_base->fregs[i] = 0;
+    }
     // reset instruction analysis
     core_base->instr_counter = 0;
-    memset(core_base->instr_analysis, 0, 10 * sizeof(u32));
+    memset(core_base->instr_analysis, 0, 23 * sizeof(u32));
 }
 
 void init_core(CORE* core) {

@@ -55,7 +55,6 @@ int cache_get_replacable_block(ADDR addr) {
     #else // 1st entry
     block_idx = start_idx;
     #endif
-    fprintf(stderr, "%u\n", block_idx);
     return block_idx;
 }
 

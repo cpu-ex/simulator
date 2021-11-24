@@ -202,7 +202,7 @@ void init_gui(GUI* gui) {
     init_pair(STANDOUT_COLOR, COLOR_YELLOW, COLOR_BLACK);
     // regist variables
     gui->reg_set = REG_SET_DEF;
-    memset(gui->reg_focus, 0, 32);
+    memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;
     gui->mem_start = DEFAULT_PC;
     gui->mem_focus = 0xFFFFFFFF;
