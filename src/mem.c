@@ -19,9 +19,11 @@ void mem_assure_page(ADDR addr) {
     MEM_ADDR_HELPER helper = { .raw = addr };
     if (!mem_base->data[helper.d.index1]) {
         mem_base->data[helper.d.index1] = (BYTE**)malloc(0x400 * sizeof(BYTE*));
+        memset(mem_base->data[helper.d.index1], 0, 0x400 * sizeof(BYTE*));
     }
     if (!mem_base->data[helper.d.index1][helper.d.index2]) {
         mem_base->data[helper.d.index1][helper.d.index2] = (BYTE*)malloc(0x100 * sizeof(BYTE));
+        memset(mem_base->data[helper.d.index1][helper.d.index2], 0, 0x100 * sizeof(BYTE));
     }
 }
 

@@ -14,6 +14,8 @@
 - [2021/11/19] support main memory with a cache system
 - [2021/11/21] visualize the cache structure
 
+![sample](sample.gif)
+
 ## 2. how to build
 
 ***recommended workflow as well***
