@@ -19,4 +19,7 @@ void show_help_win() {
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);
+    // delete window pointers
+    delwin(help_win_outer);
+    delwin(help_win_inner);
 }

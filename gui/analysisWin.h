@@ -46,4 +46,8 @@ void show_analysis_win(CORE* core) {
     wrefresh(block2);
     wrefresh(block3);
     getch();
+    // delete window pointers
+    delwin(block1);
+    delwin(block2);
+    delwin(block3);
 }

@@ -110,15 +110,26 @@ void show_cache_win(CORE* core) {
     int* offset = &focused.line;
     keypad(stdscr, 1);
     while (1) {
+        // update routine
         update_list(list_outer, list_inner, core, &focused);
         update_info(info_outer, info_inner, core, &focused);
         update_detail(detail_outer, detail_inner, core, &focused);
+        // catching inputs
         switch (getch()) {
         case KEY_UP: *offset -= 1; break;
         case KEY_DOWN: *offset += 1; break;
         case KEY_LEFT: focused.win = list_outer; offset = &focused.line; break;
         case KEY_RIGHT: focused.win = detail_outer; offset = &focused.offset; *offset = 0; break;
-        default: keypad(stdscr, 0); return;
+        default:
+            keypad(stdscr, 0);
+            // delete window pointers
+            delwin(info_outer);
+            delwin(list_outer);
+            delwin(detail_outer);
+            delwin(info_inner);
+            delwin(list_inner);
+            delwin(detail_inner);
+            return;
         }
     }
 }

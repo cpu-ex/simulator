@@ -13,4 +13,5 @@ void show_splash_win() {
     attroff(COLOR_PAIR(WARNING_COLOR));
     refresh();
     wrefresh(splash_box);
+    delwin(splash_box);
 }

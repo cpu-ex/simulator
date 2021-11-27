@@ -113,4 +113,13 @@ void show_main_win(GUI* gui, CORE* core) {
     wrefresh(pc_inner);
     wrefresh(reg_inner);
     wrefresh(mem_inner);
+    // delete window pointers
+    delwin(pc_outer);
+    delwin(reg_outer);
+    delwin(mem_outer);
+    delwin(com_outer);
+    delwin(pc_inner);
+    delwin(reg_inner);
+    delwin(mem_inner);
+    delwin(com_outer);
 }
