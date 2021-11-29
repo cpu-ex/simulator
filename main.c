@@ -6,8 +6,8 @@ int main(int argc, char* argv[]) {
     } else {
         SIM sim;
         init_sim(&sim);
-        sim.load(argv[1]);
-        sim.run();
+        sim.load(&sim, argv[1]);
+        sim.run(&sim);
     }
     return 0;
 }

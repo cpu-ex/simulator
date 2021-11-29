@@ -10,13 +10,13 @@ typedef struct mmu {
     CACHE* data_cache;
     MEM* data_mem;
     // interfaces
-    void (*allocate_instr)(u64);
-    BYTE (*read_instr)(ADDR);
-    void (*write_instr)(ADDR, BYTE);
-    BYTE (*read_data)(ADDR);
-    void (*write_data)(ADDR, BYTE);
-    BYTE (*sneak)(ADDR, u8);
-    void (*reset)(ADDR);
+    void (*allocate_instr)(struct mmu*, u64);
+    BYTE (*read_instr)(struct mmu*, ADDR);
+    void (*write_instr)(struct mmu*, ADDR, BYTE);
+    BYTE (*read_data)(struct mmu*, ADDR);
+    void (*write_data)(struct mmu*, ADDR, BYTE);
+    BYTE (*sneak)(struct mmu*, ADDR, u8);
+    void (*reset)(struct mmu*, ADDR);
 } MMU;
 
 void init_mmu(MMU* mmu);

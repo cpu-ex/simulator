@@ -19,7 +19,7 @@ void FLW_EXEC(CORE* core, INSTR instr) {
     BYTE funct3 = instr.i.funct3;
     switch (funct3) {
     // flw
-    case 0b010: core->fregs[rd] = core->load_data(core->regs[rs1] + sext(imm, 11), 2, 0); break;
+    case 0b010: core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11), 2, 0); break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
@@ -35,7 +35,7 @@ void FSW_EXEC(CORE* core, INSTR instr) {
     BYTE funct3 = instr.s.funct3;
     switch (funct3) {
     // fsw
-    case 0b010: core->store_data(core->regs[rs1] + sext(imm, 11), core->fregs[rs2], 2); break;
+    case 0b010: core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2], 2); break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }

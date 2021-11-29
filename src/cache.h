@@ -1,5 +1,6 @@
 #pragma once
 #include "types.h"
+#include "mem.h"
 
 #define LOG_1(n) (((n) < 1 << 1) ? 0 : 1)
 #define LOG_2(n) (((n) < 1 << 2) ? LOG_1(n) : (2 + LOG_1((n) >> 2)))
@@ -51,11 +52,11 @@ typedef struct cache {
     u32 write_counter;
     u32 reference_counter;
     // interfaces
-    u8 (*read_byte)(ADDR, BYTE*);
-    u8 (*write_byte)(ADDR, BYTE);
-    u8 (*sneak)(ADDR, BYTE*);
-    void (*load_block)(ADDR, BYTE (*)(ADDR), void (*)(ADDR, BYTE));
-    void (*reset)(void);
+    u8 (*read_byte)(struct cache*, ADDR, BYTE*);
+    u8 (*write_byte)(struct cache*, ADDR, BYTE);
+    u8 (*sneak)(struct cache*, ADDR, BYTE*);
+    void (*load_block)(struct cache*, ADDR, MEM*);
+    void (*reset)(struct cache*);
 } CACHE;
 
 void init_cache(CACHE* cache);

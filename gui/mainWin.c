@@ -4,7 +4,7 @@ void update_pc(GUI* gui, WINDOW* win, CORE* core) {
     wclear(win);
     // fetch pc and op
     ADDR pc = core->pc;
-    WORD op = core->load_instr(pc);
+    WORD op = core->load_instr(core, pc);
     // disasm
     char asm_buf[24];
     INSTR curr_instr = { .raw = op };
@@ -72,7 +72,7 @@ void update_mem(GUI* gui, WINDOW* win, CORE* core) {
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         if (gui->mem_type && ((addr + offset) & (~0x3)) == core->pc)
             wattron(win, COLOR_PAIR(STANDOUT_COLOR));
-        wprintw(win, " %02X", core->mmu->sneak(addr + offset, gui->mem_type));
+        wprintw(win, " %02X", core->mmu->sneak(core->mmu, addr + offset, gui->mem_type));
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
         if (offset % 0x10 == 0xF)

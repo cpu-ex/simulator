@@ -1,71 +1,66 @@
 #include "mmu.h"
 
-static MMU* mmu_base;
-
-BYTE mmu_read_instr(ADDR addr) {
-    if (addr < mmu_base->instr_len) {
-        return mmu_base->instr_mem[addr];
+BYTE mmu_read_instr(MMU* mmu, ADDR addr) {
+    if (addr < mmu->instr_len) {
+        return mmu->instr_mem[addr];
     } else {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
         return 0;
     }
 }
 
-void mmu_write_instr(ADDR addr, BYTE val) {
-    if (addr < mmu_base->instr_len) {
-        mmu_base->instr_mem[addr] = val;
+void mmu_write_instr(MMU* mmu, ADDR addr, BYTE val) {
+    if (addr < mmu->instr_len) {
+        mmu->instr_mem[addr] = val;
     } else {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
     }
 }
 
-BYTE mmu_read_data(ADDR addr) {
+BYTE mmu_read_data(MMU* mmu, ADDR addr) {
     BYTE val;
     // cache miss
-    if (!mmu_base->data_cache->read_byte(addr, &val)) {
+    if (!mmu->data_cache->read_byte(mmu->data_cache, addr, &val)) {
         // load certain block to cache
-        mmu_base->data_cache->load_block(addr, mmu_base->data_mem->read_byte,
-            mmu_base->data_mem->write_byte);
-        val = mmu_base->data_mem->read_byte(addr);
+        mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
+        val = mmu->data_mem->read_byte(mmu->data_mem, addr);
     }
     return val;
 }
 
-void mmu_write_data(ADDR addr, BYTE val) {
+void mmu_write_data(MMU* mmu, ADDR addr, BYTE val) {
     // cache miss
-    if (!mmu_base->data_cache->write_byte(addr, val)) {
+    if (!mmu->data_cache->write_byte(mmu->data_cache, addr, val)) {
         // write allocate
-        mmu_base->data_cache->load_block(addr, mmu_base->data_mem->read_byte,
-            mmu_base->data_mem->write_byte);
-        mmu_base->data_cache->write_byte(addr, val);
+        mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
+        mmu->data_cache->write_byte(mmu->data_cache, addr, val);
     }
 }
 
-BYTE mmu_sneak(ADDR addr, u8 type) {
+BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
     if (type) {
         // instr
-        return mmu_read_instr(addr);
+        return mmu->read_instr(mmu, addr);
     } else {
         // data
         BYTE val;
-        if (!mmu_base->data_cache->sneak(addr, &val))
-            val = mmu_base->data_mem->read_byte(addr);
+        if (!mmu->data_cache->sneak(mmu->data_cache, addr, &val))
+            val = mmu->data_mem->read_byte(mmu->data_mem, addr);
         return val;
     }
 }
 
-void mmu_allocate_instr(u64 size) {
-    mmu_base->instr_len = size;
-    mmu_base->instr_mem = malloc(size * sizeof(BYTE));
+void mmu_allocate_instr(MMU* mmu, u64 size) {
+    mmu->instr_len = size;
+    mmu->instr_mem = malloc(size * sizeof(BYTE));
 }
 
-void mmu_reset(ADDR addr) {
-    mmu_base->data_cache->reset();
-    mmu_base->data_mem->reset_stack(addr);
+void mmu_reset(MMU* mmu, ADDR addr) {
+    mmu->data_cache->reset(mmu->data_cache);
+    mmu->data_mem->reset_stack(mmu->data_mem, addr);
 }
 
 void init_mmu(MMU* mmu) {
-    mmu_base = mmu;
     // init cache
     static CACHE data_cache;
     init_cache(&data_cache);

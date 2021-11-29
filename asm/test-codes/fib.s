@@ -2,7 +2,7 @@
 
     .data
 const:
-    .byte 10
+    .byte 20
 
     .text
 fib: # a0 = n

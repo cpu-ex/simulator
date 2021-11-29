@@ -5,8 +5,6 @@
 #include "analysisWin.h"
 #include "cacheWin.h"
 
-static GUI* gui_base;
-
 typedef struct command {
     char type;
     int argc;
@@ -122,7 +120,7 @@ COMMAND get_command() {
     return com;
 }
 
-STATE wait4command(CORE* core) {
+STATE wait4command(GUI* gui, CORE* core) {
     COMMAND com = get_command();
     switch (com.type) {
     case 'q':
@@ -133,31 +131,31 @@ STATE wait4command(CORE* core) {
         for (int i = 0; i < com.argc; i++) {
             int arg = com.argv[i];
             if (arg == 'd') {
-                gui_base->reg_set = REG_SET_DEF;
+                gui->reg_set = REG_SET_DEF;
             } else if (arg == 'a') {
-                gui_base->reg_set = REG_SET_A;
+                gui->reg_set = REG_SET_A;
             } else if (arg == 's') {
-                gui_base->reg_set = REG_SET_S;
+                gui->reg_set = REG_SET_S;
             } else if (arg == 't') {
-                gui_base->reg_set = REG_SET_T;
+                gui->reg_set = REG_SET_T;
             } else if (arg == 'f' + 'a') {
-                gui_base->reg_set = REG_SET_FA;
+                gui->reg_set = REG_SET_FA;
             } else if (arg == 'f' + 's') {
-                gui_base->reg_set = REG_SET_FS;
+                gui->reg_set = REG_SET_FS;
             } else if (arg == 'f' + 't') {
-                gui_base->reg_set = REG_SET_FT;
+                gui->reg_set = REG_SET_FT;
             } else if (64 > arg && arg > -64) {
                 if (arg > 0)
-                    gui_base->reg_focus[arg] = 1;
+                    gui->reg_focus[arg] = 1;
                 else
-                    gui_base->reg_focus[-arg] = 0;
+                    gui->reg_focus[-arg] = 0;
             }
         }
         return STAT_HALT;
     case 'm':
-        gui_base->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
-        gui_base->mem_start = com.argc > 1 ? com.argv[1] & (~0xFF) : (gui_base->mem_type ? 0x100 : 0);
-        gui_base->mem_focus = com.argc > 1 ? com.argv[1] : 0xFFFFFFFF;
+        gui->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
+        gui->mem_start = com.argc > 1 ? com.argv[1] & (~0xFF) : (gui->mem_type ? 0x100 : 0);
+        gui->mem_focus = com.argc > 1 ? com.argv[1] : 0xFFFFFFFF;
         return STAT_HALT;
     case 'a':
         show_analysis_win(core);
@@ -173,19 +171,18 @@ STATE wait4command(CORE* core) {
     }
 }
 
-STATE gui_update(CORE* core) {
-    show_main_win(gui_base, core);
+STATE gui_update(GUI* gui, CORE* core) {
+    show_main_win(gui, core);
     // wait for a new command
-    return wait4command(core);
+    return wait4command(gui, core);
 }
 
-void gui_deinit() {
+void gui_deinit(GUI* gui) {
     // at the end of program ncurses mode should be exited properly
     endwin();
 }
 
 void init_gui(GUI* gui) {
-    gui_base = gui;
     char title[] = " RISC-V simulator ";
     // resize the terminal to 80 * 24
     printf("\e[8;24;80t");

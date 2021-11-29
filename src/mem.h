@@ -10,9 +10,9 @@
 typedef struct mem {
     BYTE** data[0x100];
     // interfaces
-    BYTE (*read_byte)(ADDR);
-    void (*write_byte)(ADDR, BYTE);
-    void (*reset_stack)(ADDR);
+    BYTE (*read_byte)(struct mem*, ADDR);
+    void (*write_byte)(struct mem*, ADDR, BYTE);
+    void (*reset_stack)(struct mem*, ADDR);
 } MEM;
 
 void init_mem(MEM* mem);

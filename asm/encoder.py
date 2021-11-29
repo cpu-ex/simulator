@@ -550,9 +550,9 @@ encoder = {
     'PSEUDO-JAL': pseudo_jal,
     'PSEUDO-JALR': pseudo_jalr,
     'PSEUDO-RET': pseudo_ret,
-    'PSEUDO-FMV': None,
-    'PSEUDO-FABS': None,
-    'PSEUDO-FNEG': None,
+    'PSEUDO-FMV': pseudo_fmv,
+    'PSEUDO-FABS': pseudo_fabs,
+    'PSEUDO-FNEG': pseudo_fneg,
     # special
     'SWI': store,
 }

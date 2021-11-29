@@ -8,8 +8,8 @@ typedef struct sim {
     CORE* core;
     GUI* gui;
     // insterfaces
-    void (*load)(char*);
-    void (*run)(void);
+    void (*load)(struct sim*, char*);
+    void (*run)(struct sim*);
 } SIM;
 
 void init_sim(SIM* sim);

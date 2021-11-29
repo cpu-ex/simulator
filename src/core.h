@@ -66,12 +66,12 @@ typedef struct core {
     u32 instr_counter;
     u32 instr_analysis[23];
     // interfaces
-    WORD (*load_instr)(ADDR);
-    WORD (*load_data)(ADDR, int ,int);
-    void (*store_instr)(ADDR, WORD);
-    void (*store_data)(ADDR, WORD, int);
-    void (*step)(void);
-    void (*reset)(void);
+    WORD (*load_instr)(struct core*, ADDR);
+    WORD (*load_data)(struct core*, ADDR, int ,int);
+    void (*store_instr)(struct core*, ADDR, WORD);
+    void (*store_data)(struct core*, ADDR, WORD, int);
+    void (*step)(struct core*);
+    void (*reset)(struct core*);
 } CORE;
 
 void init_core(CORE* core);

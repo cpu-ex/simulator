@@ -39,8 +39,8 @@ typedef struct gui {
     ADDR mem_start;
     ADDR mem_focus;
     // interfaces
-    STATE (*update)(CORE* core);
-    void (*deinit)(void);
+    STATE (*update)(struct gui*, CORE*);
+    void (*deinit)(struct gui*);
 } GUI;
 
 void init_gui(GUI* win);
