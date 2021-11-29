@@ -4,15 +4,16 @@
 
 - [2021/10/08] first commit, main framework done, simple sample code in `main.c`,not fully tested.
 - [2021/10/10] GUI almost done, somehow functional.
-- [2021/10/24] support standard risc-v memory structure + disasm.
+- [2021/10/24] implement standard risc-v memory structure + disasm.
 - [2021/10/24] complete simple assembler without supporting directives and pseudo instructions
 - [2021/10/27] change the output code format from text file to binary, all related parts adapted
 - [2021/10/30] support some directives and pseudo instructions for assembler
 - [2021/10/31] implement instruction analysis
 - [2021/11/09] support RV32M and RV32F
 - [2021/11/12] have every related parts customized
-- [2021/11/19] support main memory with a cache system
+- [2021/11/19] implement a cache system
 - [2021/11/21] visualize the cache structure
+- [2021/11/29] implement a branch predictor
 
 ![sample](sample.gif)
 

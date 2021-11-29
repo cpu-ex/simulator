@@ -1,8 +1,5 @@
 #include "cacheWin.h"
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 typedef struct focus_info {
     WINDOW* win;
     int line; // list offset

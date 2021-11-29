@@ -71,6 +71,8 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
     core->pc += cmp ? sext(imm, 12) : 4;
+    // predict branch
+    core->branch_predictor->predict(core->branch_predictor, core->pc, cmp);
 }
 
 // load: lb, lh, lw, lbu, lhu

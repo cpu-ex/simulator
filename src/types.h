@@ -32,3 +32,6 @@ union broadcast {
 #define STAT_BOOTING         4
 #define STAT_MEM_EXCEPTION   5
 #define STAT_INSTR_EXCEPTION 6
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))

@@ -80,6 +80,8 @@ void core_reset(CORE* core) {
     // reset instruction analysis
     core->instr_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
+    // reset branch predictor
+    core->branch_predictor->reset(core->branch_predictor);
 }
 
 void init_core(CORE* core) {
@@ -91,6 +93,10 @@ void init_core(CORE* core) {
     static MMU mmu;
     init_mmu(&mmu);
     core->mmu = &mmu;
+    // init branch predictor
+    static BRANCH_PREDICTOR branch_predictor;
+    init_branch_predictor(&branch_predictor);
+    core->branch_predictor = &branch_predictor;
     // assign interfaces
     core->load_instr = core_load_instr;
     core->load_data = core_load_data;

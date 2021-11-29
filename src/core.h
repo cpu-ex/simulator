@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
 #include "mmu.h"
+#include "branch_predictor.h"
 
 #define DEFAULT_PC     0x100
 #define UART_IN        0x03FFFFF0
@@ -57,6 +58,7 @@ typedef struct core {
     REG regs[32];
     REG fregs[32];
     MMU* mmu;
+    BRANCH_PREDICTOR* branch_predictor;
     // MMIO
     WORD uart_in;
     WORD uart_in_valid;
