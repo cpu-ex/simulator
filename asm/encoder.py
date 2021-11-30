@@ -37,7 +37,7 @@ def reg2idx(name: str) -> int:
         idx = int(res.groups()[0])
         if idx < 32:
             return idx
-    raise RuntimeError(f'invalid register : {name}')
+    raise RuntimeError(f'invalid register \'{name}\'')
 
 def imm2int(imm: str) -> int:
     try:
@@ -46,20 +46,20 @@ def imm2int(imm: str) -> int:
         except ValueError:
             return int(imm, base=16)
     except ValueError:
-        raise RuntimeError(f'invalid digital value : {imm}')
+        raise RuntimeError(f'invalid digital value \'{imm}\'')
 
 def fimm2int(imm: str) -> int:
     try:
         bytes = struct.pack('<f', float(imm))
         return struct.unpack('<I', bytes)[0]
     except ValueError:
-        raise RuntimeError(f'invalid float value : {imm}')
+        raise RuntimeError(f'invalid float value \'{imm}\'')
 
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
         return dst - addr
     else:
-        raise RuntimeError(f'no tag name : {name}')
+        raise RuntimeError(f'no tag name \'{name}\'')
 
 # lui imm[31:12] rd[5] 0110111
 def lui(instr: tuple, addr: int, tags: dict) -> list:
@@ -131,7 +131,7 @@ def branch(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b111 << 12
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable branch type : {name}')
+        raise RuntimeError(f'unrecognizable branch type \'{name}\'')
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
@@ -159,7 +159,7 @@ def load(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b101 << 12
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable load type : {name}')
+        raise RuntimeError(f'unrecognizable load type \'{name}\'')
     mc |= (rs1 & 0x1F) << 15
     mc |= (imm & 0xFFF) << 20
     return [mc]
@@ -183,7 +183,7 @@ def store(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b011 << 12
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable store type : {name}')
+        raise RuntimeError(f'unrecognizable store type \'{name}\'')
     mc |= (rs1 & 0x1F) << 15
     mc |= (rs2 & 0x1F) << 20
     mc |= ((imm & 0xFE0) >> 5) << 25
@@ -231,7 +231,7 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b0100000 << 25
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith-i type : {name}')
+        raise RuntimeError(f'unrecognizable arith-i type \'{name}\'')
     return [mc]
 
 # arith funct7 rs2 rs1 funct3 rd 0110011
@@ -294,7 +294,7 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b0000001 << 25
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith type : {name}')
+        raise RuntimeError(f'unrecognizable arith type \'{name}\'')
     return [mc]
 
 # env
@@ -402,7 +402,7 @@ def f_arith(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b0010000 << 25
     else:
         # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith type : {name}')
+        raise RuntimeError(f'unrecognizable arith type \'{name}\'')
     mc |= (rs2 & 0x1F) << 20
     return [mc]
 

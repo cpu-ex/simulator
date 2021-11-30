@@ -34,7 +34,7 @@ class ASM(object):
                     _, *info = res.groups()
                     return (name, *info), length
         else:
-            raise RuntimeError(f'unrecognizable instruction : {instr}')
+            raise RuntimeError(f'unrecognizable instruction \'{instr}\'')
     
     def __encode(self, instr: tuple, addr: int) -> str:
         # print(f'encoding {instr}\t{hex(addr)}')
@@ -42,7 +42,7 @@ class ASM(object):
             return encoder(instr, addr, {**self.codeTag, **self.dataTag})
         else:
             # not suppose to be here
-            raise RuntimeError(f'no matched encoder for current instruction : {instr}')
+            raise RuntimeError(f'no matched encoder for current instruction \'{instr}\'')
     
     @staticmethod
     def pack2word(data: list, bitLen: int) -> list:
@@ -63,12 +63,18 @@ class ASM(object):
             # remove all unnecessary parts like space\n\t and comments
             raw = [line.lstrip().rstrip().split('#')[0] for line in file]
         # remove empty lines and seprate tags and instructions
+        lineno = 0
         for line in raw:
+            lineno += 1
             # skip empty lines
             if not line: continue
             # decode
-            instr, length = self.__decode(line)
-            name, *info = instr
+            try:
+                instr, length = self.__decode(line)
+                instr = (*instr, lineno)  # append line number
+                name, *info = instr
+            except RuntimeError as e:
+                raise RuntimeError(f'{e} at line {lineno}.')
             if name.startswith('TAG'):
                 if self.section == ASM.CODE_SECTION:
                     self.codeTag[info[0]] = self.codeCounter
@@ -99,7 +105,7 @@ class ASM(object):
                     self.data += data
                     self.dataCounter += len(data) * 4
                 else:
-                    raise RuntimeError(f'unsupported directive {name}')
+                    raise RuntimeError(f'unsupported directive \'{name}\' at line {instr[-1]}.')
             else:
                 self.code.append(instr)
                 self.codeCounter += 4 * length
@@ -134,7 +140,7 @@ class ASM(object):
                 ('JALR', 'zero', str(lo), 't0')
             ] + self.code
         else:
-            raise RuntimeError(f'no starting tag {self.startTag}')
+            raise RuntimeError(f'no starting tag defined.')
         # remap data tags (disused)
         # for tag, addr in self.dataTag.items():
         #     self.dataTag[tag] = addr + self.codeCounter
@@ -142,9 +148,12 @@ class ASM(object):
         bc = list() # binary codes
         addr = ASM.DEFAULT_PC
         for instr in self.code:
-            mc = self.__encode(instr, addr) # machine codes
-            bc += mc
-            addr += len(mc) * 4
+            try:
+                mc = self.__encode(instr, addr) # machine codes
+                bc += mc
+                addr += len(mc) * 4
+            except RuntimeError as e:
+                raise RuntimeError(f'{e} at line {instr[-1]}.')
         self.code = bc
         # prepare for output
         if not os.path.exists('../bin/'):
