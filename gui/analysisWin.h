@@ -52,8 +52,12 @@ void show_analysis_win(CORE* core) {
         "policy: Always Taken"
         #elif defined(BP_NT)
         "policy: Always Untaken"
+        #elif defined(BP_2BIT)
+        "policy: 2-bit counter"
         #elif defined(BP_BIMODAL)
         "policy: Bimodal (PHT size = %u)", PHT_SIZE
+        #elif defined(BP_GSHARE)
+        "policy: Gshare (PHT size = %u)", PHT_SIZE
         #else
         "policy: Always Untaken (default)"
         #endif
