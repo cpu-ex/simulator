@@ -22,11 +22,7 @@ int reg2idx(char* reg) {
         if (!strcmp(reg, freg_name[idx]))
             return 32 + idx;
     }
-    // convert d|a|s|t|fa|fs|ft into a int number
-    int val = 0;
-    for (int idx = 0; idx < strlen(reg); idx++)
-        val += reg[idx];
-    return val;
+    return 0;
 }
 
 COMMAND get_command() {
@@ -63,23 +59,8 @@ COMMAND get_command() {
         com.argv[0] = argc > 1 ? atoi(output[1]) : 0x7FFFFFFF;
     } else if (!strcmp(output[0], "reg")) {
         com.type = 'r';
-        if (argc > 1) {
-            com.argc = argc - 1;
-            for (int i = 1; i < argc && i < 11; i++) {
-                int flag = 1, idx;
-                if (output[i][0] == '-') {
-                    // minus for un-focus
-                    flag = -1;
-                    idx = reg2idx(output[i] + 1);
-                } else {
-                    idx = reg2idx(output[i]);
-                }
-                com.argv[i - 1] = flag * idx;
-            }
-        } else {
-            com.argc = 1;
-            com.argv[0] = 'd'; // default reg set
-        }
+        com.argc = 1;
+        com.argv[0] = (argc > 1) ? reg2idx(output[1]) : -1;
     } else if (!strcmp(output[0], "instr")) {
         com.type = 'm';
         com.argv[0] = 'i';
@@ -128,34 +109,15 @@ STATE wait4command(GUI* gui, CORE* core) {
     case 's':
         return STAT_STEP | ((u64)com.argv[0] << 32);
     case 'r':
-        for (int i = 0; i < com.argc; i++) {
-            int arg = com.argv[i];
-            if (arg == 'd') {
-                gui->reg_set = REG_SET_DEF;
-            } else if (arg == 'a') {
-                gui->reg_set = REG_SET_A;
-            } else if (arg == 's') {
-                gui->reg_set = REG_SET_S;
-            } else if (arg == 't') {
-                gui->reg_set = REG_SET_T;
-            } else if (arg == 'f' + 'a') {
-                gui->reg_set = REG_SET_FA;
-            } else if (arg == 'f' + 's') {
-                gui->reg_set = REG_SET_FS;
-            } else if (arg == 'f' + 't') {
-                gui->reg_set = REG_SET_FT;
-            } else if (64 > arg && arg > -64) {
-                if (arg > 0)
-                    gui->reg_focus[arg] = 1;
-                else
-                    gui->reg_focus[-arg] = 0;
-            }
-        }
+        gui->focused_win = 1;
+        gui->reg_start = (com.argv[0] < 0) ? gui->reg_start : com.argv[0];
+        show_main_win(gui, core);
         return STAT_HALT;
     case 'm':
+        gui->focused_win = 2;
         gui->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
-        gui->mem_start = com.argc > 1 ? com.argv[1] & (~0xFF) : (gui->mem_type ? 0x100 : 0);
-        gui->mem_focus = com.argc > 1 ? com.argv[1] : 0xFFFFFFFF;
+        gui->mem_start = com.argc > 1 ? (com.argv[1] >> 4) : (gui->mem_type ? DEFAULT_PC >> 4 : 0);
+        show_main_win(gui, core);
         return STAT_HALT;
     case 'a':
         show_analysis_win(core);
@@ -198,18 +160,14 @@ void init_gui(GUI* gui) {
     init_pair(HIGHLIGHT_COLOR, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(STANDOUT_COLOR, COLOR_YELLOW, COLOR_BLACK);
     // regist variables
-    gui->reg_set = REG_SET_DEF;
+    gui->reg_start = 0;
     memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;
-    gui->mem_start = DEFAULT_PC;
-    gui->mem_focus = 0xFFFFFFFF;
+    gui->mem_start = DEFAULT_PC / 0x10;
     // assign interfaces
     gui->update = gui_update;
     gui->deinit = gui_deinit;
 
     show_splash_win();
-    // catch char h
-    if (getch() == 'h') {
-        show_help_win();
-    }
+    if (getch() == 'h') show_help_win();
 }

@@ -46,7 +46,7 @@ void update_list(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
 
     focused->line = max(0, min(focused->line, BLOCK_NUM - 1));
     mvwprintw(outer, 1, 7, (focused->line > 0) ? "^" : " ");
-    mvwprintw(outer, 18, 7, (focused->line < BLOCK_NUM - 1) ?"v" : " ");
+    mvwprintw(outer, 18, 7, (focused->line < BLOCK_NUM - 1) ? "v" : " ");
 
     for (int i = focused->line; i < min(focused->line + 16, BLOCK_NUM); i++) {
         char block_name[15];
@@ -93,12 +93,12 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
 
 void show_cache_win(CORE* core) {
     clear();
-    // create outer windows
+    // create windows
     WINDOW* info_outer = newwin(4, 80, 0, 0);
-    WINDOW* list_outer = newwin(20, 16, 4, 0);
-    WINDOW* detail_outer = newwin(20, 64, 4, 16);
     WINDOW* info_inner = newwin(2, 78, 1, 1);
+    WINDOW* list_outer = newwin(20, 16, 4, 0);
     WINDOW* list_inner = newwin(16, 14, 6, 1);
+    WINDOW* detail_outer = newwin(20, 64, 4, 16);
     WINDOW* detail_inner = newwin(16, 62, 6, 17);
     // refresh
     refresh();

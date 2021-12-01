@@ -14,6 +14,7 @@
 - [2021/11/19] implement a cache system
 - [2021/11/21] visualize the cache structure
 - [2021/11/29] implement a branch predictor
+- [2021/12/01] improve the interaction of GUI
 
 ![sample](sample.gif)
 

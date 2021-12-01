@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 
+#define MAX_ADDR 0x04000000
+
 // address
 // 31 ~ 26 (6 ): disused
 // 25 ~ 18 (8 ): 1st index

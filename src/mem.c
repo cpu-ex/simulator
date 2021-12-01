@@ -1,7 +1,5 @@
 #include "mem.h"
 
-#define MAX_ADDR 0x04000000
-
 typedef union mem_addr_helper {
     u32 raw;
 

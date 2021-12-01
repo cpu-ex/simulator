@@ -2,20 +2,41 @@
 
 void show_help_win() {
     clear();
-    WINDOW* help_win_outer = newwin(22, 70, 1, 5);
-    WINDOW* help_win_inner = newwin(20, 68, 2, 6);
+    WINDOW* help_win_outer = newwin(24, 80, 0, 0);
+    WINDOW* help_win_inner = newwin(22, 70, 1, 5);
     wattron(help_win_outer, COLOR_PAIR(TITLE_COLOR));
     box(help_win_outer, 0, 0);
     mvwprintw(help_win_outer, 0, 2, " Instruction ");
     wattroff(help_win_outer, COLOR_PAIR(TITLE_COLOR));
-    mvwprintw(help_win_inner, 0, 3, "step [n]:\n\tmove on for n step,\n\tpositive for forward, negative for backwards\n\tdefault to infinity (loops util exit or exception)");
-    mvwprintw(help_win_inner, 4, 3, "reg [d|a|s|t|fa|fs|ft]:\n\tswitch register set, [d]default to zero ~ a5");
-    mvwprintw(help_win_inner, 6, 3, "reg [-][reg name]:\n\thighlight certain register,\n\tminus for setting back to normal,\n\tmutiple input supported");
-    mvwprintw(help_win_inner, 10, 3, "instr|data [address(hex)]:\n\tswitch memory range, example: instr 0x100");
-    mvwprintw(help_win_inner, 12, 3, "analysis:\n\tdisplay analysis window and press any button to close");
-    mvwprintw(help_win_inner, 14, 3, "cache:\n\tdisplay cache window and control with arrow key intuitively");
-    mvwprintw(help_win_inner, 16, 3, "help:\n\tdisplay help window and press any button to close");
-    mvwprintw(help_win_inner, 18, 3, "quit:\n\texit simulator");
+    mvwprintw(help_win_inner, 0, 0,
+        "step [n]:\n\
+        move on for n step,\n\
+        positive for forward, negative for backwards\n\
+        default to infinity (loops util exit or exception)");
+    mvwprintw(help_win_inner, 4, 0,
+        "reg [reg name]:\n\
+        focus register window, move contents with arrow key\n\
+        direct to certain register by giving its name\n\
+        set and cancel highlight with KEY_ENTER\n\
+        exit focusing mode by pressing any key");
+    mvwprintw(help_win_inner, 9, 0,
+        "instr|data [address(Hex)]:\n\
+        focus memory window, move contents with arrow key\n\
+        direct to certain address by giving a Hex number\n\
+        exit focusing mode by pressing any key");
+    mvwprintw(help_win_inner, 13, 0,
+        "analysis:\n\
+        display analysis window and press any key to close");
+    mvwprintw(help_win_inner, 15, 0,
+        "cache:\n\
+        display cache window, move contents with arrow key\n\
+        exit focusing mode by pressing any key");
+    mvwprintw(help_win_inner, 18, 0,
+        "help:\n\
+        display help window and press any key to close");
+    mvwprintw(help_win_inner, 20, 0,
+        "quit:\n\
+        exit simulator");
     refresh();
     wrefresh(help_win_outer);
     wgetch(help_win_inner);

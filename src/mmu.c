@@ -1,20 +1,12 @@
 #include "mmu.h"
 
 BYTE mmu_read_instr(MMU* mmu, ADDR addr) {
-    if (addr < mmu->instr_len) {
-        return mmu->instr_mem[addr];
-    } else {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
-        return 0;
-    }
+    return (addr < mmu->instr_len) ? mmu->instr_mem[addr] : 0;
 }
 
 void mmu_write_instr(MMU* mmu, ADDR addr, BYTE val) {
-    if (addr < mmu->instr_len) {
+    if (addr < mmu->instr_len)
         mmu->instr_mem[addr] = val;
-    } else {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
-    }
 }
 
 BYTE mmu_read_data(MMU* mmu, ADDR addr) {
