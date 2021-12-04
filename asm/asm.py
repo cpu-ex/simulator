@@ -71,8 +71,8 @@ class ASM(object):
             # decode
             try:
                 instr, length = self.__decode(line)
-                instr = (*instr, lineno)  # append line number
                 name, *info = instr
+                instr = (instr, lineno)  # append line number
             except RuntimeError as e:
                 raise RuntimeError(f'{e} at line {lineno}.')
             if name.startswith('TAG'):
@@ -105,7 +105,7 @@ class ASM(object):
                     self.data += data
                     self.dataCounter += len(data) * 4
                 else:
-                    raise RuntimeError(f'unsupported directive \'{name}\' at line {instr[-1]}.')
+                    raise RuntimeError(f'unsupported directive \'{name}\' at line {lineno}.')
             else:
                 self.code.append(instr)
                 self.codeCounter += 4 * length
@@ -136,8 +136,8 @@ class ASM(object):
             hi, lo = encoder.getHiLo(startAddr - ASM.DEFAULT_PC)
             self.code = [
                 # jump to start point
-                ('AUIPC', 't0', str(hi)),
-                ('JALR', 'zero', str(lo), 't0')
+                (('AUIPC', 't0', str(hi)), 0),
+                (('JALR', 'zero', str(lo), 't0'), 0)
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag defined.')
@@ -147,13 +147,13 @@ class ASM(object):
         # encode
         bc = list() # binary codes
         addr = ASM.DEFAULT_PC
-        for instr in self.code:
+        for instr, lineno in self.code:
             try:
                 mc = self.__encode(instr, addr) # machine codes
                 bc += mc
                 addr += len(mc) * 4
             except RuntimeError as e:
-                raise RuntimeError(f'{e} at line {instr[-1]}.')
+                raise RuntimeError(f'{e} at line {lineno}.')
         self.code = bc
         # prepare for output
         if not os.path.exists('../bin/'):
