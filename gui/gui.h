@@ -10,6 +10,10 @@
 #define HIGHLIGHT_COLOR 4
 #define STANDOUT_COLOR  5
 
+#define REG_WIN 0
+#define MEM_WIN 1
+#define COM_WIN 2
+
 #define MEM_INSTR 1
 #define MEM_DATA  0
 

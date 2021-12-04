@@ -109,12 +109,12 @@ STATE wait4command(GUI* gui, CORE* core) {
     case 's':
         return STAT_STEP | ((u64)com.argv[0] << 32);
     case 'r':
-        gui->focused_win = 1;
+        gui->focused_win = REG_WIN;
         gui->reg_start = (com.argv[0] < 0) ? gui->reg_start : com.argv[0];
         show_main_win(gui, core);
         return STAT_HALT;
     case 'm':
-        gui->focused_win = 2;
+        gui->focused_win = MEM_WIN;
         gui->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
         gui->mem_start = com.argc > 1 ? (com.argv[1] >> 4) : (gui->mem_type ? DEFAULT_PC >> 4 : 0);
         show_main_win(gui, core);
@@ -160,6 +160,7 @@ void init_gui(GUI* gui) {
     init_pair(HIGHLIGHT_COLOR, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(STANDOUT_COLOR, COLOR_YELLOW, COLOR_BLACK);
     // regist variables
+    gui->focused_win = COM_WIN;
     gui->reg_start = 0;
     memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;

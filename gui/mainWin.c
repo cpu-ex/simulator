@@ -49,17 +49,17 @@ void update_reg_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
 }
 
 void update_reg(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
-    if (gui->focused_win == 1) wattron(outer, COLOR_PAIR(STANDOUT_COLOR));
+    if (gui->focused_win == REG_WIN) wattron(outer, COLOR_PAIR(STANDOUT_COLOR));
     else wattron(outer, COLOR_PAIR(TITLE_COLOR));
     box(outer, 0, 0); mvwprintw(outer, 0, 2, " Register ");
     wattroff(outer, COLOR_PAIR(TITLE_COLOR));
     wattroff(outer, COLOR_PAIR(STANDOUT_COLOR));
 
     // render
-    if (gui->focused_win == 1) {
+    if (gui->focused_win == REG_WIN) {
         // focused
         keypad(stdscr, 1);
-        while (gui->focused_win == 1) {
+        while (gui->focused_win == REG_WIN) {
             // update
             gui->reg_start = max(0, min(gui->reg_start, 63));
             mvwprintw(outer, 1, 7, (gui->reg_start > 0) ? "^" : " ");
@@ -74,7 +74,7 @@ void update_reg(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
             case KEY_LEFT: gui->reg_start -= 16; break;
             case KEY_RIGHT: gui->reg_start += 16; break;
             case '\n': gui->reg_focus[gui->reg_start] = gui->reg_focus[gui->reg_start] ? 0 : 1; break;
-            default: keypad(stdscr, 0); gui->focused_win = 0; break;
+            default: keypad(stdscr, 0); gui->focused_win = COM_WIN; break;
             }
         }
     } else {
@@ -92,13 +92,17 @@ void update_mem_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         mvwprintw(win, i - gui->mem_start, 0, "0x%08X   ", i << 4);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-        for (int j = 0; j < 0x10; j++)
+        for (int j = 0; j < 0x10; j++) {
+            if (gui->mem_type && (((i << 4) + j) & (~0x3)) == core->pc)
+                wattron(win, COLOR_PAIR(STANDOUT_COLOR));
             wprintw(win, " %02X", core->mmu->sneak(core->mmu, (i << 4) + j, gui->mem_type));
+            wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+        }
     }
 }
 
 void update_mem(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
-    if (gui->focused_win == 2) wattron(outer, COLOR_PAIR(STANDOUT_COLOR));
+    if (gui->focused_win == MEM_WIN) wattron(outer, COLOR_PAIR(STANDOUT_COLOR));
     else wattron(outer, COLOR_PAIR(TITLE_COLOR));
     box(outer, 0, 0); mvwprintw(outer, 0, 2, gui->mem_type ? " Memory: instruction " : " Memory: data ");
     wattroff(outer, COLOR_PAIR(TITLE_COLOR));
@@ -114,10 +118,10 @@ void update_mem(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     }
 
     // render
-    if (gui->focused_win == 2) {
+    if (gui->focused_win == MEM_WIN) {
         // focused
         keypad(stdscr, 1);
-        while (gui->focused_win == 2) {
+        while (gui->focused_win == MEM_WIN) {
             // update
             gui->mem_start = max(0, min((signed)gui->mem_start, (MAX_ADDR >> 4) - 1));
             mvwprintw(outer, 1, 31, (gui->mem_start > 0) ? "^" : " ");
@@ -131,7 +135,7 @@ void update_mem(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
             case KEY_DOWN: gui->mem_start += 1; break;
             case KEY_LEFT: gui->mem_start -= 16; break;
             case KEY_RIGHT: gui->mem_start += 16; break;
-            default: keypad(stdscr, 0); gui->focused_win = 0; break;
+            default: keypad(stdscr, 0); gui->focused_win = COM_WIN; break;
             }
         }
     } else {
@@ -144,9 +148,11 @@ void update_mem(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
 }
 
 void update_com(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
-    wattron(outer, COLOR_PAIR(TITLE_COLOR));
+    if (gui->focused_win == COM_WIN) wattron(outer, COLOR_PAIR(STANDOUT_COLOR));
+    else wattron(outer, COLOR_PAIR(TITLE_COLOR));
     box(outer, 0, 0); mvwprintw(outer, 0, 2, " Input ");
     wattroff(outer, COLOR_PAIR(TITLE_COLOR));
+    wattroff(outer, COLOR_PAIR(STANDOUT_COLOR));
     wrefresh(outer);
 }
 
@@ -154,10 +160,10 @@ void show_main_win(GUI* gui, CORE* core) {
     // create outer windows
     WINDOW* pc_outer = newwin(3, 80, 0, 0);
     WINDOW* pc_inner = newwin(1, 78, 1, 1);
-    WINDOW* reg_outer = newwin((gui->focused_win == 1) ? 20 : 18, 16, 3, 0);
-    WINDOW* reg_inner = newwin(16, 14, (gui->focused_win == 1) ? 5 : 4, 1);
-    WINDOW* mem_outer = newwin((gui->focused_win == 2) ? 20 : 18, 64, 3, 16);
-    WINDOW* mem_inner = newwin(16, 62, (gui->focused_win == 2) ? 5 : 4, 17);
+    WINDOW* reg_outer = newwin((gui->focused_win == REG_WIN) ? 20 : 18, 16, 3, 0);
+    WINDOW* reg_inner = newwin(16, 14, (gui->focused_win == REG_WIN) ? 5 : 4, 1);
+    WINDOW* mem_outer = newwin((gui->focused_win == MEM_WIN) ? 20 : 18, 64, 3, 16);
+    WINDOW* mem_inner = newwin(16, 62, (gui->focused_win == MEM_WIN) ? 5 : 4, 17);
     WINDOW* com_outer = newwin(3, 80, 21, 0);
     // refresh
     refresh();
