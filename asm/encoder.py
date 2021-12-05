@@ -369,7 +369,7 @@ def f_arith(instr: tuple, addr: int, tags: dict) -> list:
         mc |= 0b0001100 << 25
     elif name == 'FSQRT':
         rs2 = 0b00000
-        mc |= 0b0001100 << 25
+        mc |= 0b0101100 << 25
     elif name == 'FEQ':
         mc |= 0b010 << 12
         mc |= 0b1010000 << 25

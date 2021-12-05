@@ -15,6 +15,7 @@
 - [2021/11/21] visualize the cache structure
 - [2021/11/29] implement a branch predictor
 - [2021/12/01] improve the interaction of GUI
+- [2021/12/05] introduce stall counter and display executing time prediction to analysis window
 
 ![sample](sample.gif)
 

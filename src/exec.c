@@ -29,6 +29,8 @@ void JAL_EXEC(CORE* core, INSTR instr) {
 
     core->regs[rd] = core->pc + 4;
     core->pc += sext(imm, 20);
+    // stall check
+    core->stall_counter += 2;
 }
 
 // jalr: jump and link register
@@ -40,6 +42,8 @@ void JALR_EXEC(CORE* core, INSTR instr) {
     REG t = core->pc + 4;
     core->pc = (core->regs[rs1] + sext(imm, 11)) & ~1;
     core->regs[rd] = t;
+    // stall check
+    core->stall_counter += 2;
 }
 
 // branch: beq, bne, blt, bge, bltu, bgeu
@@ -72,7 +76,9 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     }
     core->pc += cmp ? sext(imm, 12) : 4;
     // predict branch
-    core->branch_predictor->predict(core->branch_predictor, core->pc, cmp);
+    u8 predicted = core->branch_predictor->predict(core->branch_predictor, core->pc, cmp);
+    // stall check
+    core->stall_counter += (predicted == cmp) ? 0 : 2;
 }
 
 // load: lb, lh, lw, lbu, lhu
@@ -89,6 +95,11 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
     WORD val = core->load_data(core, core->regs[rs1] + sext(imm, 11), bytes, sign);
     core->regs[rd] = val;
     core->pc += 4;
+    // stall check
+    INSTR next_instr = { .raw = core->load_instr(core, core->pc) };
+    char placeholder[36];
+    u8 instr_type = disasm(next_instr, placeholder);
+    core->stall_counter += ((instr_type == LOAD) || (instr_type == F_LOAD)) ? 1 : 0;
 }
 
 // store: sb, sh, sw
@@ -257,139 +268,68 @@ void execute(CORE* core, INSTR instr) {
     switch (instr.decoder.opcode) {
     /* RV32I + RV32M */
     // lui
-    case 0b0110111:
-        LUI_EXEC(core, instr);
-        core->instr_analysis[LUI]++;
-        break;
+    case 0b0110111: LUI_EXEC(core, instr); core->instr_analysis[LUI]++; break;
     // auipc
-    case 0b0010111:
-        AUIPC_EXEC(core, instr);
-        core->instr_analysis[AUIPC]++;
-        break;
+    case 0b0010111: AUIPC_EXEC(core, instr); core->instr_analysis[AUIPC]++; break;
     // jal
-    case 0b1101111:
-        JAL_EXEC(core, instr);
-        core->instr_analysis[JAL]++;
-        break;
+    case 0b1101111: JAL_EXEC(core, instr); core->instr_analysis[JAL]++; break;
     // jalr
-    case 0b1100111:
-        JALR_EXEC(core, instr);
-        core->instr_analysis[JALR]++;
-        break;
+    case 0b1100111: JALR_EXEC(core, instr); core->instr_analysis[JALR]++; break;
     // branch
-    case 0b1100011:
-        BRANCH_EXEC(core, instr);
-        core->instr_analysis[BRANCH]++;
-        break;
+    case 0b1100011:BRANCH_EXEC(core, instr); core->instr_analysis[BRANCH]++; break;
     // load
-    case 0b0000011:
-        LOAD_EXEC(core, instr);
-        core->instr_analysis[LOAD]++;
-        break;
+    case 0b0000011: LOAD_EXEC(core, instr); core->instr_analysis[LOAD]++; break;
     // store
-    case 0b0100011:
-        STORE_EXEC(core, instr);
-        core->instr_analysis[STORE]++;
-        break;
+    case 0b0100011: STORE_EXEC(core, instr);core->instr_analysis[STORE]++; break;
     // arith I
-    case 0b0010011:
-        ARITH_I_EXEC(core, instr);
-        core->instr_analysis[ARITH_I]++;
-        break;
+    case 0b0010011: ARITH_I_EXEC(core, instr); core->instr_analysis[ARITH_I]++; break;
     // arith
-    case 0b0110011:
-        ARITH_EXEC(core, instr);
-        core->instr_analysis[ARITH]++;
-        break;
+    case 0b0110011: ARITH_EXEC(core, instr); core->instr_analysis[ARITH]++; break;
     // fence
-    case 0b0001111:
-        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
-        break;
+    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     // env + csr
-    case 0b1110011:
-        ENV_EXEC(core, instr);
-        core->instr_analysis[ENV_CSR]++;
-        break;
+    case 0b1110011: ENV_EXEC(core, instr); core->instr_analysis[ENV_CSR]++; break;
     
 
     /* RV32F */
     // f-load
-    case 0b0000111:
-        FLW_EXEC(core, instr);
-        core->instr_analysis[F_LOAD]++;
-        break;
+    case 0b0000111: FLW_EXEC(core, instr); core->instr_analysis[F_LOAD]++; break;
     // f-store
-    case 0b0100111:
-        FSW_EXEC(core, instr);
-        core->instr_analysis[F_STORE]++;
-        break;
+    case 0b0100111: FSW_EXEC(core, instr); core->instr_analysis[F_STORE]++; break;
     // f-arith (seprating for better analysis)
     case 0b1010011:
         switch (instr.r.funct7) {
         // f-mv to integer from float
-        case 0b1110000:
-            FMV2I_EXEC(core, instr);
-            core->instr_analysis[FMV2I]++;
-            break;
+        case 0b1110000: FMV2I_EXEC(core, instr); core->instr_analysis[FMV2I]++; break;
         // f-mv to float from integer
-        case 0b1111000:
-            FMV2F_EXEC(core, instr);
-            core->instr_analysis[FMV2F]++;
-            break;
+        case 0b1111000: FMV2F_EXEC(core, instr); core->instr_analysis[FMV2F]++; break;
         // fadd
-        case 0b0000000:
-            FADD_EXEC(core, instr);
-            core->instr_analysis[FADD]++;
-            break;
+        case 0b0000000: FADD_EXEC(core, instr); core->instr_analysis[FADD]++; break;
         // fsub
-        case 0b0000100:
-            FSUB_EXEC(core, instr);
-            core->instr_analysis[FSUB]++;
-            break;
+        case 0b0000100: FSUB_EXEC(core, instr); core->instr_analysis[FSUB]++; break;
         // fmul
-        case 0b0001000:
-            FMUL_EXEC(core, instr);
-            core->instr_analysis[FMUL]++;
-            break;
+        case 0b0001000: FMUL_EXEC(core, instr); core->instr_analysis[FMUL]++; break;
         // fdiv + fsqrt
         case 0b0001100:
             if (instr.r.rs2) {
-                FDIV_EXEC(core, instr);
-                core->instr_analysis[FDIV]++;
+                FDIV_EXEC(core, instr); core->instr_analysis[FDIV]++;
             } else {
-                FSQRT_EXEC(core, instr);
-                core->instr_analysis[FSQRT]++;
+                FSQRT_EXEC(core, instr); core->instr_analysis[FSQRT]++;
             }
             break;
         // fcmp
-        case 0b1010000:
-            FCMP_EXEC(core, instr);
-            core->instr_analysis[FCMP]++;
-            break;
+        case 0b1010000: FCMP_EXEC(core, instr); core->instr_analysis[FCMP]++; break;
         // fcvt to integer from float
-        case 0b1100000:
-            FCVT2I_EXEC(core, instr);
-            core->instr_analysis[FCVT2I]++;
-            break;
+        case 0b1100000: FCVT2I_EXEC(core, instr); core->instr_analysis[FCVT2I]++; break;
         // fcvt to float from integer
-        case 0b1101000:
-            FCVT2F_EXEC(core, instr);
-            core->instr_analysis[FCVT2F]++;
-            break;
+        case 0b1101000: FCVT2F_EXEC(core, instr); core->instr_analysis[FCVT2F]++; break;
         // fsgnj
-        case 0b0010000:
-            FSGNJ_EXEC(core, instr);
-            core->instr_analysis[FSGNJ]++;
-            break;
+        case 0b0010000: FSGNJ_EXEC(core, instr); core->instr_analysis[FSGNJ]++; break;
         // unexpected
-        default:
-            BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
-            break;
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
         }
         break;
     // unexpected
-    default:
-        BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32));
-        break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
 }

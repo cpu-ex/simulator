@@ -79,6 +79,7 @@ void core_reset(CORE* core) {
     }
     // reset instruction analysis
     core->instr_counter = 0;
+    core->stall_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
     // reset branch predictor
     core->branch_predictor->reset(core->branch_predictor);
@@ -88,6 +89,7 @@ void init_core(CORE* core) {
     // init basic info
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
+    core->stall_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
     // init mmu
     static MMU mmu;

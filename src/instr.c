@@ -345,72 +345,71 @@ void FSGNJ_DISASM(INSTR instr, char* buffer) {
     }
 }
 
-void disasm(INSTR instr, char* buffer) {
+u8 disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* RV32I + RV32M */
     // lui
-    case 0b0110111: LUI_DISASM(instr, buffer); break;
+    case 0b0110111: LUI_DISASM(instr, buffer); return LUI;
     // auipc
-    case 0b0010111: AUIPC_DISASM(instr, buffer); break;
+    case 0b0010111: AUIPC_DISASM(instr, buffer); return AUIPC;
     // jal
-    case 0b1101111: JAL_DISASM(instr, buffer); break;
+    case 0b1101111: JAL_DISASM(instr, buffer); return JAL;
     // jalr
-    case 0b1100111: JALR_DISASM(instr, buffer); break;
+    case 0b1100111: JALR_DISASM(instr, buffer); return JALR;
     // branch
-    case 0b1100011: BRANCH_DISASM(instr, buffer); break;
+    case 0b1100011: BRANCH_DISASM(instr, buffer); return BRANCH;
     // load
-    case 0b0000011: LOAD_DISASM(instr, buffer); break;
+    case 0b0000011: LOAD_DISASM(instr, buffer); return LOAD;
     // store
-    case 0b0100011: STORE_DISASM(instr, buffer); break;
+    case 0b0100011: STORE_DISASM(instr, buffer); return STORE;
     // arith I
-    case 0b0010011: ARITH_I_DISASM(instr, buffer); break;
+    case 0b0010011: ARITH_I_DISASM(instr, buffer); return ARITH_I;
     // arith
-    case 0b0110011: ARITH_DISASM(instr, buffer);break;
+    case 0b0110011: ARITH_DISASM(instr, buffer); return ARITH;
     // fence
-    case 0b0001111: sprintf(buffer, "unexpected instr (fence)"); break;
+    case 0b0001111: sprintf(buffer, "unexpected instr (fence)"); return UNDEFINED;
     // env + csr
-    case 0b1110011: ENV_DISASM(instr, buffer); break;
+    case 0b1110011: ENV_DISASM(instr, buffer); return ENV_CSR;
     
     
     /* RV32F */
     // f-load
-    case 0b0000111: FLW_DISASM(instr, buffer); break;
+    case 0b0000111: FLW_DISASM(instr, buffer); return F_LOAD;
     // f-store
-    case 0b0100111: FSW_DISASM(instr, buffer); break;
+    case 0b0100111: FSW_DISASM(instr, buffer); return F_STORE;
     // f-arith (seperating for better analysis)
     case 0b1010011:
         switch (instr.r.funct7) {
         // f-mv to integer from float
-        case 0b1110000: FMV2I_DISASM(instr, buffer); break;
+        case 0b1110000: FMV2I_DISASM(instr, buffer); return FMV2I;
         // f-mv to float from integer
-        case 0b1111000: FMV2F_DISASM(instr, buffer); break;
+        case 0b1111000: FMV2F_DISASM(instr, buffer); return FMV2F;
         // fadd
-        case 0b0000000: FADD_DISASM(instr, buffer); break;
+        case 0b0000000: FADD_DISASM(instr, buffer); return FADD;
         // fsub
-        case 0b0000100: FSUB_DISASM(instr, buffer); break;
+        case 0b0000100: FSUB_DISASM(instr, buffer); return FSUB;
         // fmul
-        case 0b0001000: FMUL_DISASM(instr, buffer); break;
+        case 0b0001000: FMUL_DISASM(instr, buffer); return FMUL;
         // fdiv + fsqrt
         case 0b0001100:
             if (instr.r.rs2) {
-                FDIV_DISASM(instr, buffer);
+                FDIV_DISASM(instr, buffer); return FDIV;
             } else {
-                FSQRT_DISASM(instr, buffer);
+                FSQRT_DISASM(instr, buffer); return FSQRT;
             }
-            break;
         // f-cmp
-        case 0b1010000: FCMP_DISASM(instr, buffer); break;
+        case 0b1010000: FCMP_DISASM(instr, buffer); return FCMP;
         // fcvt to integer from float
-        case 0b1100000: FCVT2I_DISASM(instr, buffer); break;
+        case 0b1100000: FCVT2I_DISASM(instr, buffer); return FCVT2I;
         // fcvt to float from integer
-        case 0b1101000: FCVT2F_DISASM(instr, buffer); break;
+        case 0b1101000: FCVT2F_DISASM(instr, buffer); return FCVT2F;
         // fsgnj
-        case 0b0010000: FSGNJ_DISASM(instr, buffer); break;
+        case 0b0010000: FSGNJ_DISASM(instr, buffer); return FSGNJ;
         // unexpected
-        default: sprintf(buffer, "unexpected instr"); break;
+        default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
         }
         break;
     // unexpected
-    default: sprintf(buffer, "unexpected instr"); break;
+    default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
     }
 }

@@ -3,6 +3,8 @@
 #include "mmu.h"
 #include "branch_predictor.h"
 
+#define CLK_FREQUENCY 1000000
+
 #define DEFAULT_PC     0x100
 #define UART_IN        0x03FFFFF0
 #define UART_IN_VALID  0x03FFFFF4
@@ -44,7 +46,7 @@ static char* reg_name[32] = {
     "t3", "t4", "t5", "t6"
 };
 
-static char *freg_name[32] = {
+static char* freg_name[32] = {
     "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7",
     "fs0", "fs1",
     "fa0", "fa1", "fa2", "fa3", "fa4", "fa5", "fa6", "fa7",
@@ -66,6 +68,7 @@ typedef struct core {
     WORD uart_out;
     // analysis
     u32 instr_counter;
+    u32 stall_counter;
     u32 instr_analysis[23];
     // interfaces
     WORD (*load_instr)(struct core*, ADDR);

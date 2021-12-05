@@ -26,7 +26,7 @@ enum instr_type {
     F_LOAD, F_STORE,
     FMV2I, FMV2F,
     FADD, FSUB, FMUL, FDIV, FSQRT, FCMP,
-    FCVT2F, FCVT2I, FSGNJ
+    FCVT2F, FCVT2I, FSGNJ, UNDEFINED
 };
 
 typedef union instr {
@@ -90,4 +90,4 @@ typedef union instr {
     } __attribute__((packed)) j;
 } INSTR;
 
-void disasm(INSTR instr, char* buffer);
+u8 disasm(INSTR instr, char* buffer);
