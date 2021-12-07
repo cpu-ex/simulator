@@ -24,6 +24,8 @@ void FLW_EXEC(CORE* core, INSTR instr) {
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
     }
     core->pc += 4;
+    // stall check
+    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
 }
 
 // f-store

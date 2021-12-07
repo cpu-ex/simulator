@@ -96,10 +96,7 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
     core->regs[rd] = val;
     core->pc += 4;
     // stall check
-    INSTR next_instr = { .raw = core->load_instr(core, core->pc) };
-    char placeholder[36];
-    u8 instr_type = disasm(next_instr, placeholder);
-    core->stall_counter += ((instr_type == LOAD) || (instr_type == F_LOAD)) ? 1 : 0;
+    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
 }
 
 // store: sb, sh, sw
@@ -276,7 +273,7 @@ void execute(CORE* core, INSTR instr) {
     // jalr
     case 0b1100111: JALR_EXEC(core, instr); core->instr_analysis[JALR]++; break;
     // branch
-    case 0b1100011:BRANCH_EXEC(core, instr); core->instr_analysis[BRANCH]++; break;
+    case 0b1100011: BRANCH_EXEC(core, instr); core->instr_analysis[BRANCH]++; break;
     // load
     case 0b0000011: LOAD_EXEC(core, instr); core->instr_analysis[LOAD]++; break;
     // store
