@@ -15,6 +15,7 @@ mmu.o: mem.h cache.h
 core.o: mmu.h branch_predictor.h
 exec.o, win.o: core.h
 exec.o: instr.h
+sim.o: core.h gui.h
 disasm.o: types.h instr.h
 gui.o: splashWin.h helpWin.h mainWin.h analysisWin.h cacheWin.h
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
 
+// customizable variables
 // #define BP_AT // always taken
 // #define BP_NT // always untaken
 // #define BP_2BIT

@@ -36,7 +36,9 @@ COMMAND get_command() {
     char input[73], output[12][12];
     WINDOW* com_win = newwin(1, 77, 22, 2);
     wclear(com_win);
+    wtimeout(com_win, TIMEOUT_TIME);
     mvwgetstr(com_win, 0, 0, input);
+    delwin(com_win);
     // split with space (exactly 1 space)
     int counter = 0, argc = 0;
     strcat(input, " "); // add an end point

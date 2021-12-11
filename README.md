@@ -16,6 +16,7 @@
 - [2021/11/29] implement a branch predictor
 - [2021/12/01] improve the interaction of GUI
 - [2021/12/05] introduce stall counter and display executing time prediction to analysis window
+- [2021/12/12] implement automatic stepping with window updated
 
 ![sample](sample.gif)
 
@@ -53,6 +54,18 @@
 		> using stdout as output
 
 - simulator
+
+	> customizable settings
+	> - Cache (under `src/cache.h`)
+	> 	- block size
+	> 	- associativity
+	>	- page switching policy
+	> - Branch Predictor (under `src/branch_predictor.h`)
+	> 	- prediction policy
+	> 	- size of PHT
+	> - Gui (under `gui/gui.h`)
+	> 	- automatic stepping interval
+
 	- step1: `make sim`
 	- step2: `./sim fileName`
 

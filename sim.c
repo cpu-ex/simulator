@@ -54,9 +54,9 @@ void sim_run(SIM* sim) {
     init_gui(&gui);
     sim->gui = &gui;
     // timer
-    clock_t t1, t2;
-    BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
-    t1 = clock();
+    // clock_t t1, t2;
+    // BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
+    // t1 = clock();
     // main loop of simulator
     for (;;) {
         switch (BROADCAST.decoder.type) {
@@ -76,11 +76,11 @@ void sim_run(SIM* sim) {
             }
             break;
         case STAT_EXIT:
-            t2 = clock();
-            u32 num = sim->core->instr_counter;
-            fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
-            sim->gui->deinit(sim->gui);
-            return;
+            // t2 = clock();
+            // u32 num = sim->core->instr_counter;
+            // fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
+            // sim->gui->deinit(sim->gui);
+            // return;
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
