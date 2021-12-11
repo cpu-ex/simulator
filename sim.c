@@ -1,4 +1,5 @@
 #include "sim.h"
+// #include <time.h>
 
 u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
@@ -10,16 +11,6 @@ u64 get_file_size(char* file_name) {
         fclose(file);
         return size;
     }
-}
-
-void load2mem(char* file_name, u64 file_size, ADDR addr, void (*loader)(ADDR, BYTE)) {
-    FILE *file = fopen(file_name, "rb");
-    u8 byte = 0;
-    for (int i = 0; i < file_size; i++) {
-        fread(&byte, 1, 1, file);
-        loader(addr++, byte);
-    }
-    fclose(file);
 }
 
 void sim_load_file(SIM* sim, char* file_name) {
@@ -62,6 +53,10 @@ void sim_run(SIM* sim) {
     static GUI gui;
     init_gui(&gui);
     sim->gui = &gui;
+    // timer
+    // clock_t t1, t2;
+    // BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
+    // t1 = clock();
     // main loop of simulator
     while (1) {
         switch (BROADCAST.decoder.type) {
@@ -69,6 +64,11 @@ void sim_run(SIM* sim) {
             sim->gui->deinit(sim->gui);
             return;
         case STAT_EXIT:
+            // t2 = clock();
+            // u32 num = sim->core->instr_counter;
+            // fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
+            // sim->gui->deinit(sim->gui);
+            // return;
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
