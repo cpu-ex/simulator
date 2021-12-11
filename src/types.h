@@ -19,7 +19,7 @@ union broadcast {
 
     struct broadcast_decoder {
         u32 type: 32;
-        u32 info: 32;
+        signed info: 32;
     } decoder;
 } BROADCAST;
 

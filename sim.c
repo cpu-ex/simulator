@@ -1,5 +1,5 @@
 #include "sim.h"
-// #include <time.h>
+#include <time.h>
 
 u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
@@ -54,21 +54,33 @@ void sim_run(SIM* sim) {
     init_gui(&gui);
     sim->gui = &gui;
     // timer
-    // clock_t t1, t2;
-    // BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
-    // t1 = clock();
+    clock_t t1, t2;
+    BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
+    t1 = clock();
     // main loop of simulator
-    while (1) {
+    for (;;) {
         switch (BROADCAST.decoder.type) {
-        case STAT_QUIT:
+        case STAT_STEP:
+            if (BROADCAST.decoder.info > 0) {
+                // step forward
+                sim->core->step(sim->core);
+                BROADCAST.decoder.info--;
+            } else if (BROADCAST.decoder.info < 0) {
+                // roll back
+                signed remains = (signed)sim->core->instr_counter + BROADCAST.decoder.info;
+                sim->core->reset(sim->core);
+                signed steps = max(0, remains);
+                BROADCAST(STAT_STEP | ((u64)steps << 32));
+            } else {
+                BROADCAST(STAT_HALT);
+            }
+            break;
+        case STAT_EXIT:
+            t2 = clock();
+            u32 num = sim->core->instr_counter;
+            fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
             sim->gui->deinit(sim->gui);
             return;
-        case STAT_EXIT:
-            // t2 = clock();
-            // u32 num = sim->core->instr_counter;
-            // fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
-            // sim->gui->deinit(sim->gui);
-            // return;
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
@@ -78,22 +90,9 @@ void sim_run(SIM* sim) {
         case STAT_HALT:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
             break;
-        case STAT_STEP:
-            if ((signed)BROADCAST.decoder.info > 0) {
-                // step forward
-                sim->core->step(sim->core);
-                BROADCAST.decoder.info = (unsigned)((signed)BROADCAST.decoder.info - 1);
-            } else if ((signed)BROADCAST.decoder.info < 0) {
-                // roll back
-                signed remains = (signed)sim->core->instr_counter +
-                    (signed)BROADCAST.decoder.info;
-                sim->core->reset(sim->core);
-                u32 steps = (remains < 0) ? 0 : (unsigned)remains;
-                BROADCAST(STAT_STEP | ((u64)steps << 32));
-            } else {
-                BROADCAST(STAT_HALT);
-            }
-            break;
+        case STAT_QUIT:
+            sim->gui->deinit(sim->gui);
+            return;
         default:
             break;
         }
