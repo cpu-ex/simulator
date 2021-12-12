@@ -13,13 +13,7 @@ void core_step(CORE* core) {
 }
 
 WORD core_load_instr(CORE* core, ADDR addr) {
-    addr &= ~0x3;
-    WORD val = 0;
-    for (int i = 0; i < 4; i++) {
-        val <<= 8;
-        val |= core->mmu->read_instr(core->mmu, addr + i);
-    }
-    return val;
+    return core->mmu->read_instr(core->mmu, addr >> 2);
 }
 
 WORD core_load_data(CORE* core, ADDR addr, int bytes, int sign) {

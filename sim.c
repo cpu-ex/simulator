@@ -1,5 +1,5 @@
 #include "sim.h"
-#include <time.h>
+// #include <time.h>
 
 u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
@@ -19,15 +19,18 @@ void sim_load_file(SIM* sim, char* file_name) {
     sprintf(data_name, "./bin/%s.data", file_name);
     u64 file_size;
     // load instr
-    file_size = get_file_size(code_name);
+    file_size = get_file_size(code_name) >> 2;
     if (file_size) {
-        sim->core->mmu->allocate_instr(sim->core->mmu, 0x100 + file_size);
+        sim->core->mmu->allocate_instr(sim->core->mmu, (DEFAULT_PC >> 2) + file_size);
         FILE* file = fopen(code_name, "rb");
-        u8 byte = 0;
-        ADDR addr = DEFAULT_PC;
+        u32 word = 0;
+        ADDR addr = DEFAULT_PC >> 2;
         for (int i = 0; i < file_size; i++) {
-            fread(&byte, 1, 1, file);
-            sim->core->mmu->write_instr(sim->core->mmu, addr++, byte);
+            fread(&word, 1, 4, file);
+            // endian exchange
+            word = ((word & 0xFF00FF00) >> 8) | ((word & 0x00FF00FF) << 8);
+            word = ((word & 0xFFFF0000) >> 16) | ((word & 0x0000FFFF) << 16);
+            sim->core->mmu->write_instr(sim->core->mmu, addr++, word);
         }
         fclose(file);
     } else {
@@ -78,8 +81,7 @@ void sim_run(SIM* sim) {
         case STAT_EXIT:
             // t2 = clock();
             // u32 num = sim->core->instr_counter;
-            // fprintf(stderr, "%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
-            // sim->gui->deinit(sim->gui);
+            // printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
             // return;
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:

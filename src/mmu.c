@@ -1,10 +1,10 @@
 #include "mmu.h"
 
-BYTE mmu_read_instr(MMU* mmu, ADDR addr) {
+WORD mmu_read_instr(MMU* mmu, ADDR addr) {
     return (addr < mmu->instr_len) ? mmu->instr_mem[addr] : 0;
 }
 
-void mmu_write_instr(MMU* mmu, ADDR addr, BYTE val) {
+void mmu_write_instr(MMU* mmu, ADDR addr, WORD val) {
     if (addr < mmu->instr_len)
         mmu->instr_mem[addr] = val;
 }
@@ -32,7 +32,8 @@ void mmu_write_data(MMU* mmu, ADDR addr, BYTE val) {
 BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
     if (type) {
         // instr
-        return mmu->read_instr(mmu, addr);
+        WORD val = mmu->read_instr(mmu, addr >> 2);
+        return (val >> ((3 - (addr & 0x3)) * 8)) & 0xFF;
     } else {
         // data
         BYTE val;
@@ -44,7 +45,7 @@ BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
 
 void mmu_allocate_instr(MMU* mmu, u64 size) {
     mmu->instr_len = size;
-    mmu->instr_mem = malloc(size * sizeof(BYTE));
+    mmu->instr_mem = malloc(size * sizeof(WORD));
 }
 
 void mmu_reset(MMU* mmu, ADDR addr) {

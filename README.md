@@ -63,8 +63,6 @@
 	> - Branch Predictor (under `src/branch_predictor.h`)
 	> 	- prediction policy
 	> 	- size of PHT
-	> - Gui (under `gui/gui.h`)
-	> 	- automatic stepping interval
 
 	- step1: `make sim`
 	- step2: `./sim fileName`
@@ -77,5 +75,4 @@
 
 ## 3. efficiency
 
-- fib 30: 20800995  instructions in 2041654  cpu clk, 10188305.658060 instructions per sec
-- fib 35: 230686620 instructions in 22643029 cpu clk, 10187975.292528 instructions per sec
+- fib 35: 230686620 instructions in 17853138 clk, 12921348.616697 per sec

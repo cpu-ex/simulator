@@ -6,13 +6,13 @@
 typedef struct mmu {
     // attributes
     u32 instr_len;
-    BYTE* instr_mem;
+    WORD* instr_mem;
     CACHE* data_cache;
     MEM* data_mem;
     // interfaces
     void (*allocate_instr)(struct mmu*, u64);
-    BYTE (*read_instr)(struct mmu*, ADDR);
-    void (*write_instr)(struct mmu*, ADDR, BYTE);
+    WORD (*read_instr)(struct mmu*, ADDR);
+    void (*write_instr)(struct mmu*, ADDR, WORD);
     BYTE (*read_data)(struct mmu*, ADDR);
     void (*write_data)(struct mmu*, ADDR, BYTE);
     BYTE (*sneak)(struct mmu*, ADDR, u8);
