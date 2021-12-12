@@ -13,7 +13,7 @@ void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     INSTR instr = { .raw = op };
     disasm(instr, asm_buf);
     // render
-    wprintw(inner, "%-8u 0x%08X : %08X : %-21s", core->instr_counter, pc, op, asm_buf);
+    wprintw(inner, "%-10u 0x%08X : %08X : %-19s", core->instr_counter, pc, op, asm_buf);
     wattron(inner, COLOR_PAIR(WARNING_COLOR));
     switch (BROADCAST.decoder.type) {
     case STAT_EXIT: wprintw(inner, "%24s", "exit"); break;

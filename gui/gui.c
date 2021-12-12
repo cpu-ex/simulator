@@ -25,7 +25,7 @@ int reg2idx(char* reg) {
     return 0;
 }
 
-COMMAND get_command() {
+COMMAND get_command(GUI* gui) {
     // echo + blinking cursor
     echo();
     curs_set(1);
@@ -36,7 +36,7 @@ COMMAND get_command() {
     char input[73], output[12][12];
     WINDOW* com_win = newwin(1, 77, 22, 2);
     wclear(com_win);
-    wtimeout(com_win, TIMEOUT_TIME);
+    wtimeout(com_win, gui->stepping_interval);
     mvwgetstr(com_win, 0, 0, input);
     delwin(com_win);
     // split with space (exactly 1 space)
@@ -59,6 +59,15 @@ COMMAND get_command() {
         com.type = 's';
         com.argc = 1;
         com.argv[0] = argc > 1 ? atoi(output[1]) : 0x7FFFFFFF;
+    } else if (!strcmp(output[0], "auto")) {
+        com.type = 'o';
+        com.argc = 1;
+        com.argv[0] = argc > 1 ? atoi(output[1]) : 1500;
+    } else if (!strcmp(output[0], "stop")) {
+        // quit auto-stepping
+        com.type = 'o';
+        com.argc = 1;
+        com.argv[0] = -1;
     } else if (!strcmp(output[0], "reg")) {
         com.type = 'r';
         com.argc = 1;
@@ -104,12 +113,15 @@ COMMAND get_command() {
 }
 
 STATE wait4command(GUI* gui, CORE* core) {
-    COMMAND com = get_command();
+    COMMAND com = get_command(gui);
     switch (com.type) {
     case 'q':
         return STAT_QUIT;
     case 's':
         return STAT_STEP | ((u64)com.argv[0] << 32);
+    case 'o':
+        gui->stepping_interval = (com.argv[0] == 0) ? -1 : com.argv[0];
+        return STAT_HALT;
     case 'r':
         gui->focused_win = REG_WIN;
         gui->reg_start = (com.argv[0] < 0) ? gui->reg_start : com.argv[0];
@@ -167,6 +179,7 @@ void init_gui(GUI* gui) {
     memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;
     gui->mem_start = DEFAULT_PC / 0x10;
+    gui->stepping_interval = -1;
     // assign interfaces
     gui->update = gui_update;
     gui->deinit = gui_deinit;

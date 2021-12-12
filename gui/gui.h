@@ -4,14 +4,6 @@
 #include "../src/core.h"
 #include "../src/instr.h"
 
-// customizable variables
-// timeout time in msec
-// negative number for blocking
-// 0 for non-blocking (do not wait for input at all)
-// positive number for time-limited blocking
-// (wait for 1s when setting to 1000, if input is none then skip it)
-#define TIMEOUT_TIME   -1
-
 #define TITLE_COLOR     1
 #define SUBTITLE_COLOR  2
 #define WARNING_COLOR   3
@@ -32,6 +24,7 @@ typedef struct gui {
     u8 reg_focus[64];
     ADDR mem_start;
     u8 mem_type;
+    int stepping_interval;
     // interfaces
     STATE (*update)(struct gui*, CORE*);
     void (*deinit)(struct gui*);
