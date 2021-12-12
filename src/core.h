@@ -4,12 +4,7 @@
 #include "branch_predictor.h"
 
 #define CLK_FREQUENCY 1000000
-
 #define DEFAULT_PC     0x100
-#define UART_IN        0x03FFFFF0
-#define UART_IN_VALID  0x03FFFFF4
-#define UART_OUT_VALID 0x03FFFFF8
-#define UART_OUT       0x03FFFFFC
 
 enum reg {
     zero = 0,
