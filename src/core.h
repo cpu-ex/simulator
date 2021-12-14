@@ -4,7 +4,7 @@
 #include "branch_predictor.h"
 
 #define CLK_FREQUENCY 1000000
-#define DEFAULT_PC     0x100
+#define DEFAULT_PC    0x100
 
 enum reg {
     zero = 0,
@@ -32,10 +32,10 @@ static char* reg_name[32] = {
     "zero",
     "ra",
     "sp",
-    "gp",
+    "hp",
     "tp",
     "t0", "t1", "t2",
-    "s0", "s1",
+    "fp", "s1",
     "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
     "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
     "t3", "t4", "t5", "t6"
@@ -56,6 +56,7 @@ typedef struct core {
     REG fregs[32];
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
+    FILE* output_file;
     // MMIO
     WORD uart_in;
     WORD uart_in_valid;
@@ -71,6 +72,7 @@ typedef struct core {
     void (*store_instr)(struct core*, ADDR, WORD);
     void (*store_data)(struct core*, ADDR, WORD, int);
     void (*step)(struct core*);
+    void (*dump)(struct core*, long long);
     void (*reset)(struct core*);
 } CORE;
 

@@ -3,6 +3,8 @@
 #include "src/core.h"
 #include "gui/gui.h"
 
+// #define TIME_TEST_MODE
+
 typedef struct sim {
     // attributes
     CORE* core;

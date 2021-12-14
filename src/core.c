@@ -36,6 +36,16 @@ void core_store_data(CORE* core, ADDR addr, WORD val, int bytes) {
     }
 }
 
+void core_dump(CORE* core, long long step_left) {
+    if (core->output_file == NULL)
+        core->output_file = fopen("output.txt", "a");
+    fprintf(core->output_file, "PC = %08X\n", core->pc);
+    if (step_left == 0) {
+        fclose(core->output_file);
+        core->output_file = NULL;
+    }
+}
+
 void core_reset(CORE* core) {
     // call mem reset
     core->mmu->reset(core->mmu, core->regs[sp]);
@@ -59,6 +69,7 @@ void init_core(CORE* core) {
     core->instr_counter = 0;
     core->stall_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
+    core->output_file = NULL;
     // init mmu
     static MMU mmu;
     init_mmu(&mmu);
@@ -73,5 +84,6 @@ void init_core(CORE* core) {
     core->store_instr = core_store_instr;
     core->store_data = core_store_data;
     core->step = core_step;
+    core->dump = core_dump;
     core->reset = core_reset;
 }

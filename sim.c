@@ -1,5 +1,7 @@
 #include "sim.h"
-// #include <time.h>
+#if defined(TIME_TEST_MODE)
+#include <time.h>
+#endif
 
 u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
@@ -52,14 +54,17 @@ void sim_load_file(SIM* sim, char* file_name) {
 }
 
 void sim_run(SIM* sim) {
+    #if defined(TIME_TEST_MODE)
+    // timer
+    clock_t t1, t2;
+    BROADCAST(STAT_STEP | ((u64)STAT_INFO_MAX << STAT_SHIFT_AMOUNT));
+    t1 = clock();
+    #else
     // init GUI
     static GUI gui;
     init_gui(&gui);
     sim->gui = &gui;
-    // timer
-    // clock_t t1, t2;
-    // BROADCAST(STAT_STEP | ((u64)0x7FFFFFFF << 32));
-    // t1 = clock();
+    #endif
     // main loop of simulator
     for (;;) {
         switch (BROADCAST.decoder.type) {
@@ -70,27 +75,39 @@ void sim_run(SIM* sim) {
                 BROADCAST.decoder.info--;
             } else if (BROADCAST.decoder.info < 0) {
                 // roll back
-                signed remains = (signed)sim->core->instr_counter + BROADCAST.decoder.info;
+                signed long long remains = (signed)sim->core->instr_counter + BROADCAST.decoder.info;
                 sim->core->reset(sim->core);
-                signed steps = max(0, remains);
-                BROADCAST(STAT_STEP | ((u64)steps << 32));
+                signed long long steps = max(0, remains);
+                BROADCAST(STAT_STEP | ((u64)steps << STAT_SHIFT_AMOUNT));
             } else {
                 BROADCAST(STAT_HALT);
             }
             break;
+        case STAT_HALT:
+            BROADCAST(sim->gui->update(sim->gui, sim->core));
+            break;
         case STAT_EXIT:
-            // t2 = clock();
-            // u32 num = sim->core->instr_counter;
-            // printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
-            // return;
+            #if defined(TIME_TEST_MODE)
+            t2 = clock();
+            u32 num = sim->core->instr_counter;
+            printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
+            return;
+            #endif
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
             if (BROADCAST.decoder.type != STAT_QUIT)
                 BROADCAST(STAT_EXIT);
             break;
-        case STAT_HALT:
-            BROADCAST(sim->gui->update(sim->gui, sim->core));
+        case STAT_DUMPING:
+            if (BROADCAST.decoder.info > 0) {
+                // step forward and record (almost same with STAT_STEP)
+                sim->core->step(sim->core);
+                sim->core->dump(sim->core, --BROADCAST.decoder.info);
+            } else {
+                // ignore negative step number
+                BROADCAST(STAT_HALT);
+            }
             break;
         case STAT_QUIT:
             sim->gui->deinit(sim->gui);
