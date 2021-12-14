@@ -12,7 +12,7 @@ def reg2idx(name: str) -> int:
         'zero': 0,
         'ra': 1,
         'sp': 2,
-        'gp': 3,
+        'gp': 3, 'hp': 3,
         'tp': 4,
         't0': 5, 't1': 6, 't2': 7,
         's0': 8, 'fp': 8, 's1': 9,
