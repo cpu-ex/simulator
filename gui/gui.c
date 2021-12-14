@@ -8,13 +8,13 @@
 typedef struct command {
     char type;
     int argc;
-    int argv[10];
+    signed long long argv[2];
 } COMMAND;
 
 int reg2idx(char* reg) {
     // special fp
-    if (!strcmp(reg, "fp"))
-        return 8;
+    if (!strcmp(reg, "gp")) return 3;
+    if (!strcmp(reg, "s0")) return 8;
     // try regs and fregs
     for (int idx = 0; idx < 32; idx++) {
         if (!strcmp(reg, reg_name[idx]))
@@ -58,7 +58,7 @@ COMMAND get_command(GUI* gui) {
     } else if (!strcmp(output[0], "step")) {
         com.type = 's';
         com.argc = 1;
-        com.argv[0] = argc > 1 ? atoi(output[1]) : 0x7FFFFFFF;
+        com.argv[0] = argc > 1 ? atoi(output[1]) : STAT_INFO_MAX;
     } else if (!strcmp(output[0], "auto")) {
         com.type = 'o';
         com.argc = 1;
@@ -68,6 +68,10 @@ COMMAND get_command(GUI* gui) {
         com.type = 'o';
         com.argc = 1;
         com.argv[0] = -1;
+    } else if (!strcmp(output[0], "dump")) {
+        com.type = 'd';
+        com.argc = 1;
+        com.argv[0] = argc > 1 ? atoi(output[1]) : STAT_INFO_MAX;
     } else if (!strcmp(output[0], "reg")) {
         com.type = 'r';
         com.argc = 1;
@@ -77,7 +81,7 @@ COMMAND get_command(GUI* gui) {
         com.argv[0] = 'i';
         if (argc > 1) {
             com.argc = 2;
-            sscanf(output[1], "0x%X", com.argv + 1);
+            sscanf(output[1], "0x%llX", com.argv + 1);
             if (!com.argv[1]) // not recognizable
                 com.argc = 1;
         } else {
@@ -88,7 +92,7 @@ COMMAND get_command(GUI* gui) {
         com.argv[0] = 'd';
         if (argc > 1) {
             com.argc = 2;
-            sscanf(output[1], "0x%X", com.argv + 1);
+            sscanf(output[1], "0x%llX", com.argv + 1);
             if (!com.argv[0]) // not recognizable
                 com.argc = 1;
         } else {
@@ -118,10 +122,12 @@ STATE wait4command(GUI* gui, CORE* core) {
     case 'q':
         return STAT_QUIT;
     case 's':
-        return STAT_STEP | ((u64)com.argv[0] << 32);
+        return STAT_STEP | ((u64)com.argv[0] << STAT_SHIFT_AMOUNT);
     case 'o':
         gui->stepping_interval = (com.argv[0] == 0) ? -1 : com.argv[0];
         return STAT_HALT;
+    case 'd':
+        return STAT_DUMPING | ((u64)com.argv[0] << STAT_SHIFT_AMOUNT);
     case 'r':
         gui->focused_win = REG_WIN;
         gui->reg_start = (com.argv[0] < 0) ? gui->reg_start : com.argv[0];

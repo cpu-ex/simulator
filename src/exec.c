@@ -72,7 +72,7 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     // bgeu
     case 0b111: cmp = (a1 >= a2) ? 1 : 0; break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
     core->pc += cmp ? sext(imm, 12) : 4;
     // predict branch
@@ -158,7 +158,7 @@ void ARITH_I_EXEC(CORE* core, INSTR instr) {
         switch (a2 >> 5) {
             case 0b0000000: val = ARITH_SRL(a1, a2); break;
             case 0b0100000: val = ARITH_SRA(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // ori
@@ -166,7 +166,7 @@ void ARITH_I_EXEC(CORE* core, INSTR instr) {
     // andi
     case 0b111: val = ARITH_AND(a1, a2); break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
     core->regs[rd] = val;
     core->pc += 4;
@@ -190,7 +190,7 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
             case 0b0000000: val = ARITH_ADD(a1, a2); break;
             case 0b0100000: val = ARITH_SUB(a1, a2); break;
             case 0b0000001: val = ARITH_MUL(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // sll
@@ -204,7 +204,7 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
         switch (funct7) {
             case 0b0000000: val = ARITH_XOR(a1, a2); break;
             case 0b0000001: val = ARITH_DIV(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // srl + sra + divu
@@ -213,7 +213,7 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
             case 0b0000000: val = ARITH_SRL(a1, a2); break;
             case 0b0100000: val = ARITH_SRA(a1, a2); break;
             case 0b0000001: val = ARITH_DIVU(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // or + rem
@@ -221,7 +221,7 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
         switch (funct7) {
             case 0b0000000: val = ARITH_OR(a1, a2); break;
             case 0b0000001: val = ARITH_REM(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // and + remu
@@ -229,11 +229,11 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
         switch (funct7) {
             case 0b0000000: val = ARITH_AND(a1, a2); break;
             case 0b0000001: val = ARITH_REMU(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
     core->regs[rd] = val;
     core->pc += 4;
@@ -257,7 +257,7 @@ void ENV_EXEC(CORE* core, INSTR instr) {
         }
         break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 }
 
@@ -283,7 +283,7 @@ void execute(CORE* core, INSTR instr) {
     // arith
     case 0b0110011: ARITH_EXEC(core, instr); core->instr_analysis[ARITH]++; break;
     // fence
-    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     // env + csr
     case 0b1110011: ENV_EXEC(core, instr); core->instr_analysis[ENV_CSR]++; break;
     
@@ -323,10 +323,10 @@ void execute(CORE* core, INSTR instr) {
         // fsgnj
         case 0b0010000: FSGNJ_EXEC(core, instr); core->instr_analysis[FSGNJ]++; break;
         // unexpected
-        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 }

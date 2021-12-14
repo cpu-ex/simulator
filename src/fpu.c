@@ -21,7 +21,7 @@ void FLW_EXEC(CORE* core, INSTR instr) {
     // flw
     case 0b010: core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11), 2, 0); break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
     core->pc += 4;
     // stall check
@@ -39,7 +39,7 @@ void FSW_EXEC(CORE* core, INSTR instr) {
     // fsw
     case 0b010: core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2], 2); break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
     core->pc += 4;
 }
@@ -148,7 +148,7 @@ void FCMP_EXEC(CORE* core, INSTR instr) {
     // fle
     case 0b000: val = (f1.f <= f2.f) ? 1 : 0; break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
     core->regs[rd] = val;
@@ -168,7 +168,7 @@ void FCVT2F_EXEC(CORE* core, INSTR instr) {
     // fcvt.s.wu
     case 0b00001: f.f = (float)((unsigned)core->regs[rs1]); break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
     core->fregs[rd] = f.i;
@@ -189,7 +189,7 @@ void FCVT2I_EXEC(CORE* core, INSTR instr) {
     // fcvt.wu.s
     case 0b00001: i = (unsigned)f.f; break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
     core->regs[rd] = i;
@@ -214,7 +214,7 @@ void FSGNJ_EXEC(CORE* core, INSTR instr) {
     // fsgnjx
     case 0b010: val.decoder.sign = f1.decoder.sign ^ f2.decoder.sign; break;
     // unexpected
-    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << 32)); break;
+    default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
     core->fregs[rd] = val.i;

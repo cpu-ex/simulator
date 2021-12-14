@@ -18,8 +18,8 @@ union broadcast {
     u64 raw;
 
     struct broadcast_decoder {
-        u32 type: 32;
-        signed info: 32;
+        unsigned long long type: 8;
+        signed long long info: 48;
     } decoder;
 } BROADCAST;
 
@@ -29,9 +29,12 @@ union broadcast {
 #define STAT_EXIT            1
 #define STAT_HALT            2
 #define STAT_STEP            3
-#define STAT_BOOTING         4
-#define STAT_MEM_EXCEPTION   5
-#define STAT_INSTR_EXCEPTION 6
+#define STAT_DUMPING         4
+#define STAT_BOOTING         5
+#define STAT_MEM_EXCEPTION   6
+#define STAT_INSTR_EXCEPTION 7
+#define STAT_SHIFT_AMOUNT    8
+#define STAT_INFO_MAX        0x7FFFFFFFFFFF
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))

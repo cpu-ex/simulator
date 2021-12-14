@@ -26,7 +26,7 @@ void mem_assure_page(MEM* mem, ADDR addr) {
 BYTE mem_read_byte(MEM* mem, ADDR addr) {
     MEM_ADDR_HELPER helper = { .raw = addr };
     if (!(addr < MAX_ADDR)) {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << STAT_SHIFT_AMOUNT));
         return 0;
     } else if (mem->data[helper.d.index1] && mem->data[helper.d.index1][helper.d.index2]) {
         return mem->data[helper.d.index1][helper.d.index2][helper.d.offset];
@@ -37,7 +37,7 @@ BYTE mem_read_byte(MEM* mem, ADDR addr) {
 
 void mem_write_byte(MEM* mem, ADDR addr, BYTE val) {
     if (!(addr < MAX_ADDR)) {
-        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << 32));
+        BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << STAT_SHIFT_AMOUNT));
     } else {
         mem_assure_page(mem, addr);
         MEM_ADDR_HELPER helper = { .raw = addr };
