@@ -39,7 +39,17 @@ void core_store_data(CORE* core, ADDR addr, WORD val, int bytes) {
 void core_dump(CORE* core, long long step_left) {
     if (core->output_file == NULL)
         core->output_file = fopen("output.txt", "a");
-    fprintf(core->output_file, "PC = %08X\n", core->pc);
+    // step, pc
+    fprintf(core->output_file, "step:%016x pc:%08x", core->instr_counter, core->pc); 
+    // register file
+    for (int i = 0; i < 64; i++) {
+        if (i < 32) {
+            fprintf(core->output_file, " x%d:%08x", i, core->regs[i]);
+        } else {
+            fprintf(core->output_file, " f%d:%08x", i - 32, core->fregs[i - 32]);
+        }
+    }
+    fprintf(core->output_file, "\n");
     if (step_left == 0) {
         fclose(core->output_file);
         core->output_file = NULL;
