@@ -6,4 +6,4 @@ __pycache__
 sim
 disasm
 *.o
-output*.txt
+dumpfile*.txt

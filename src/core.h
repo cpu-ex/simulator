@@ -34,7 +34,8 @@ typedef struct core {
     REG fregs[32];
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
-    FILE* output_file;
+    char dumpfile_name[30];
+    FILE* dumpfile_fp;
     // analysis
     u64 instr_counter;
     u64 stall_counter;
@@ -47,6 +48,7 @@ typedef struct core {
     void (*step)(struct core*);
     void (*dump)(struct core*, s64);
     void (*reset)(struct core*);
+    void (*deinit)(struct core*);
 } CORE;
 
 void init_core(CORE* core);

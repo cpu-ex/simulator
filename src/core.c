@@ -37,23 +37,17 @@ void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
 }
 
 void core_dump(CORE* core, s64 step_left) {
-    if (core->output_file == NULL)
-        core->output_file = fopen("output.txt", "a");
     // step, pc
-    fprintf(core->output_file, "step:%016x pc:%08x", core->instr_counter, core->pc); 
+    fprintf(core->dumpfile_fp, "step:%016llx pc:%08x", core->instr_counter, core->pc); 
     // register file
     for (int i = 0; i < 64; i++) {
         if (i < 32) {
-            fprintf(core->output_file, " x%d:%08x", i, core->regs[i]);
+            fprintf(core->dumpfile_fp, " x%d:%08x", i, core->regs[i]);
         } else {
-            fprintf(core->output_file, " f%d:%08x", i - 32, core->fregs[i - 32]);
+            fprintf(core->dumpfile_fp, " f%d:%08x", i - 32, core->fregs[i - 32]);
         }
     }
-    fprintf(core->output_file, "\n");
-    if (step_left == 0) {
-        fclose(core->output_file);
-        core->output_file = NULL;
-    }
+    fprintf(core->dumpfile_fp, "\n");
 }
 
 void core_reset(CORE* core) {
@@ -73,13 +67,25 @@ void core_reset(CORE* core) {
     core->branch_predictor->reset(core->branch_predictor);
 }
 
+void core_deinit(CORE* core) {
+    fseek(core->dumpfile_fp, 0, SEEK_END);
+    u64 filesize = ftell(core->dumpfile_fp);
+    fclose(core->dumpfile_fp);
+    if (!filesize) remove(core->dumpfile_name);
+    core->dumpfile_fp = NULL;
+}
+
 void init_core(CORE* core) {
     // init basic info
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->stall_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
-    core->output_file = NULL;
+    // open a dumpfile
+    time_t curr_time = time(NULL);
+    struct tm* info = localtime(&curr_time);
+    strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S.txt", info);
+    core->dumpfile_fp = fopen(core->dumpfile_name, "w");
     // init mmu
     static MMU mmu;
     init_mmu(&mmu);
@@ -96,4 +102,5 @@ void init_core(CORE* core) {
     core->step = core_step;
     core->dump = core_dump;
     core->reset = core_reset;
+    core->deinit = core_deinit;
 }

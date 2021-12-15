@@ -1,7 +1,4 @@
 #include "sim.h"
-#if defined(TIME_TEST_MODE)
-#include <time.h>
-#endif
 
 u64 get_file_size(char* file_name) {
     FILE* file = fopen(file_name, "rb");
@@ -110,6 +107,7 @@ void sim_run(SIM* sim) {
             }
             break;
         case STAT_QUIT:
+            sim->core->deinit(sim->core);
             sim->gui->deinit(sim->gui);
             return;
         default:
