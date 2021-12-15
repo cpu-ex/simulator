@@ -20,11 +20,11 @@
 typedef struct gui {
     // display control
     u8 focused_win;
-    int reg_start;
+    s32 reg_start;
     u8 reg_focus[64];
     ADDR mem_start;
     u8 mem_type;
-    int stepping_interval;
+    s32 stepping_interval;
     // interfaces
     STATE (*update)(struct gui*, CORE*);
     void (*deinit)(struct gui*);

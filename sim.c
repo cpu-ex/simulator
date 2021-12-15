@@ -75,9 +75,9 @@ void sim_run(SIM* sim) {
                 BROADCAST.decoder.info--;
             } else if (BROADCAST.decoder.info < 0) {
                 // roll back
-                signed long long remains = (signed)sim->core->instr_counter + BROADCAST.decoder.info;
+                s64 remains = (s64)sim->core->instr_counter + BROADCAST.decoder.info;
                 sim->core->reset(sim->core);
-                signed long long steps = max(0, remains);
+                s64 steps = max(0, remains);
                 BROADCAST(STAT_STEP | ((u64)steps << STAT_SHIFT_AMOUNT));
             } else {
                 BROADCAST(STAT_HALT);
@@ -89,8 +89,8 @@ void sim_run(SIM* sim) {
         case STAT_EXIT:
             #if defined(TIME_TEST_MODE)
             t2 = clock();
-            u32 num = sim->core->instr_counter;
-            printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (double)num * CLOCKS_PER_SEC / (double)(t2 - t1));
+            u64 num = sim->core->instr_counter;
+            printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
             return;
             #endif
         case STAT_MEM_EXCEPTION:

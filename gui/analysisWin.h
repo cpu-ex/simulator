@@ -22,10 +22,10 @@ void show_analysis_win(CORE* core) {
     for (int i = 10; i < 23; i++)
         mvwprintw(block1, i - 10 + 3, 18, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 16, 0, "instruction(s): %u", core->instr_counter);
-    u32 cycles = core->instr_counter + core->stall_counter;
-    mvwprintw(block1, 17, 0, "cycle(s)      : %u", cycles, core->stall_counter);
-    mvwprintw(block1, 18, 0, "stall(s)      : %u", core->stall_counter);
-    mvwprintw(block1, 19, 0, "time in second: %.6f", (float)cycles / CLK_FREQUENCY);
+    u64 cycles = core->instr_counter + core->stall_counter;
+    mvwprintw(block1, 17, 0, "cycle(s)      : %llu", cycles, core->stall_counter);
+    mvwprintw(block1, 18, 0, "stall(s)      : %llu", core->stall_counter);
+    mvwprintw(block1, 19, 0, "time in second: %.6f", (f32)cycles / CLK_FREQUENCY);
     // block2: cache info
     wattron(block2, COLOR_PAIR(STANDOUT_COLOR));
     mvwprintw(block2, 0, 0, "%u way Set-associative Cache Info:", ASSOCIATIVITY);

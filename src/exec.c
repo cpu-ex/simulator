@@ -64,9 +64,9 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     // bne
     case 0b001: cmp = (a1 != a2) ? 1 : 0; break;
     // blt
-    case 0b100: cmp = ((signed)a1 < (signed)a2) ? 1 : 0; break;
+    case 0b100: cmp = ((s32)a1 < (s32)a2) ? 1 : 0; break;
     // bge
-    case 0b101: cmp = ((signed)a1 >= (signed)a2) ? 1 : 0; break;
+    case 0b101: cmp = ((s32)a1 >= (s32)a2) ? 1 : 0; break;
     // bltu
     case 0b110: cmp = (a1 < a2) ? 1 : 0; break;
     // bgeu
@@ -90,8 +90,8 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
 
     // funct3: 000 -> lb, 001 -> lh, 010 -> lw
     //         100 -> lbu, 101 -> lhu
-    int bytes = funct3 & 0b011;
-    int sign = !(funct3 >> 2);
+    u8 bytes = funct3 & 0b011;
+    u8 sign = !(funct3 >> 2);
     WORD val = core->load_data(core, core->regs[rs1] + sext(imm, 11), bytes, sign);
     core->regs[rd] = val;
     core->pc += 4;
@@ -118,18 +118,18 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 #define ARITH_ADD(a1, a2) (a1) + (a2)
 #define ARITH_SUB(a1, a2) (a1) - (a2)
 #define ARITH_SLL(a1, a2) ((a1) << ((a2) & 0b11111)) // only take lower 5 bits as shift amount
-#define ARITH_SLT(a1, a2) (((signed)(a1) < (signed)(a2)) ? 1 : 0)
+#define ARITH_SLT(a1, a2) (((s32)(a1) < (s32)(a2)) ? 1 : 0)
 #define ARITH_SLTU(a1, a2) (((a1) < (a2)) ? 1 : 0)
 #define ARITH_XOR(a1, a2) ((a1) ^ (a2))
 #define ARITH_SRL(a1, a2) ((a1) >> ((a2) & 0b11111)) // same with sll
-#define ARITH_SRA(a1, a2) (unsigned)(((signed)(a1)) >> ((a2)&0b11111)) // same with sll
+#define ARITH_SRA(a1, a2) (u32)(((s32)(a1)) >> ((a2) & 0b11111)) // same with sll
 #define ARITH_OR(a1, a2) ((a1) | (a2))
 #define ARITH_AND(a1, a2) ((a1) & (a2))
 // RV32M
 #define ARITH_MUL(a1, a2) (a1) * (a2)
-#define ARITH_DIV(a1, a2) ((signed)(a1)) / ((signed)(a2))
+#define ARITH_DIV(a1, a2) ((s32)(a1)) / ((s32)(a2))
 #define ARITH_DIVU(a1, a2) (a1) / (a2)
-#define ARITH_REM(a1, a2) ((signed)(a1)) % ((signed)(a2))
+#define ARITH_REM(a1, a2) ((s32)(a1)) % ((s32)(a2))
 #define ARITH_REMU(a1, a2) (a1) % (a2)
 
 // arith with immediate variants

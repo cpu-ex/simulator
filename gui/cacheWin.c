@@ -2,11 +2,11 @@
 
 typedef struct focus_info {
     WINDOW* win;
-    int line; // list offset
-    int offset; // data offset
+    s32 line; // list offset
+    s32 offset; // data offset
 } FOCUS_INFO;
 
-void print_info(WINDOW* win, int flag, char* true_info, char* false_info) {
+void print_info(WINDOW* win, u8 flag, char* true_info, char* false_info) {
     if (flag) {
         wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wprintw(win, true_info);
@@ -104,7 +104,7 @@ void show_cache_win(CORE* core) {
     refresh();
     // main loop
     FOCUS_INFO focused = { .win = list_outer, .line = 0, .offset = 0 };
-    int* offset = &focused.line;
+    s32* offset = &focused.line;
     keypad(stdscr, 1);
     while (1) {
         // update routine

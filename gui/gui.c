@@ -6,17 +6,17 @@
 #include "cacheWin.h"
 
 typedef struct command {
-    char type;
-    int argc;
-    signed long long argv[2];
+    s8 type;
+    s32 argc;
+    s64 argv[2];
 } COMMAND;
 
-int reg2idx(char* reg) {
+s8 reg2idx(char* reg) {
     // special fp
     if (!strcmp(reg, "gp")) return 3;
     if (!strcmp(reg, "s0")) return 8;
     // try regs and fregs
-    for (int idx = 0; idx < 32; idx++) {
+    for (s8 idx = 0; idx < 32; idx++) {
         if (!strcmp(reg, reg_name[idx]))
             return idx;
         if (!strcmp(reg, freg_name[idx]))
@@ -33,14 +33,14 @@ COMMAND get_command(GUI* gui) {
     COMMAND com;
     com.argc = 0;
     // get instruction
-    char input[73], output[12][12];
+    char input[73], output[5][12];
     WINDOW* com_win = newwin(1, 77, 22, 2);
     wclear(com_win);
     wtimeout(com_win, gui->stepping_interval);
     mvwgetstr(com_win, 0, 0, input);
     delwin(com_win);
     // split with space (exactly 1 space)
-    int counter = 0, argc = 0;
+    s32 counter = 0, argc = 0;
     strcat(input, " "); // add an end point
     for (int idx = 0; idx < strlen(input); idx++) {
         if (input[idx] == ' ') {

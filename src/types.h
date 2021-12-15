@@ -3,10 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
+typedef unsigned char      u8;
+typedef signed char        s8;
+typedef unsigned short     u16;
+typedef signed short       s16;
+typedef unsigned int       u32;
+typedef signed int         s32;
+typedef float              f32;
 typedef unsigned long long u64;
+typedef signed long long   s64;
+typedef double             f64;
 
 typedef u8 BYTE;
 typedef u16 HALF;
@@ -18,8 +24,8 @@ union broadcast {
     u64 raw;
 
     struct broadcast_decoder {
-        unsigned long long type: 8;
-        signed long long info: 48;
+        u64 type: 8;
+        s64 info: 48;
     } decoder;
 } BROADCAST;
 

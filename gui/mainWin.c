@@ -13,7 +13,7 @@ void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     INSTR instr = { .raw = op };
     disasm(instr, asm_buf);
     // render
-    wprintw(inner, "%-10u 0x%08X : %08X : %-19s", core->instr_counter, pc, op, asm_buf);
+    wprintw(inner, "%-10llu 0x%08X : %08X : %-19s", core->instr_counter, pc, op, asm_buf);
     wattron(inner, COLOR_PAIR(WARNING_COLOR));
     switch (BROADCAST.decoder.type) {
     case STAT_EXIT: wprintw(inner, "%24s", "exit"); break;
@@ -42,7 +42,7 @@ void update_reg_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
         if (idx < 32)
             wprintw(win, "%8X", core->regs[idx]);
         else
-            wprintw(win, "%8.3f", *(float*)&(core->fregs[idx - 32]));
+            wprintw(win, "%8.3f", *(f32*)&(core->fregs[idx - 32]));
         wattroff(win, A_STANDOUT);
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
     }
@@ -123,7 +123,7 @@ void update_mem(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
         keypad(stdscr, 1);
         while (gui->focused_win == MEM_WIN) {
             // update
-            gui->mem_start = max(0, min((signed)gui->mem_start, (MAX_ADDR >> 4) - 1));
+            gui->mem_start = max(0, min((s32)gui->mem_start, (MAX_ADDR >> 4) - 1));
             mvwprintw(outer, 1, 31, (gui->mem_start > 0) ? "^" : " ");
             mvwprintw(outer, 18, 31, (gui->mem_start < (MAX_ADDR >> 4) - 1) ? "v" : " ");
             update_mem_sub(inner, gui, core, 1);

@@ -2,8 +2,8 @@
 #include <math.h>
 
 typedef union converter {
-    float f;
-    unsigned i;
+    f32 f;
+    u32 i;
 
     struct float_decoder {
         u32 body : 31;
@@ -164,9 +164,9 @@ void FCVT2F_EXEC(CORE* core, INSTR instr) {
     CVT f;
     switch (rs2) {
     // fcvt.s.w
-    case 0b00000: f.f = (float)((signed)core->regs[rs1]); break;
+    case 0b00000: f.f = (f32)((s32)core->regs[rs1]); break;
     // fcvt.s.wu
-    case 0b00001: f.f = (float)((unsigned)core->regs[rs1]); break;
+    case 0b00001: f.f = (f32)((u32)core->regs[rs1]); break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
@@ -185,9 +185,9 @@ void FCVT2I_EXEC(CORE* core, INSTR instr) {
     u32 i;
     switch (rs2) {
     // fcvt.w.s
-    case 0b00000: i = (signed)f.f; break;
+    case 0b00000: i = (s32)f.f; break;
     // fcvt.wu.s
-    case 0b00001: i = (unsigned)f.f; break;
+    case 0b00001: i = (u32)f.f; break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }

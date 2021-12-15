@@ -8,7 +8,7 @@ void core_step(CORE* core) {
     INSTR curr_instr = { .raw = raw };
     // execute
     execute(core, curr_instr);
-    core->regs[zero] = 0;
+    core->regs[0] = 0;
     core->instr_counter++;
 }
 
@@ -16,7 +16,7 @@ WORD core_load_instr(CORE* core, ADDR addr) {
     return core->mmu->read_instr(core->mmu, addr >> 2);
 }
 
-WORD core_load_data(CORE* core, ADDR addr, int bytes, int sign) {
+WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
     WORD val = 0;
     for (int i = 0; i < (1 << bytes); i++) {
         val <<= 8;
@@ -29,14 +29,14 @@ void core_store_instr(CORE* core, ADDR addr, WORD val) {
     core->mmu->write_instr(core->mmu, addr & (~0x3), val);
 }
 
-void core_store_data(CORE* core, ADDR addr, WORD val, int bytes) {
+void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
     for (int i = (1 << bytes) - 1; i >= 0; i--) {
         core->mmu->write_data(core->mmu, addr + i, val & 0xFF);
         val >>= 8;
     }
 }
 
-void core_dump(CORE* core, long long step_left) {
+void core_dump(CORE* core, s64 step_left) {
     if (core->output_file == NULL)
         core->output_file = fopen("output.txt", "a");
     fprintf(core->output_file, "PC = %08X\n", core->pc);
@@ -48,7 +48,7 @@ void core_dump(CORE* core, long long step_left) {
 
 void core_reset(CORE* core) {
     // call mem reset
-    core->mmu->reset(core->mmu, core->regs[sp]);
+    core->mmu->reset(core->mmu, core->regs[2]);
     // reset registers
     core->pc = DEFAULT_PC;
     for (int i = 0; i < 32; i++) {

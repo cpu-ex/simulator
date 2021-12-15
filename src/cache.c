@@ -2,9 +2,9 @@
 
 // #define is_valid_setting (((TAG_LEN / 8 + BLOCK_SIZE) * BLOCK_NUM) <= CACHE_SIZE ? 1 : 0)
 
-int cache_get_valid_block(CACHE* cache, ADDR addr) {
+s32 cache_get_valid_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    int idx = helper.d.set_idx * ASSOCIATIVITY;
+    s32 idx = helper.d.set_idx * ASSOCIATIVITY;
     for (int i = 0; i < ASSOCIATIVITY; i++, idx++) {
         if (cache->blocks[idx].valid && cache->blocks[idx].tag == helper.d.tag)
             return idx;
@@ -12,9 +12,9 @@ int cache_get_valid_block(CACHE* cache, ADDR addr) {
     return -1;
 }
 
-int cache_get_empty_block(CACHE* cache, ADDR addr) {
+s32 cache_get_empty_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    int idx = helper.d.set_idx * ASSOCIATIVITY;
+    s32 idx = helper.d.set_idx * ASSOCIATIVITY;
     for (int i = 0; i < ASSOCIATIVITY; i++, idx++) {
         if (!cache->blocks[idx].valid)
             return idx;
@@ -22,9 +22,9 @@ int cache_get_empty_block(CACHE* cache, ADDR addr) {
     return -1;
 }
 
-int cache_get_replacable_block(CACHE* cache, ADDR addr) {
+s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    int start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
+    s32 start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
     #if defined(CACHE_FIFO) // fifo
     u32 min = 0xFFFFFFFF;
     for (int i = 0; i < ASSOCIATIVITY; i++) {
@@ -59,7 +59,7 @@ int cache_get_replacable_block(CACHE* cache, ADDR addr) {
 u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
     cache->reference_counter++;
     cache->read_counter++;
-    int block_idx = cache_get_valid_block(cache, addr);
+    s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -77,7 +77,7 @@ u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
 u8 cache_write_byte(CACHE* cache, ADDR addr, BYTE val) {
     cache->reference_counter++;
     cache->write_counter++;
-    int block_idx = cache_get_valid_block(cache, addr);
+    s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -94,7 +94,7 @@ u8 cache_write_byte(CACHE* cache, ADDR addr, BYTE val) {
 }
 
 void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
-    int block_idx = cache_get_empty_block(cache, addr);
+    s32 block_idx = cache_get_empty_block(cache, addr);
     CACHE_ADDR_HELPER helper;
     // write back
     if (block_idx < 0) {
@@ -126,7 +126,7 @@ void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
 
 // get data without incrementing counters
 u8 cache_sneak(CACHE* cache, ADDR addr, BYTE* val) {
-    int block_idx = cache_get_valid_block(cache, addr);
+    s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         return 0;
