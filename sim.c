@@ -87,7 +87,8 @@ void sim_run(SIM* sim) {
             #if defined(TIME_TEST_MODE)
             t2 = clock();
             u64 num = sim->core->instr_counter;
-            printf("%u instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
+            printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
+            sim->core->deinit(sim->core);
             return;
             #endif
         case STAT_MEM_EXCEPTION:
