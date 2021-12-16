@@ -1,15 +1,19 @@
 #include "fpu.h"
 #include <math.h>
 
-typedef union converter {
-    f32 f;
+typedef union float_helper {
     u32 i;
+    f32 f;
 
     struct float_decoder {
-        u32 body : 31;
+        u32 mantissa : 23;
+        u32 exp : 8;
         u32 sign : 1;
     } __attribute__((packed)) decoder;
-} CVT;
+} FLOAT_HELPER;
+
+#define BIT_SET(val, h, l) (val | (((1 << (h - l + 1)) - 1) << l))
+#define BIT_GET(val, h, l) ((val >> l) & ((1 << (h - l + 1)) - 1))
 
 // f-load
 void FLW_EXEC(CORE* core, INSTR instr) {
@@ -68,9 +72,9 @@ void FADD_EXEC(CORE* core, INSTR instr) {
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
     
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
-    CVT val = { .f = f1.f + f2.f };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
+    FLOAT_HELPER val = { .f = f1.f + f2.f };
 
     core->fregs[rd] = val.i;
     core->pc += 4;
@@ -82,9 +86,9 @@ void FSUB_EXEC(CORE* core, INSTR instr) {
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
     
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
-    CVT val = { .f = f1.f - f2.f };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
+    FLOAT_HELPER val = { .f = f1.f - f2.f };
 
     core->fregs[rd] = val.i;
     core->pc += 4;
@@ -95,11 +99,40 @@ void FMUL_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
-    
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
-    CVT val = { .f = f1.f * f2.f };
 
+    FLOAT_HELPER x1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER x2 = { .i = core->fregs[rs2] };
+    u32 s1 = x1.decoder.sign;
+    u32 s2 = x2.decoder.sign;
+    u32 e1 = x1.decoder.exp;
+    u32 e2 = x2.decoder.exp;
+    u32 m1h = BIT_GET(x1.decoder.mantissa, 22, 11); // x1[22:11]
+    u32 m1l = BIT_GET(x1.decoder.mantissa, 10, 0); // x1[10:0]
+    u32 m2h = BIT_GET(x2.decoder.mantissa, 22, 11);
+    u32 m2l = BIT_GET(x2.decoder.mantissa, 10, 0);
+
+    /* stage 1 */
+    // step 2
+    u32 h1 = BIT_SET(m1h, 12, 12);
+    u32 h2 = BIT_SET(m2h, 12, 12);
+    u32 hh = h1 * h2;
+    u32 hl = h1 * m2l;
+    u32 lh = m1l * h2;
+    // step 5
+    u32 s3 = s1 ^ s2;
+    u32 e3 = e1 + e2 + 129;
+
+    /* stage 2 */
+    // step 3
+    u32 m3 = hh + (hl >> 11) + (lh >> 11) + 2;
+    u32 e4 = e3 + 1;
+
+    /* stage 3 */
+    u32 e5 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(e4, 7, 0) : BIT_GET(e3, 7, 0));
+    // step 4
+    u32 m4 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(m3, 24, 2) : BIT_GET(m3, 23, 1));
+
+    FLOAT_HELPER val = { .decoder = { .mantissa = m4, .exp = e5, .sign = s3 } };
     core->fregs[rd] = val.i;
     core->pc += 4;
 }
@@ -110,9 +143,9 @@ void FDIV_EXEC(CORE* core, INSTR instr) {
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
     
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
-    CVT val = { .f = f1.f / f2.f };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
+    FLOAT_HELPER val = { .f = f1.f / f2.f };
 
     core->fregs[rd] = val.i;
     core->pc += 4;
@@ -123,8 +156,8 @@ void FSQRT_EXEC(CORE* core, INSTR instr) {
     BYTE rd = instr.r.rd;
     BYTE rs1 = instr.r.rs1;
     
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT val = { .f = sqrtf(f1.f) };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER val = { .f = sqrtf(f1.f) };
 
     core->fregs[rd] = val.i;
     core->pc += 4;
@@ -137,8 +170,8 @@ void FCMP_EXEC(CORE* core, INSTR instr) {
     BYTE rs2 = instr.r.rs2;
     BYTE funct3 = instr.r.funct3;
 
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
     u32 val;
     switch (funct3) {
     // feq
@@ -161,7 +194,7 @@ void FCVT2F_EXEC(CORE* core, INSTR instr) {
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
 
-    CVT f;
+    FLOAT_HELPER f;
     switch (rs2) {
     // fcvt.s.w
     case 0b00000: f.f = (f32)((s32)core->regs[rs1]); break;
@@ -181,7 +214,7 @@ void FCVT2I_EXEC(CORE* core, INSTR instr) {
     BYTE rs1 = instr.r.rs1;
     BYTE rs2 = instr.r.rs2;
 
-    CVT f = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f = {.i = core->fregs[rs1]};
     u32 i;
     switch (rs2) {
     // fcvt.w.s
@@ -203,9 +236,9 @@ void FSGNJ_EXEC(CORE* core, INSTR instr) {
     BYTE rs2 = instr.r.rs2;
     BYTE funct3 = instr.r.funct3;
 
-    CVT f1 = { .i = core->fregs[rs1] };
-    CVT f2 = { .i = core->fregs[rs2] };
-    CVT val = { .decoder = { .body = f2.decoder.body } };
+    FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
+    FLOAT_HELPER val = { .decoder = { .mantissa = f2.decoder.mantissa, .exp = f2.decoder.exp } };
     switch (funct3) {
     // fsgnj
     case 0b000: val.decoder.sign = f2.decoder.sign; break;

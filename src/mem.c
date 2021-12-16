@@ -4,10 +4,10 @@ typedef union mem_addr_helper {
     u32 raw;
 
     struct addr_decoder {
-        u16 offset: 8;
-        u16 index2: 10;
-        u16 index1: 8;
-        u16 padding: 6;
+        u16 offset : 8;
+        u16 index2 : 10;
+        u16 index1 : 8;
+        u16 padding : 6;
     } __attribute__((packed)) d;
 } MEM_ADDR_HELPER;
 

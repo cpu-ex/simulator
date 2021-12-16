@@ -29,7 +29,7 @@ typedef union cache_addr_helper {
     struct addr_decoder {
         u32 offset : OFFSET_LEN;
         u32 set_idx : SET_IDX_LEN;
-        u32 tag :    TAG_LEN;
+        u32 tag : TAG_LEN;
     } __attribute__((packed)) d;
 } CACHE_ADDR_HELPER;
 

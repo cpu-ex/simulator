@@ -47,7 +47,7 @@ void core_dump(CORE* core, s64 step_left) {
             fprintf(core->dumpfile_fp, " f%d:%08x", i - 32, core->fregs[i - 32]);
         }
     }
-    fprintf(core->dumpfile_fp, "\n");
+    fprintf(core->dumpfile_fp, "\r\n");
 }
 
 void core_reset(CORE* core) {
