@@ -435,7 +435,7 @@ def pseudo_not(instr: tuple, addr: int, tags: dict) -> list:
 def pseudo_mv(instr: tuple, addr: int, tags: dict) -> list:
     rd = instr[1]
     rs = instr[2]
-    return arith_i(('ADDI', rd, rs, '1'), addr, tags)
+    return arith_i(('ADDI', rd, rs, '0'), addr, tags)
 
 def pseudo_j(instr: tuple, addr: int, tags: dict) -> list:
     offset = instr[1]
