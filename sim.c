@@ -26,9 +26,7 @@ void sim_load_file(SIM* sim, char* file_name) {
         ADDR addr = DEFAULT_PC >> 2;
         for (int i = 0; i < file_size; i++) {
             fread(&word, 1, 4, file);
-            // endian exchange
-            word = ((word & 0xFF00FF00) >> 8) | ((word & 0x00FF00FF) << 8);
-            word = ((word & 0xFFFF0000) >> 16) | ((word & 0x0000FFFF) << 16);
+            format2big(word);
             sim->core->mmu->write_instr(sim->core->mmu, addr++, word);
         }
         fclose(file);

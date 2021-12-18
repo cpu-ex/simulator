@@ -7,6 +7,7 @@ import decoder, encoder
 class ASM(object):
 
     DEFAULT_PC = 0x100
+    DEFAULT_SP = 0x03FFFFF0
     CODE_SECTION = True
     DATA_SECTION = False
 
@@ -22,7 +23,7 @@ class ASM(object):
 
         self.startTag = None
         self.section = ASM.CODE_SECTION
-        self.codeCounter = ASM.DEFAULT_PC + 0x8
+        self.codeCounter = ASM.DEFAULT_PC + 24
         self.dataCounter = 0
     
     def __decode(self, instr: str) -> tuple:
@@ -133,11 +134,19 @@ class ASM(object):
     def save(self, binary: bool, text: bool) -> None:
         # direct to start point
         if startAddr := self.codeTag.get(self.startTag, None):
-            hi, lo = encoder.getHiLo(startAddr - ASM.DEFAULT_PC)
+            hiOfSp, loOfSp = encoder.getHiLo(ASM.DEFAULT_SP)
+            hiOfHp, loOfHp = encoder.getHiLo(len(self.data) * 4)
+            hiOfStart, loOfStart = encoder.getHiLo(startAddr - ASM.DEFAULT_PC - 16)
             self.code = [
+                # preset sp to DEFAULT_SP
+                (('LUI', 'sp', str(hiOfSp)), -6),
+                (('ADDI', 'sp', 'sp', str(loOfSp)), -5),
+                # preset hp right after static data
+                (('LUI', 'hp', str(hiOfHp)), -4),
+                (('ADDI', 'hp', 'hp', str(loOfHp)), -3),
                 # jump to start point
-                (('AUIPC', 't0', str(hi)), 0),
-                (('JALR', 'zero', str(lo), 't0'), 0)
+                (('AUIPC', 't0', str(hiOfStart)), -2),
+                (('JALR', 'zero', str(loOfStart), 't0'), -1)
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag defined.')

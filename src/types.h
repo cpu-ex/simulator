@@ -45,3 +45,13 @@ union broadcast {
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
+
+#define format2big(word)                                                      \
+    {                                                                         \
+        s32 n = 1;                                                            \
+        if (*(char *)&n == 1)                                                 \
+        {                                                                     \
+            word = ((word & 0xFF00FF00) >> 8) | ((word & 0x00FF00FF) << 8);   \
+            word = ((word & 0xFFFF0000) >> 16) | ((word & 0x0000FFFF) << 16); \
+        }                                                                     \
+    }

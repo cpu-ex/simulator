@@ -16,21 +16,20 @@ int main(int argc, char* argv[]) {
             char output[36];
             // calculate file size
             fseek(code, 0, SEEK_END);
-            u64 size = ftell(code);
+            u64 size = ftell(code) >> 2;
             fseek(code, 0, SEEK_SET);
             // disasm
             for (int i = 0; i < size; i++) {
-                u8 byte;
-                fread(&byte, 1, 1, code);
-                input <<= 8;
-                input |= byte;
-                if (i % 4 == 3) {
-                    INSTR instr = { .raw = input };
-                    disasm(instr, output);
-                    printf("0x%08X : %08X\t%s\n", i / 4 * 4, input, output);
-                    input = 0;
-                    memset(output, 0, 36);
-                }
+                // fetch
+                u32 input;
+                fread(&input, 1, 4, code);
+                format2big(input);
+                // decode
+                INSTR instr = { .raw = input };
+                disasm(instr, output);
+                printf("0x%08X : %08X\t%s\n", i << 2, input, output);
+                input = 0;
+                memset(output, 0, 36);
             }
             fclose(code);
         }
