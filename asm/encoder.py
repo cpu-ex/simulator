@@ -452,6 +452,22 @@ def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
 def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
     return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
 
+def pseudo_call(instr: tuple, addr: int, tags: dict) -> list:
+    tag = instr[1]
+
+    offset = tag2offset(tag, tags, addr)
+    hi, lo = getHiLo(offset)
+    return auipc(('AUIPC', 't1', str(hi)), addr, tags) + \
+        jalr(('JALR', 'ra', str(lo), 't1'), addr, tags)
+
+def pseudo_tail(instr: tuple, addr: int, tags: dict) -> list:
+    tag = instr[1]
+
+    offset = tag2offset(tag, tags, addr)
+    hi, lo = getHiLo(offset)
+    return auipc(('AUIPC', 't1', str(hi)), addr, tags) + \
+        jalr(('JALR', 'zero', str(lo), 't1'), addr, tags)
+
 def pseudo_fmv(instr: tuple, addr: int, tags: dict) -> list:
     rd = instr[1]
     rs = instr[2]
@@ -559,6 +575,8 @@ encoder = {
     'PSEUDO-JAL': pseudo_jal,
     'PSEUDO-JALR': pseudo_jalr,
     'PSEUDO-RET': pseudo_ret,
+    'PSEUDO-CALL': pseudo_call,
+    'PSEUDO-TAIL': pseudo_tail,
     'PSEUDO-FMV': pseudo_fmv,
     'PSEUDO-FABS': pseudo_fabs,
     'PSEUDO-FNEG': pseudo_fneg,

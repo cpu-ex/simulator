@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-#define sext(val, shift) (val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0)
+#define sext(val, shift) ((val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0))
 
 static char* instr_name[23] = {
     "lui", "auipc",

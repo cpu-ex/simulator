@@ -101,6 +101,8 @@ decoder = {
     'PSEUDO-JAL': (re.compile(r'(jal)\s+(\S+)'), 1),
     'PSEUDO-JALR': (re.compile(r'(jalr)\s+(\S+)'), 1),
     'PSEUDO-RET': (re.compile(r'(ret)'), 1),
+    'PSEUDO-CALL': (re.compile(r'(call)\s+(\S+)'), 2),
+    'PSEUDO-TAIL': (re.compile(r'(tail)\s+(\S+)'), 2),
     'PSEUDO-FMV': (re.compile(r'(fmv)\s+(\S+),\s*(\S+)'), 1),
     'PSEUDO-FABS': (re.compile(r'(fabs)\s+(\S+),\s*(\S+)'), 1),
     'PSEUDO-FNEG': (re.compile(r'(fneg)\s+(\S+),\s*(\S+)'), 1),

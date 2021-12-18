@@ -115,8 +115,8 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 }
 
 // RV32I
-#define ARITH_ADD(a1, a2) (a1) + (a2)
-#define ARITH_SUB(a1, a2) (a1) - (a2)
+#define ARITH_ADD(a1, a2) ((a1) + (a2))
+#define ARITH_SUB(a1, a2) ((a1) - (a2))
 #define ARITH_SLL(a1, a2) ((a1) << ((a2) & 0b11111)) // only take lower 5 bits as shift amount
 #define ARITH_SLT(a1, a2) (((s32)(a1) < (s32)(a2)) ? 1 : 0)
 #define ARITH_SLTU(a1, a2) (((a1) < (a2)) ? 1 : 0)
@@ -126,11 +126,11 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 #define ARITH_OR(a1, a2) ((a1) | (a2))
 #define ARITH_AND(a1, a2) ((a1) & (a2))
 // RV32M
-#define ARITH_MUL(a1, a2) (a1) * (a2)
+#define ARITH_MUL(a1, a2) ((a1) * (a2))
 #define ARITH_DIV(a1, a2) ((s32)(a1)) / ((s32)(a2))
-#define ARITH_DIVU(a1, a2) (a1) / (a2)
+#define ARITH_DIVU(a1, a2) ((a1) / (a2))
 #define ARITH_REM(a1, a2) ((s32)(a1)) % ((s32)(a2))
-#define ARITH_REMU(a1, a2) (a1) % (a2)
+#define ARITH_REMU(a1, a2) ((a1) % (a2))
 
 // arith with immediate variants
 // addi, slli, slti, sltiu, xori, srli, srai, ori, andi

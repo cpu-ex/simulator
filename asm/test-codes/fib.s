@@ -13,12 +13,12 @@ fib: # a0 = n
 
     sw a0, 4(sp) # save current n
     addi a0, a0, -1 # a0 = n - 1
-    jal fib # fib (n - 1)
+    call fib # fib (n - 1)
     sw a0, 8(sp) # save fib (n - 1)
     
     lw a0, 4(sp)
     addi a0, a0, -2 # a0 = n - 2
-    jal fib # fib (n - 2)
+    call fib # fib (n - 2)
     lw a1, 8(sp)
     add a0, a0, a1
     j final
@@ -35,7 +35,7 @@ main:
     lb a0, 0(t0) # load a0 from const field
     # or remove the data section
     # and use this instead: li a0, 10
-    jal fib # call fib(a0)
+    call fib # call fib(a0)
     la t0, const
     sw a0, 0(t0) # store a0 back to const field
     ebreak
