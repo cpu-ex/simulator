@@ -39,7 +39,7 @@ void JALR_EXEC(CORE* core, INSTR instr) {
     WORD imm = instr.i.imm;
     BYTE rs1 = instr.i.rs1;
     
-    REG t = core->pc + 4;
+    WORD t = core->pc + 4;
     core->pc = (core->regs[rs1] + sext(imm, 11)) & ~1;
     core->regs[rd] = t;
     // stall check

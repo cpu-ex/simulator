@@ -5,6 +5,7 @@
 
 #define CLK_FREQUENCY 1000000
 #define DEFAULT_PC    0x100
+#define UART_ADDR     0x3FFFFFC
 
 static char* reg_name[32] = {
     "zero",
@@ -29,13 +30,15 @@ static char* freg_name[32] = {
 
 typedef struct core {
     // attributes
-    REG pc;
-    REG regs[32];
-    REG fregs[32];
+    WORD pc;
+    WORD regs[32];
+    WORD fregs[32];
+    WORD uart;
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
-    char dumpfile_name[30];
-    FILE* dumpfile_fp;
+    // output files
+    char outputfile_name[30], dumpfile_name[30];
+    FILE *outputfile_fp, *dumpfile_fp;
     // analysis
     u64 instr_counter;
     u64 stall_counter;
@@ -46,7 +49,7 @@ typedef struct core {
     void (*store_instr)(struct core*, ADDR, WORD);
     void (*store_data)(struct core*, ADDR, WORD, u8);
     void (*step)(struct core*);
-    void (*dump)(struct core*, s64);
+    void (*dump)(struct core*);
     void (*reset)(struct core*);
     void (*deinit)(struct core*);
 } CORE;

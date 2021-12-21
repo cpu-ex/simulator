@@ -18,6 +18,7 @@
 - [2021/12/05] introduce stall counter and display executing time prediction to analysis window
 - [2021/12/12] implement automatic stepping with window updated
 - [2021/12/14] implement information dump for simulator
+- [2021/12/21] implement uart output for simulator
 
 ![sample](sample.gif)
 

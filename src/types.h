@@ -19,7 +19,6 @@ typedef u8 BYTE;
 typedef u16 HALF;
 typedef u32 WORD;
 typedef u32 ADDR;
-typedef u32 REG;
 
 union broadcast {
     u64 raw;

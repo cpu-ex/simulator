@@ -99,7 +99,8 @@ void sim_run(SIM* sim) {
             if (BROADCAST.decoder.info > 0) {
                 // step forward and record (almost same with STAT_STEP)
                 sim->core->step(sim->core);
-                sim->core->dump(sim->core, --BROADCAST.decoder.info);
+                sim->core->dump(sim->core);
+                BROADCAST.decoder.info--;
             } else {
                 // ignore negative step number
                 BROADCAST(STAT_HALT);

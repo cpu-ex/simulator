@@ -17,6 +17,7 @@ WORD core_load_instr(CORE* core, ADDR addr) {
 }
 
 WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
+    // uart read ignored
     WORD val = 0;
     for (int i = 0; i < (1 << bytes); i++) {
         val <<= 8;
@@ -30,13 +31,18 @@ void core_store_instr(CORE* core, ADDR addr, WORD val) {
 }
 
 void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
-    for (int i = (1 << bytes) - 1; i >= 0; i--) {
-        core->mmu->write_data(core->mmu, addr + i, val & 0xFF);
-        val >>= 8;
+    if (addr ^ UART_ADDR) {
+        for (int i = (1 << bytes) - 1; i >= 0; i--) {
+            core->mmu->write_data(core->mmu, addr + i, val & 0xFF);
+            val >>= 8;
+        }
+    } else {
+        u8 byte = val & 0xFF;
+        fwrite(&byte, 1, 1, core->outputfile_fp);
     }
 }
 
-void core_dump(CORE* core, s64 step_left) {
+void core_dump(CORE* core) {
     // step, pc
     fprintf(core->dumpfile_fp, "step:%016llx pc:%08x", core->instr_counter, core->pc); 
     // register file
@@ -67,12 +73,17 @@ void core_reset(CORE* core) {
     core->branch_predictor->reset(core->branch_predictor);
 }
 
+#define close_file(fp, name)         \
+    {                                \
+        fseek(fp, 0, SEEK_END);      \
+        u64 filesize = ftell(fp);    \
+        fclose(fp);                  \
+        if (!filesize) remove(name); \
+        fp = NULL;                   \
+    }
 void core_deinit(CORE* core) {
-    fseek(core->dumpfile_fp, 0, SEEK_END);
-    u64 filesize = ftell(core->dumpfile_fp);
-    fclose(core->dumpfile_fp);
-    if (!filesize) remove(core->dumpfile_name);
-    core->dumpfile_fp = NULL;
+    close_file(core->outputfile_fp, core->outputfile_name);
+    close_file(core->dumpfile_fp, core->dumpfile_name);
 }
 
 void init_core(CORE* core) {
@@ -81,10 +92,12 @@ void init_core(CORE* core) {
     core->instr_counter = 0;
     core->stall_counter = 0;
     memset(core->instr_analysis, 0, 23 * sizeof(u32));
-    // open a dumpfile
+    // open files for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);
+    strftime(core->outputfile_name, 30, "output-%Y%m%d-%H%M%S.bin", info);
     strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S.txt", info);
+    core->outputfile_fp = fopen(core->outputfile_name, "wb");
     core->dumpfile_fp = fopen(core->dumpfile_name, "w");
     // init mmu
     static MMU mmu;
