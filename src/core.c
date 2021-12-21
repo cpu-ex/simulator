@@ -95,9 +95,9 @@ void init_core(CORE* core) {
     // open files for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);
-    strftime(core->outputfile_name, 30, "output-%Y%m%d-%H%M%S.bin", info);
-    strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S.txt", info);
-    core->outputfile_fp = fopen(core->outputfile_name, "wb");
+    strftime(core->outputfile_name, 30, "output-%Y%m%d-%H%M%S", info);
+    strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S", info);
+    core->outputfile_fp = fopen(core->outputfile_name, "w");
     core->dumpfile_fp = fopen(core->dumpfile_name, "w");
     // init mmu
     static MMU mmu;

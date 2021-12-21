@@ -2,7 +2,8 @@
     .text
 main:
     li t0, 0x3FFFFFC
-    li a1, 10
+    addi a0, a0, 48
+    addi a1, a1, 58
 for:
     bge a0, a1, endfor
     sw a0, 0(t0)
