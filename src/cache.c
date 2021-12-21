@@ -4,19 +4,21 @@
 
 s32 cache_get_valid_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    s32 idx = helper.d.set_idx * ASSOCIATIVITY;
-    for (int i = 0; i < ASSOCIATIVITY; i++, idx++) {
-        if (cache->blocks[idx].valid && cache->blocks[idx].tag == helper.d.tag)
-            return idx;
+    register s32 idx = helper.d.set_idx * ASSOCIATIVITY;
+    register u32 tag = helper.d.tag;
+    for (register int i = 0; i < ASSOCIATIVITY; i++, idx++) {
+        if (!cache->blocks[idx]->valid) continue;
+        if (cache->blocks[idx]->tag ^ tag) continue;
+        return idx;
     }
     return -1;
 }
 
 s32 cache_get_empty_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    s32 idx = helper.d.set_idx * ASSOCIATIVITY;
-    for (int i = 0; i < ASSOCIATIVITY; i++, idx++) {
-        if (!cache->blocks[idx].valid)
+    register s32 idx = helper.d.set_idx * ASSOCIATIVITY;
+    for (register int i = 0; i < ASSOCIATIVITY; i++, idx++) {
+        if (!cache->blocks[idx]->valid)
             return idx;
     }
     return -1;
@@ -24,28 +26,28 @@ s32 cache_get_empty_block(CACHE* cache, ADDR addr) {
 
 s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
-    s32 start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
+    register s32 start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
     #if defined(CACHE_FIFO) // fifo
-    u32 min = 0xFFFFFFFF;
-    for (int i = 0; i < ASSOCIATIVITY; i++) {
-        if (cache->blocks[start_idx + i].start_point < min) {
-            min = cache->blocks[start_idx + i].start_point;
+    register u32 min = 0xFFFFFFFF;
+    for (register int i = 0; i < ASSOCIATIVITY; i++) {
+        if (cache->blocks[start_idx + i]->start_point < min) {
+            min = cache->blocks[start_idx + i]->start_point;
             block_idx = start_idx + i;
         }
     }
     #elif defined(CACHE_LRU) // lru
-    u32 min = 0xFFFFFFFF;
-    for (int i = 0; i < ASSOCIATIVITY; i++) {
-        if (cache->blocks[start_idx + i].last_referenced < min) {
-            min = cache->blocks[start_idx + i].last_referenced;
+    register u32 min = 0xFFFFFFFF;
+    for (register int i = 0; i < ASSOCIATIVITY; i++) {
+        if (cache->blocks[start_idx + i]->last_referenced < min) {
+            min = cache->blocks[start_idx + i]->last_referenced;
             block_idx = start_idx + i;
         }
     }
     #elif defined(CACHE_RR) // round robin
-    u32 max = 0;
-    for (int i = 0; i < ASSOCIATIVITY; i++) {
-        if (cache->blocks[start_idx + i].last_referenced > max) {
-            max = cache->blocks[start_idx + i].last_referenced;
+    register u32 max = 0;
+    for (register int i = 0; i < ASSOCIATIVITY; i++) {
+        if (cache->blocks[start_idx + i]->last_referenced > max) {
+            max = cache->blocks[start_idx + i]->last_referenced;
             block_idx = start_idx + i;
         }
     }
@@ -59,7 +61,7 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
 u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
     cache->reference_counter++;
     cache->read_counter++;
-    s32 block_idx = cache_get_valid_block(cache, addr);
+    register s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -68,8 +70,8 @@ u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
         // hit
         cache->hit_counter++;
         CACHE_ADDR_HELPER helper = { .raw = addr };
-        *val = cache->blocks[block_idx].data[helper.d.offset];
-        cache->blocks[block_idx].last_referenced = cache->reference_counter;
+        *val = cache->blocks[block_idx]->data[helper.d.offset];
+        cache->blocks[block_idx]->last_referenced = cache->reference_counter;
         return 1;
     }
 }
@@ -77,7 +79,7 @@ u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
 u8 cache_write_byte(CACHE* cache, ADDR addr, BYTE val) {
     cache->reference_counter++;
     cache->write_counter++;
-    s32 block_idx = cache_get_valid_block(cache, addr);
+    register s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -86,41 +88,41 @@ u8 cache_write_byte(CACHE* cache, ADDR addr, BYTE val) {
         // hit
         cache->hit_counter++;
         CACHE_ADDR_HELPER helper = { .raw = addr };
-        cache->blocks[block_idx].data[helper.d.offset] = val;
-        cache->blocks[block_idx].modified = 1;
-        cache->blocks[block_idx].last_referenced = cache->reference_counter;
+        cache->blocks[block_idx]->data[helper.d.offset] = val;
+        cache->blocks[block_idx]->modified = 1;
+        cache->blocks[block_idx]->last_referenced = cache->reference_counter;
         return 1;
     }
 }
 
 void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
-    s32 block_idx = cache_get_empty_block(cache, addr);
+    register s32 block_idx = cache_get_empty_block(cache, addr);
     CACHE_ADDR_HELPER helper;
     // write back
     if (block_idx < 0) {
         // all blocks occupied
         block_idx = cache_get_replacable_block(cache, addr);
-        if (cache->blocks[block_idx].modified) {
-            helper.d.tag = cache->blocks[block_idx].tag;
-            helper.d.set_idx = cache->blocks[block_idx].set_idx;
-            for (int offset = 0; offset < BLOCK_SIZE; offset++) {
+        if (cache->blocks[block_idx]->modified) {
+            helper.d.tag = cache->blocks[block_idx]->tag;
+            helper.d.set_idx = cache->blocks[block_idx]->set_idx;
+            for (register int offset = 0; offset < BLOCK_SIZE; offset++) {
                 helper.d.offset = offset;
-                mem->write_byte(mem, helper.raw, cache->blocks[block_idx].data[offset]);
-                cache->blocks[block_idx].data[offset] = 0;
+                mem->write_byte(mem, helper.raw, cache->blocks[block_idx]->data[offset]);
+                cache->blocks[block_idx]->data[offset] = 0;
             }
         }
     }
     // load block
     helper.raw = addr;
-    cache->blocks[block_idx].valid = 1;
-    cache->blocks[block_idx].modified = 0;
-    cache->blocks[block_idx].start_point = cache->reference_counter;
-    cache->blocks[block_idx].last_referenced = cache->read_counter;
-    cache->blocks[block_idx].tag = helper.d.tag;
-    cache->blocks[block_idx].set_idx = helper.d.set_idx;
-    for (int offset = 0; offset < BLOCK_SIZE; offset++) {
+    cache->blocks[block_idx]->valid = 1;
+    cache->blocks[block_idx]->modified = 0;
+    cache->blocks[block_idx]->start_point = cache->reference_counter;
+    cache->blocks[block_idx]->last_referenced = cache->read_counter;
+    cache->blocks[block_idx]->tag = helper.d.tag;
+    cache->blocks[block_idx]->set_idx = helper.d.set_idx;
+    for (register int offset = 0; offset < BLOCK_SIZE; offset++) {
         helper.d.offset = offset;
-        cache->blocks[block_idx].data[offset] = mem->read_byte(mem, helper.raw);
+        cache->blocks[block_idx]->data[offset] = mem->read_byte(mem, helper.raw);
     }
 }
 
@@ -133,7 +135,7 @@ u8 cache_sneak(CACHE* cache, ADDR addr, BYTE* val) {
     } else {
         // hit
         CACHE_ADDR_HELPER helper = { .raw = addr };
-        *val = cache->blocks[block_idx].data[helper.d.offset];
+        *val = cache->blocks[block_idx]->data[helper.d.offset];
         return 1;
     }
 }
@@ -144,8 +146,11 @@ void cache_reset(CACHE* cache) {
     cache->read_counter = 0;
     cache->write_counter = 0;
     cache->reference_counter = 0;
-    for (int idx = 0; idx < BLOCK_NUM; idx++)
-        cache->blocks[idx].valid = 0;
+    for (int idx = 0; idx < BLOCK_NUM; idx++) {
+        if (cache->blocks[idx] != NULL)
+            free(cache->blocks[idx]);
+        cache->blocks[idx] = (CACHE_BLOCK*)malloc(sizeof(CACHE_BLOCK));
+    }
 }
 
 void init_cache(CACHE* cache) {

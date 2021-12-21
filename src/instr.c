@@ -416,7 +416,7 @@ u8 disasm(INSTR instr, char* buffer) {
 
 u8 isLwStall(BYTE rd, WORD op) {
     INSTR instr = { .raw = op };
-    char buffer[36];
+    static char buffer[36];
     
     switch (disasm(instr, buffer)) {
     case JALR:

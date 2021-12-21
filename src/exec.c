@@ -3,8 +3,8 @@
 
 // lui: load upper immediate
 void LUI_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.u.rd;
-    WORD imm = instr.u.imm31_12;
+    register BYTE rd = instr.u.rd;
+    register WORD imm = instr.u.imm31_12;
 
     core->regs[rd] = imm << 12;
     core->pc += 4;
@@ -12,8 +12,8 @@ void LUI_EXEC(CORE* core, INSTR instr) {
 
 // auipc: add upper immediate to pc
 void AUIPC_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.u.rd;
-    WORD imm = instr.u.imm31_12;
+    register BYTE rd = instr.u.rd;
+    register WORD imm = instr.u.imm31_12;
 
     core->regs[rd] = core->pc + (imm << 12);
     core->pc += 4;
@@ -21,11 +21,11 @@ void AUIPC_EXEC(CORE* core, INSTR instr) {
 
 // jal: jump and link
 void JAL_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.j.rd;
-    WORD imm = instr.j.imm20 << 20 |
-                instr.j.imm19_12 << 12 |
-                instr.j.imm11 << 11 |
-                instr.j.imm10_1 << 1;
+    register BYTE rd = instr.j.rd;
+    register WORD imm = instr.j.imm20 << 20 |
+                        instr.j.imm19_12 << 12 |
+                        instr.j.imm11 << 11 |
+                        instr.j.imm10_1 << 1;
 
     core->regs[rd] = core->pc + 4;
     core->pc += sext(imm, 20);
@@ -35,9 +35,9 @@ void JAL_EXEC(CORE* core, INSTR instr) {
 
 // jalr: jump and link register
 void JALR_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.i.rd;
-    WORD imm = instr.i.imm;
-    BYTE rs1 = instr.i.rs1;
+    register BYTE rd = instr.i.rd;
+    register WORD imm = instr.i.imm;
+    register BYTE rs1 = instr.i.rs1;
     
     WORD t = core->pc + 4;
     core->pc = (core->regs[rs1] + sext(imm, 11)) & ~1;
@@ -48,16 +48,16 @@ void JALR_EXEC(CORE* core, INSTR instr) {
 
 // branch: beq, bne, blt, bge, bltu, bgeu
 void BRANCH_EXEC(CORE* core, INSTR instr) {
-    WORD imm = instr.b.imm12 << 12 |
-                instr.b.imm11 << 11 |
-                instr.b.imm10_5 << 5 |
-                instr.b.imm4_1 << 1;
-    BYTE rs1 = instr.b.rs1;
-    BYTE rs2 = instr.b.rs2;
-    BYTE funct3 = instr.b.funct3;
+    register WORD imm = instr.b.imm12 << 12 |
+                        instr.b.imm11 << 11 |
+                        instr.b.imm10_5 << 5 |
+                        instr.b.imm4_1 << 1;
+    register BYTE rs1 = instr.b.rs1;
+    register BYTE rs2 = instr.b.rs2;
+    register BYTE funct3 = instr.b.funct3;
 
-    u8 cmp = 0;
-    WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
+    register u8 cmp = 0;
+    register WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
     switch (funct3) {
     // beq
     case 0b000: cmp = (a1 == a2) ? 1 : 0; break;
@@ -83,17 +83,14 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
 
 // load: lb, lh, lw, lbu, lhu
 void LOAD_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.i.rd;
-    WORD imm = instr.i.imm;
-    BYTE rs1 = instr.i.rs1;
-    BYTE funct3 = instr.i.funct3;
+    register BYTE rd = instr.i.rd;
+    register WORD imm = instr.i.imm;
+    register BYTE rs1 = instr.i.rs1;
+    register BYTE funct3 = instr.i.funct3;
 
     // funct3: 000 -> lb, 001 -> lh, 010 -> lw
     //         100 -> lbu, 101 -> lhu
-    u8 bytes = funct3 & 0b011;
-    u8 sign = !(funct3 >> 2);
-    WORD val = core->load_data(core, core->regs[rs1] + sext(imm, 11), bytes, sign);
-    core->regs[rd] = val;
+    core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11), funct3 & 0b011, !(funct3 >> 2));
     core->pc += 4;
     // stall check
     core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
@@ -101,11 +98,11 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
 
 // store: sb, sh, sw
 void STORE_EXEC(CORE* core, INSTR instr) {
-    WORD imm = instr.s.imm11_5 << 5 |
-                instr.s.imm4_0;
-    BYTE rs1 = instr.s.rs1;
-    BYTE rs2 = instr.s.rs2;
-    BYTE funct3 = instr.s.funct3;
+    register WORD imm = instr.s.imm11_5 << 5 |
+                        instr.s.imm4_0;
+    register BYTE rs1 = instr.s.rs1;
+    register BYTE rs2 = instr.s.rs2;
+    register BYTE funct3 = instr.s.funct3;
 
     if (funct3 == 0b011)
         core->store_instr(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
@@ -135,13 +132,13 @@ void STORE_EXEC(CORE* core, INSTR instr) {
 // arith with immediate variants
 // addi, slli, slti, sltiu, xori, srli, srai, ori, andi
 void ARITH_I_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.i.rd;
-    WORD imm = instr.i.imm;
-    BYTE rs1 = instr.i.rs1;
-    BYTE funct3 = instr.i.funct3;
+    register BYTE rd = instr.i.rd;
+    register WORD imm = instr.i.imm;
+    register BYTE rs1 = instr.i.rs1;
+    register BYTE funct3 = instr.i.funct3;
 
-    WORD val = 0;
-    WORD a1 = core->regs[rs1], a2 = sext(imm, 11);
+    register WORD val = 0;
+    register WORD a1 = core->regs[rs1], a2 = sext(imm, 11);
     switch (funct3) {
     // addi
     case 0b000: val = ARITH_ADD(a1, a2); break;
@@ -175,14 +172,14 @@ void ARITH_I_EXEC(CORE* core, INSTR instr) {
 // arith (RV32I + RV32M)
 // add, sub, sll, slt, sltu, xor, srl, sra, or, and
 void ARITH_EXEC(CORE* core, INSTR instr) {
-    BYTE rd = instr.r.rd;
-    BYTE rs1 = instr.r.rs1;
-    BYTE rs2 = instr.r.rs2;
-    BYTE funct3 = instr.r.funct3;
-    BYTE funct7 = instr.r.funct7;
+    register BYTE rd = instr.r.rd;
+    register BYTE rs1 = instr.r.rs1;
+    register BYTE rs2 = instr.r.rs2;
+    register BYTE funct3 = instr.r.funct3;
+    register BYTE funct7 = instr.r.funct7;
 
-    WORD val = 0;
-    WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
+    register WORD val = 0;
+    register WORD a1 = core->regs[rs1], a2 = core->regs[rs2];
     switch (funct3) {
     // add + sub + mul
     case 0b000:
@@ -241,8 +238,8 @@ void ARITH_EXEC(CORE* core, INSTR instr) {
 
 // env: ebreak
 void ENV_EXEC(CORE* core, INSTR instr) {
-    WORD imm = instr.i.imm;
-    BYTE funct3 = instr.i.funct3;
+    register WORD imm = instr.i.imm;
+    register BYTE funct3 = instr.i.funct3;
 
     switch (funct3) {
     case 0b000:

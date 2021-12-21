@@ -45,7 +45,7 @@ typedef struct cache_block {
 
 typedef struct cache {
     // attributes
-    CACHE_BLOCK blocks[BLOCK_NUM];
+    CACHE_BLOCK* blocks[BLOCK_NUM];
     u32 hit_counter;
     u32 miss_counter;
     u32 read_counter;

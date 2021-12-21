@@ -2,7 +2,7 @@
 
     .data
 const:
-    .byte 35
+    .word 35
 
     .text
 fib: # a0 = n
@@ -31,7 +31,7 @@ final:
 
 main:
     la t0, const
-    lb a0, 0(t0) # load a0 from const field
+    lw a0, 0(t0) # load a0 from const field
     # or remove the data section
     # and use this instead: li a0, 10
     call fib # call fib(a0)

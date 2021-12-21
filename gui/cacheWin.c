@@ -21,16 +21,16 @@ void update_info(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
     box(outer, 0, 0); mvwprintw(outer, 0, 2, " Block Info ");
     wattroff(outer, COLOR_PAIR(TITLE_COLOR));
 
-    CACHE_BLOCK cache_block = core->mmu->data_cache->blocks[focused->line];
+    CACHE_BLOCK* cache_block = core->mmu->data_cache->blocks[focused->line];
     CACHE_ADDR_HELPER base_addr = { .d = {
-        .tag = cache_block.tag,
-        .set_idx = cache_block.set_idx
+        .tag = cache_block->tag,
+        .set_idx = cache_block->set_idx
     } };
 
     mvwprintw(inner, 0, 0, "block idx = %u : ", focused->line);
-    print_info(inner, cache_block.valid, "valid, ", "invalid, ");
-    print_info(inner, cache_block.modified, "modified", "unmodified");
-    mvwprintw(inner, 1, 0, "tag = 0x%X, set idx = %u -> ", cache_block.tag, cache_block.set_idx);
+    print_info(inner, cache_block->valid, "valid, ", "invalid, ");
+    print_info(inner, cache_block->modified, "modified", "unmodified");
+    mvwprintw(inner, 1, 0, "tag = 0x%X, set idx = %u -> ", cache_block->tag, cache_block->set_idx);
     wprintw(inner, "0x%08X", base_addr.raw);
     
     wrefresh(outer);
@@ -54,7 +54,7 @@ void update_list(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
         if (i == focused->line)
             wattron(inner, A_STANDOUT);
         wmove(inner, i - focused->line, 0);
-        print_info(inner, core->mmu->data_cache->blocks[i].valid, block_name, block_name);
+        print_info(inner, core->mmu->data_cache->blocks[i]->valid, block_name, block_name);
         wattroff(inner, A_STANDOUT);
     }
 
@@ -73,10 +73,10 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
     mvwprintw(outer, 1, 31, (focused->offset > 0) ? "^" : " ");
     mvwprintw(outer, 18, 31, (focused->offset < (BLOCK_SIZE >> 4) - 1) ? "v" : " ");
 
-    CACHE_BLOCK cache_block = core->mmu->data_cache->blocks[focused->line];
+    CACHE_BLOCK* cache_block = core->mmu->data_cache->blocks[focused->line];
     CACHE_ADDR_HELPER helper = { .d = {
-        .tag = cache_block.tag,
-        .set_idx = cache_block.set_idx
+        .tag = cache_block->tag,
+        .set_idx = cache_block->set_idx
     } };
     for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 4); i++) {
         wattron(inner, COLOR_PAIR(SUBTITLE_COLOR));
@@ -84,7 +84,7 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
         mvwprintw(inner, i - focused->offset, 0, "0x%08X   ", helper.raw);
         wattroff(inner, COLOR_PAIR(SUBTITLE_COLOR));
         for (int j = 0; j < 0x10; j++)
-            wprintw(inner, " %02X", cache_block.data[(i << 4) + j]);
+            wprintw(inner, " %02X", cache_block->data[(i << 4) + j]);
     }
 
     wrefresh(outer);

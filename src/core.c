@@ -2,10 +2,9 @@
 #include "exec.h"
 
 void core_step(CORE* core) {
-    // fetch
-    u32 raw = core->load_instr(core, core->pc);
-    // decode
-    INSTR curr_instr = { .raw = raw };
+    // fetch and decode
+    static INSTR curr_instr;
+    curr_instr.raw = core->load_instr(core, core->pc);
     // execute
     execute(core, curr_instr);
     core->regs[0] = 0;
