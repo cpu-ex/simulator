@@ -12,10 +12,11 @@ u64 get_file_size(char* file_name) {
     }
 }
 
-void sim_load_file(SIM* sim, char* file_name) {
-    char code_name[36], data_name[36];
+void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
+    char code_name[36], data_name[36], sld_name[36];
     sprintf(code_name, "./bin/%s.code", file_name);
     sprintf(data_name, "./bin/%s.data", file_name);
+    sprintf(sld_name, "./%s.sld", sld_path);
     u64 file_size;
     // load instr
     file_size = get_file_size(code_name) >> 2;
@@ -43,6 +44,17 @@ void sim_load_file(SIM* sim, char* file_name) {
         for (int i = 0; i < file_size; i++) {
             fread(&byte, 1, 1, file);
             sim->core->mmu->data_mem->write_byte(sim->core->mmu->data_mem, addr++, byte);
+        }
+        fclose(file);
+    }
+    // load sld
+    file_size = get_file_size(sld_name);
+    if (file_size) {
+        FILE *file = fopen(sld_name, "rb");
+        u8 byte = 0;
+        for (int i = 0; i < UART_BUF_SIZE && i < file_size; i++) {
+            fread(&byte, 1, 1, file);
+            sim->core->uart->push(sim->core->uart, byte);
         }
         fclose(file);
     }

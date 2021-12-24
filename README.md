@@ -19,6 +19,7 @@
 - [2021/12/12] implement automatic stepping with window updated
 - [2021/12/14] implement information dump for simulator
 - [2021/12/21] implement uart output for simulator
+- [2021/12/24] implement uart input for simulator
 
 ![sample](sample.gif)
 
@@ -67,9 +68,13 @@
 	> 	- size of PHT
 
 	- step1: `make sim`
-	- step2: `./sim fileName`
+	- step2: `./sim codeFileName [sldFileName]`
 
-		> binary code with same file name supposed to be in `./bin`
+		> codeFileName: supposing the existence of `./bin/codeFileName.code`
+		> 
+		> sldFileName: supposing the optional existence of `./sldFileName.sld` which is a binary file
+		> 
+		> e.g.: `./sim uart asm/test-codes/uart`
 	
 	- step3: type `h` for help
 	- step4: type `quit` to exit simulator

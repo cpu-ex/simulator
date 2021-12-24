@@ -10,7 +10,7 @@ typedef struct sim {
     CORE* core;
     GUI* gui;
     // insterfaces
-    void (*load)(struct sim*, char*);
+    void (*load)(struct sim*, char*, char*);
     void (*run)(struct sim*);
 } SIM;
 

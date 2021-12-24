@@ -6,6 +6,7 @@
 #define CLK_FREQUENCY 1000000
 #define DEFAULT_PC    0x100
 #define UART_ADDR     0x3FFFFFC
+#define UART_BUF_SIZE 0x32000 // 200KB
 
 static char* reg_name[32] = {
     "zero",
@@ -28,12 +29,22 @@ static char* freg_name[32] = {
     "ft8", "ft9", "ft10", "ft11"
 };
 
+typedef struct uart_queue {
+    u32 left, right;
+    u8* buffer;
+    void (*push)(struct uart_queue*, u8);
+    u8 (*pop)(struct uart_queue*);
+    u8 (*isempty)(struct uart_queue*);
+} UART_QUEUE;
+
+void init_uart_queue(UART_QUEUE* uart);
+
 typedef struct core {
     // attributes
     WORD pc;
     WORD regs[32];
     WORD fregs[32];
-    WORD uart;
+    UART_QUEUE* uart;
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
     // output files

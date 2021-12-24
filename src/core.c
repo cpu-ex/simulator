@@ -1,6 +1,31 @@
 #include "core.h"
 #include "exec.h"
 
+/******************** uart ********************/
+
+u8 uart_isempty(UART_QUEUE* uart) {
+    return (uart->left < uart->right) ? 0 : 1;
+}
+
+void uart_push(UART_QUEUE* uart, u8 val) {
+    uart->buffer[(uart->right++) % UART_BUF_SIZE] = val;
+}
+
+u8 uart_pop(UART_QUEUE* uart) {
+    return (uart->left < uart->right) ? uart->buffer[(uart->left++) % UART_BUF_SIZE] : 0;
+}
+
+void init_uart_queue(UART_QUEUE* uart) {
+    uart->left = 0;
+    uart->right = 0;
+    uart->buffer = (u8*)malloc(UART_BUF_SIZE * sizeof(u8));
+    uart->push = uart_push;
+    uart->pop = uart_pop;
+    uart->isempty = uart_isempty;
+}
+
+/******************** core ********************/
+
 void core_step(CORE* core) {
     // fetch and decode
     static INSTR curr_instr;
@@ -16,13 +41,16 @@ WORD core_load_instr(CORE* core, ADDR addr) {
 }
 
 WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
-    // uart read ignored
-    WORD val = 0;
-    for (int i = 0; i < (1 << bytes); i++) {
-        val <<= 8;
-        val |= core->mmu->read_data(core->mmu, addr + i);
+    if (addr ^ UART_ADDR) {
+        WORD val = 0;
+        for (int i = 0; i < (1 << bytes); i++) {
+            val <<= 8;
+            val |= core->mmu->read_data(core->mmu, addr + i);
+        }
+        return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
+    } else {
+        return core->uart->pop(core->uart);
     }
-    return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
 }
 
 void core_store_instr(CORE* core, ADDR addr, WORD val) {
@@ -36,8 +64,7 @@ void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
             val >>= 8;
         }
     } else {
-        u8 byte = val & 0xFF;
-        fwrite(&byte, 1, 1, core->outputfile_fp);
+        core->uart->push(core->uart, val & 0xFF);
     }
 }
 
@@ -81,6 +108,10 @@ void core_reset(CORE* core) {
         fp = NULL;                   \
     }
 void core_deinit(CORE* core) {
+    while (!core->uart->isempty(core->uart)) {
+        u8 byte = core->uart->pop(core->uart);
+        fwrite(&byte, 1, 1, core->outputfile_fp);
+    }
     close_file(core->outputfile_fp, core->outputfile_name);
     close_file(core->dumpfile_fp, core->dumpfile_name);
 }
@@ -98,6 +129,9 @@ void init_core(CORE* core) {
     strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S", info);
     core->outputfile_fp = fopen(core->outputfile_name, "w");
     core->dumpfile_fp = fopen(core->dumpfile_name, "w");
+    static UART_QUEUE uart;
+    init_uart_queue(&uart);
+    core->uart = &uart;
     // init mmu
     static MMU mmu;
     init_mmu(&mmu);
