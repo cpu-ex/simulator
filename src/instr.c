@@ -390,13 +390,10 @@ u8 disasm(INSTR instr, char* buffer) {
         case 0b0000100: FSUB_DISASM(instr, buffer); return FSUB;
         // fmul
         case 0b0001000: FMUL_DISASM(instr, buffer); return FMUL;
-        // fdiv + fsqrt
-        case 0b0001100:
-            if (instr.r.rs2) {
-                FDIV_DISASM(instr, buffer); return FDIV;
-            } else {
-                FSQRT_DISASM(instr, buffer); return FSQRT;
-            }
+        // fdiv
+        case 0b0001100: FDIV_DISASM(instr, buffer); return FDIV;
+        // fsqrt
+        case 0b0101100: FSQRT_DISASM(instr, buffer); return FSQRT;
         // f-cmp
         case 0b1010000: FCMP_DISASM(instr, buffer); return FCMP;
         // fcvt to integer from float

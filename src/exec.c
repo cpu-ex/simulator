@@ -303,14 +303,10 @@ void execute(CORE* core, INSTR instr) {
         case 0b0000100: FSUB_EXEC(core, instr); core->instr_analysis[FSUB]++; break;
         // fmul
         case 0b0001000: FMUL_EXEC(core, instr); core->instr_analysis[FMUL]++; break;
-        // fdiv + fsqrt
-        case 0b0001100:
-            if (instr.r.rs2) {
-                FDIV_EXEC(core, instr); core->instr_analysis[FDIV]++;
-            } else {
-                FSQRT_EXEC(core, instr); core->instr_analysis[FSQRT]++;
-            }
-            break;
+        // fdiv
+        case 0b0001100: FDIV_EXEC(core, instr); core->instr_analysis[FDIV]++; break;
+        // fsqrt
+        case 0b0101100: FSQRT_EXEC(core, instr); core->instr_analysis[FSQRT]++; break;
         // fcmp
         case 0b1010000: FCMP_EXEC(core, instr); core->instr_analysis[FCMP]++; break;
         // fcvt to integer from float
