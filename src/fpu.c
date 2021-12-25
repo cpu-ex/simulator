@@ -218,9 +218,9 @@ void FCVT2I_EXEC(CORE* core, INSTR instr) {
     u32 i;
     switch (rs2) {
     // fcvt.w.s
-    case 0b00000: i = (s32)f.f; break;
+    case 0b00000: i = (f.f < 0.0) ? ((s32)(f.f - (f32)((s32)(f.f - 1.0)) + 0.5) + (s32)(f.f - 1.0)) : ((s32)(f.f + 0.5)); break;
     // fcvt.wu.s
-    case 0b00001: i = (u32)f.f; break;
+    case 0b00001: i = (u32)(f.f + 0.5); break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
