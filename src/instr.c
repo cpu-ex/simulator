@@ -205,9 +205,9 @@ void ENV_DISASM(INSTR instr, char* buffer) {
 
     switch (funct3) {
     // env
-    case 0b000: sprintf(buffer, imm ? "ebreak" : "ecall"); break;
+    case 0b000: sprintf(buffer, "ebreak %u", imm); break;
     // unexpected
-    default: sprintf(buffer, "unexpected env or csr"); break;
+    default:  break;
     }
 }
 

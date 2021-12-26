@@ -57,8 +57,7 @@ decoder = {
     'OR': (re.compile(r'(or)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     'AND': (re.compile(r'(and)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
     # env
-    'EBREAK': (re.compile(r'(ebreak)'), 1),
-    'ECALL': (re.compile(r'(ecall)'), 1),
+    'EBREAK': (re.compile(r'(ebreak)\s+(\S+)'), 1),
 
 
     # RV32M
@@ -103,6 +102,7 @@ decoder = {
     'PSEUDO-RET': (re.compile(r'(ret)'), 1),
     'PSEUDO-CALL': (re.compile(r'(call)\s+(\S+)'), 2),
     'PSEUDO-TAIL': (re.compile(r'(tail)\s+(\S+)'), 2),
+    'PSEUDO-EBREAK': (re.compile(r'(ebreak)'), 1),
     'PSEUDO-FMV': (re.compile(r'(fmv)\s+(\S+),\s*(\S+)'), 1),
     'PSEUDO-FABS': (re.compile(r'(fabs)\s+(\S+),\s*(\S+)'), 1),
     'PSEUDO-FNEG': (re.compile(r'(fneg)\s+(\S+),\s*(\S+)'), 1),

@@ -54,7 +54,7 @@ WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
 }
 
 void core_store_instr(CORE* core, ADDR addr, WORD val) {
-    core->mmu->write_instr(core->mmu, addr & (~0x3), val);
+    core->mmu->write_instr(core->mmu, addr >> 2, val);
 }
 
 void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {

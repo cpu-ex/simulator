@@ -301,19 +301,23 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
     return [mc]
 
 # env
-# ebreak for sim: shift to exit mode
+# ebreak for sim
 def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
-    return [0b1110011 | (1 << 20)]
-# ebreak for fpga: infinity loop
-def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
-    return [0b1101111]
+    imm = imm2int(instr[1])
 
-# ecall for sim: activate actual program and jump to it
-def ecall_sim(instr: tuple, addr: int, tags: dict) -> list:
-    return [0b1110011]
-# ecall for fpga: just jump to actual program
-def ecall_fpga(instr: tuple, addr: int, tags: dict) -> list:
-    return jalr(('JALR', 'zero', '0', 'zero'), addr, tags)
+    mc = 0b1110011
+    mc |= (imm & 0xFFF) << 20
+    return [mc]
+# ebreak for fpga
+def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
+    imm = imm2int(instr[1])
+
+    if imm == 0:
+        # infinity loop
+        return [0b1101111]
+    else:
+        # nop (do nothing)
+        return pseudo_nop(instr, addr, tags)
 
 # f-load imm[11:0] rs1 010 rd 0000111
 def f_load(instr: tuple, addr: int, tags: dict) -> list:
@@ -471,6 +475,11 @@ def pseudo_tail(instr: tuple, addr: int, tags: dict) -> list:
     return auipc(('AUIPC', 't1', str(hi)), addr, tags) + \
         jalr(('JALR', 'zero', str(lo), 't1'), addr, tags)
 
+def pseudo_ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
+    return ebreak_sim(('EBREAK', '0'), addr, tags)
+def pseudo_ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
+    return pseudo_nop(instr, addr, tags)
+
 def pseudo_fmv(instr: tuple, addr: int, tags: dict) -> list:
     rd = instr[1]
     rs = instr[2]
@@ -535,7 +544,6 @@ encoder = {
     'AND': arith,
     # env
     'EBREAK': None,
-    'ECALL': None,
     
 
     # RV32M
@@ -580,6 +588,7 @@ encoder = {
     'PSEUDO-RET': pseudo_ret,
     'PSEUDO-CALL': pseudo_call,
     'PSEUDO-TAIL': pseudo_tail,
+    'PSEUDO-EBREAK': None,
     'PSEUDO-FMV': pseudo_fmv,
     'PSEUDO-FABS': pseudo_fabs,
     'PSEUDO-FNEG': pseudo_fneg,
@@ -589,5 +598,5 @@ encoder = {
 
 def getEncoder(forSim: bool) -> dict:
     encoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
-    encoder['ECALL'] = ecall_sim if forSim else ecall_fpga
+    encoder['PSEUDO-EBREAK'] = pseudo_ebreak_sim if forSim else pseudo_ebreak_fpga
     return encoder

@@ -244,13 +244,22 @@ void ENV_EXEC(CORE* core, INSTR instr) {
     switch (funct3) {
     case 0b000:
         // env
-        if (imm) {
-            // ebreak
+        switch (imm) {
+        // end the program
+        case 0:
             BROADCAST(STAT_EXIT);
-        } else {
-            // ecall
-            core->pc = DEFAULT_PC;
+            break;
+        // break now
+        case 1:
+            core->pc += 4;
             BROADCAST(STAT_HALT);
+            break;
+        // break after executing imm instructions
+        default:
+            instr.i.imm = max(1, imm - 1);
+            core->store_instr(core, core->pc, instr.raw);
+            core->pc += 4;
+            break;
         }
         break;
     // unexpected

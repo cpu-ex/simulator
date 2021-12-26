@@ -42,7 +42,7 @@
 	- step2: check `python3 asm.py -h` for help
 	- step3: `python3 asm.py fileName.s`
 
-		> relative path to `.s` file needed
+		> supposing the existence of `./fileName.s` (relative path supported)
 	
 	- step4: check outputs in `./bin`
 
@@ -52,13 +52,14 @@
 	- step1: `make disasm`
 	- step2: `./disasm fileName`
 
-		> binary code with same file name supposed to be in `./bin`
+		> supposing the existence of `./bin/fileName.code`
 		>
 		> using stdout as output
 
 - simulator
 
 	> customizable settings
+	> 
 	> - Cache (under `src/cache.h`)
 	> 	- block size
 	> 	- associativity
@@ -66,6 +67,8 @@
 	> - Branch Predictor (under `src/branch_predictor.h`)
 	> 	- prediction policy
 	> 	- size of PHT
+	> 
+	> run `make clean; make` to apply changes
 
 	- step1: `make sim`
 	- step2: `./sim codeFileName [sldFileName]`
@@ -84,3 +87,11 @@
 
 - [2021/12/12] fib 35: 230686620 instructions in 17853138 clk, 12921348.616697 per sec
 - [2021/12/21] fib 35: 249141551 instructions in 17645914 clk, 14118937.165850 per sec
+
+## 4. debug tips
+
+- assembler
+	- add `ebreak [n]` to set up a breakpoint after visiting certain instruction for n times, default to 0 which means stopping the program completely
+- simulator
+	- step 1 instruction forward by typing `KEY_ENTER`
+	- use `dump [steps]` to log the information of registers
