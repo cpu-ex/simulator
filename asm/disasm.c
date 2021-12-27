@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
                 // decode
                 INSTR instr = { .raw = input };
                 disasm(instr, output);
-                printf("0x%08X : %08X\t%s\n", i << 2, input, output);
+                printf("0x%08X : %08X\t%s\n", 0x100 + (i << 2), input, output);
                 input = 0;
                 memset(output, 0, 36);
             }
