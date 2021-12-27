@@ -54,7 +54,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
         u8 byte = 0;
         for (int i = 0; i < UART_BUF_SIZE && i < file_size; i++) {
             fread(&byte, 1, 1, file);
-            sim->core->uart->push(sim->core->uart, byte);
+            sim->core->uart_in->push(sim->core->uart_in, byte);
         }
         fclose(file);
     }

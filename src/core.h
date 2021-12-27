@@ -44,7 +44,7 @@ typedef struct core {
     WORD pc;
     WORD regs[32];
     WORD fregs[32];
-    UART_QUEUE* uart;
+    UART_QUEUE *uart_in, *uart_out;
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
     // output files

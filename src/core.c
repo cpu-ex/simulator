@@ -49,7 +49,7 @@ WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
         }
         return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
     } else {
-        return core->uart->pop(core->uart);
+        return core->uart_in->pop(core->uart_in);
     }
 }
 
@@ -64,7 +64,7 @@ void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
             val >>= 8;
         }
     } else {
-        core->uart->push(core->uart, val & 0xFF);
+        core->uart_out->push(core->uart_out, val & 0xFF);
     }
 }
 
@@ -91,6 +91,9 @@ void core_reset(CORE* core) {
         core->regs[i] = 0;
         core->fregs[i] = 0;
     }
+    // reset uart queue
+    core->uart_in->left = 0;
+    core->uart_out->right = 0;
     // reset instruction analysis
     core->instr_counter = 0;
     core->stall_counter = 0;
@@ -108,8 +111,8 @@ void core_reset(CORE* core) {
         fp = NULL;                   \
     }
 void core_deinit(CORE* core) {
-    while (!core->uart->isempty(core->uart)) {
-        u8 byte = core->uart->pop(core->uart);
+    while (!core->uart_out->isempty(core->uart_out)) {
+        u8 byte = core->uart_out->pop(core->uart_out);
         fwrite(&byte, 1, 1, core->outputfile_fp);
     }
     close_file(core->outputfile_fp, core->outputfile_name);
@@ -129,9 +132,12 @@ void init_core(CORE* core) {
     strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S", info);
     core->outputfile_fp = fopen(core->outputfile_name, "w");
     core->dumpfile_fp = fopen(core->dumpfile_name, "w");
-    static UART_QUEUE uart;
-    init_uart_queue(&uart);
-    core->uart = &uart;
+    // init uart queue
+    static UART_QUEUE uart_in, uart_out;
+    init_uart_queue(&uart_in);
+    init_uart_queue(&uart_out);
+    core->uart_in = &uart_in;
+    core->uart_out = &uart_out;
     // init mmu
     static MMU mmu;
     init_mmu(&mmu);
