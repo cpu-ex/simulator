@@ -24,9 +24,11 @@ freg = {
 }
 
 def getHiLo(val: int) -> tuple:
-    high = ((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)
-    low = val & 0xFFF
-    return high << 12, low
+    high = ((((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)) << 12) & 0xFFFFFFFF
+    low = (val & 0xFFF) | (0xFFFFF000 if val & 0x800 else 0)
+    high = struct.unpack('>i', struct.pack('>I', high))[0]
+    low = struct.unpack('>i', struct.pack('>I', low))[0]
+    return high, low
 
 def reg2idx(name: str) -> int:
     if (idx := reg.get(name, None)) is not None:
@@ -53,10 +55,16 @@ def imm2int(imm: str) -> int:
 
 def fimm2int(imm: str) -> int:
     try:
-        bytes = struct.pack('<f', float(imm))
-        return struct.unpack('<I', bytes)[0]
+        bytes = struct.pack('>f', float(imm))
+        return struct.unpack('>I', bytes)[0]
     except ValueError:
         raise RuntimeError(f'invalid float value \'{imm}\'')
+
+def checkImm(imm: int, bitLen: int, signed: bool) -> None:
+    boundaryMin = -(1 << (bitLen - 1)) if signed else 0
+    boundaryMax = (1 << (bitLen - 1)) if signed else (1 << bitLen)
+    if not (boundaryMin <= imm < boundaryMax):
+        raise RuntimeError(f'digital value \'{imm}\' out of bound ({boundaryMin} ~ {boundaryMax})')
 
 def tag2offset(name: str, tags: dict, addr: int) -> int:
     if (dst := tags.get(name, None)) is not None:
@@ -68,6 +76,7 @@ def tag2offset(name: str, tags: dict, addr: int) -> int:
 def lui(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = imm2int(instr[2])
+    checkImm(imm, 32, True)
 
     mc = 0b0110111
     mc |= (rd & 0x1F) << 7
@@ -78,6 +87,7 @@ def lui(instr: tuple, addr: int, tags: dict) -> list:
 def auipc(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = imm2int(instr[2])
+    checkImm(imm, 32, True)
     
     mc = 0b0010111
     mc |= (rd & 0x1F) << 7
@@ -88,6 +98,7 @@ def auipc(instr: tuple, addr: int, tags: dict) -> list:
 def jal(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = tag2offset(instr[2], tags, addr)
+    checkImm(imm, 21, True)
 
     mc = 0b1101111
     mc |= (rd & 0x1F) << 7
@@ -102,6 +113,7 @@ def jalr(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b1100111
     mc |= (rd & 0x1F) << 7
@@ -116,6 +128,7 @@ def branch(instr: tuple, addr: int, tags: dict) -> list:
     rs1 = reg2idx(instr[1])
     rs2 = reg2idx(instr[2])
     imm = tag2offset(instr[3], tags, addr)
+    checkImm(imm, 13, True)
 
     mc = 0b1100011
     mc |= ((imm & 0x00000800) >> 11) << 7 # 11
@@ -147,6 +160,7 @@ def load(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b0000011
     mc |= (rd & 0x1F) << 7
@@ -173,6 +187,7 @@ def store(instr: tuple, addr: int, tags: dict) -> list:
     rs2 = reg2idx(instr[1])
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b0100011
     mc |= (imm & 0x1F) << 7 # [4:0]
@@ -198,6 +213,7 @@ def arith_i(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     rs1 = reg2idx(instr[2])
     imm = imm2int(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b0010011
     mc |= (rd & 0x1F) << 7
@@ -304,6 +320,7 @@ def arith(instr: tuple, addr: int, tags: dict) -> list:
 # ebreak for sim
 def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
     imm = imm2int(instr[1])
+    checkImm(imm, 12, False)
 
     mc = 0b1110011
     mc |= (imm & 0xFFF) << 20
@@ -311,6 +328,7 @@ def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
 # ebreak for fpga
 def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
     imm = imm2int(instr[1])
+    checkImm(imm, 12, False)
 
     if imm == 0:
         # infinity loop
@@ -324,6 +342,7 @@ def f_load(instr: tuple, addr: int, tags: dict) -> list:
     rd = reg2idx(instr[1])
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b0000111
     mc |= (rd & 0x1F) << 7
@@ -337,6 +356,7 @@ def f_store(instr: tuple, addr: int, tags: dict) -> list:
     rs2 = reg2idx(instr[1])
     imm = imm2int(instr[2])
     rs1 = reg2idx(instr[3])
+    checkImm(imm, 12, True)
 
     mc = 0b0100111
     mc |= (imm & 0x1F) << 7 # [4:0]

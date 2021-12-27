@@ -187,6 +187,9 @@ if __name__ == '__main__':
     try:
         asm = ASM(forSim=args.fpga)
         asm.load(args.fileName)
+        if args.tags:
+            for tag, addr in {**asm.codeTag, **asm.dataTag}.items():
+                print(f'{tag=}\taddr={hex(addr)}')
         asm.save(args.binary, args.text)
 
         if args.tags:
