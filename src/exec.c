@@ -74,11 +74,12 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
-    core->pc += cmp ? sext(imm, 12) : 4;
     // predict branch
     u8 predicted = core->branch_predictor->predict(core->branch_predictor, core->pc, cmp);
     // stall check
     core->stall_counter += (predicted == cmp) ? 0 : 2;
+    // increment pc
+    core->pc += cmp ? sext(imm, 12) : 4;
 }
 
 // load: lb, lh, lw, lbu, lhu
