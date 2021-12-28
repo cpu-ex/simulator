@@ -1,5 +1,6 @@
 #include "core.h"
 #include "exec.h"
+#include "fpu.h"
 
 /******************** uart ********************/
 
@@ -146,6 +147,8 @@ void init_core(CORE* core) {
     static BRANCH_PREDICTOR branch_predictor;
     init_branch_predictor(&branch_predictor);
     core->branch_predictor = &branch_predictor;
+    // init fpu
+    init_fpu();
     // assign interfaces
     core->load_instr = core_load_instr;
     core->load_data = core_load_data;
