@@ -2,6 +2,8 @@
 
 import re
 
+__all__ = ['getDecoder']
+
 decoder = {
     # tag
     'TAG': (re.compile(r'(\S+):'), 1),
@@ -19,12 +21,12 @@ decoder = {
     # jalr rd, offset(rs1)
     'JALR': (re.compile(r'(jalr)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
     # branch rs1, rs2, tag
-    'BEQ': (re.compile(r'(beq)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
-    'BNE': (re.compile(r'(bne)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
-    'BLT': (re.compile(r'(blt)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
-    'BGE': (re.compile(r'(bge)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
-    'BLTU': (re.compile(r'(bltu)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
-    'BGEU': (re.compile(r'(bgeu)\s+(\S+),\s*(\S+),\s*(\S+)'), 1),
+    'BEQ': (re.compile(r'(beq)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
+    'BNE': (re.compile(r'(bne)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
+    'BLT': (re.compile(r'(blt)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
+    'BGE': (re.compile(r'(bge)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
+    'BLTU': (re.compile(r'(bltu)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
+    'BGEU': (re.compile(r'(bgeu)\s+(\S+),\s*(\S+),\s*(\S+)'), 2),
     # load rd, offset(rs1)
     'LB': (re.compile(r'(lb)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
     'LH': (re.compile(r'(lh)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
@@ -110,5 +112,5 @@ decoder = {
     'SWI': (re.compile(r'(swi)\s+(\S+),\s*(-?\S+)\((\S+)\)'), 1),
 }
 
-def getDecoder(forSim: bool) -> dict:
+def getDecoder() -> dict:
     return decoder

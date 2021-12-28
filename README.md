@@ -20,6 +20,7 @@
 - [2021/12/14] implement information dump for simulator
 - [2021/12/21] implement uart output for simulator
 - [2021/12/24] implement uart input for simulator
+- [2021/12/28] fix the exception of branching too far for assembler
 
 ![sample](sample.gif)
 

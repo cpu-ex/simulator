@@ -2,6 +2,8 @@
 
 import re, struct
 
+__all__ = ['getEncoder', 'getOptimizer', 'getHiLo']
+
 reg = {
     'zero': 0,
     'ra': 1,
@@ -71,6 +73,11 @@ def tag2offset(name: str, tags: dict, addr: int) -> int:
         return dst - addr
     else:
         raise RuntimeError(f'no tag name \'{name}\'')
+
+#################### encoder ####################
+
+def tags(instr: tuple, addr: int, tags: dict) -> list:
+    return []
 
 # lui imm[31:12] rd[5] 0110111
 def lui(instr: tuple, addr: int, tags: dict) -> list:
@@ -437,14 +444,6 @@ def f_arith(instr: tuple, addr: int, tags: dict) -> list:
 def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
     return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
 
-def pseudo_li(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    imm = instr[2]
-
-    hi, lo = getHiLo(imm2int(imm))
-    return lui(('LUI', rd, str(hi)), addr, tags) + \
-        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
-
 def pseudo_la(instr: tuple, addr: int, tags: dict) -> list:
     rd = instr[1]
     tag = instr[2]
@@ -517,6 +516,7 @@ def pseudo_fneg(instr: tuple, addr: int, tags: dict) -> list:
 
 encoder = {
     # RV32I
+    'TAG': tags,
     # pc
     'LUI': lui,
     'AUIPC': auipc,
@@ -598,7 +598,6 @@ encoder = {
 
     # pseudo
     'PSEUDO-NOP': pseudo_nop,
-    'PSEUDO-LI': pseudo_li,
     'PSEUDO-LA': pseudo_la,
     'PSEUDO-NOT': pseudo_not,
     'PSEUDO-MV': pseudo_mv,
@@ -620,3 +619,57 @@ def getEncoder(forSim: bool) -> dict:
     encoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
     encoder['PSEUDO-EBREAK'] = pseudo_ebreak_sim if forSim else pseudo_ebreak_fpga
     return encoder
+
+#################### optimizer ####################
+
+def inc():
+    counter = -1
+    def inner():
+        nonlocal counter
+        counter += 1
+        return counter
+    return inner
+inc = inc()
+
+def optimize_branch(instr: tuple, addr: int, tags: dict) -> list:
+    name = instr[0]
+    rs1 = instr[1]
+    rs2 = instr[2]
+    imm = tag2offset(instr[3], tags, addr)
+
+    try:
+        checkImm(imm, 13, True)
+        return [(instr, 1)]
+    except RuntimeError:
+        oppositeDict  = {
+            'BEQ': 'BNE', 'BNE': 'BEQ',
+            'BLT': 'BGE', 'BGE': 'BLT',
+            'BLTU': 'BGEU', 'BGEU': 'BLTU'
+        }
+        oldTag = instr[3]
+        newTag = f'additional_branch_tag_{inc()}'
+        newName = oppositeDict[name]
+        return [((newName, rs1, rs2, newTag), 1), (('PSEUDO-J', oldTag), 1), (('TAG', newTag), 0)]
+
+def optimize_li(instr: tuple, addr: int, tags: dict) -> list:
+    rd = instr[1]
+    imm = instr[2]
+
+    hi, lo = getHiLo(imm2int(imm))
+    if hi == 0:
+        return [(('ADDI', rd, 'zero', str(lo)), 1)]
+    else:
+        return [(('LUI', rd, str(hi)), 1), (('ADDI', rd, rd, str(lo)), 1)]
+
+optimizer = {
+    'BEQ': optimize_branch,
+    'BNE': optimize_branch,
+    'BLT': optimize_branch,
+    'BGE': optimize_branch,
+    'BLTU': optimize_branch,
+    'BGEU': optimize_branch,
+    'PSEUDO-LI': optimize_li,
+}
+
+def getOptimizer() -> dict:
+    return optimizer

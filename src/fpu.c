@@ -148,9 +148,9 @@ f32 finv_table_a[1024];
 f32 finv_table_b[1024];
 FLOAT_HELPER finv_m(u32 mx){
     // assume mx 23bit
-    FLOAT_HELPER offset = {.decoder = {.mantissa = mx, .exp = 0b01111111, .sign = 0}};
-    FLOAT_HELPER a      = {.f = finv_table_a[mx >> 13]};
-    FLOAT_HELPER b      = {.f = finv_table_b[mx >> 13]};
+    FLOAT_HELPER offset = { .decoder = { .mantissa = mx, .exp = 0b01111111, .sign = 0 } };
+    FLOAT_HELPER a      = { .f = finv_table_a[mx >> 13] };
+    FLOAT_HELPER b      = { .f = finv_table_b[mx >> 13] };
     FLOAT_HELPER ax     = fmul(a, offset);
     FLOAT_HELPER c      = { .f = b.f - ax.f }; // fsub
     return c;
@@ -168,16 +168,16 @@ FLOAT_HELPER fdiv(FLOAT_HELPER x1, FLOAT_HELPER x2) {
     u32 m2 = x2.decoder.mantissa;
 
     if (e1 == 0) {
-        return (FLOAT_HELPER){.i = 0};
+        return (FLOAT_HELPER){ .i = 0 };
     }
 
     FLOAT_HELPER c   = finv_m(m2);
-    FLOAT_HELPER x1n = {.decoder = {.mantissa = m1                , .exp = 127, .sign = 0}};
-    FLOAT_HELPER x2n = {.decoder = {.mantissa = c.decoder.mantissa, .exp = 127, .sign = 0}};
+    FLOAT_HELPER x1n = { .decoder = { .mantissa = m1                , .exp = 127, .sign = 0 } };
+    FLOAT_HELPER x2n = { .decoder = { .mantissa = c.decoder.mantissa, .exp = 127, .sign = 0 } };
     FLOAT_HELPER yn  = fmul(x1n, x2n);
 
     u32 ey = (c.decoder.mantissa == 0) ? e1 - e2 + yn.decoder.exp : e1 - e2 - 1 + yn.decoder.exp;
-    FLOAT_HELPER y = {.decoder = {.mantissa = yn.decoder.mantissa, .exp = ey, .sign = (s1 ^ s2)}};
+    FLOAT_HELPER y = { .decoder = { .mantissa = yn.decoder.mantissa, .exp = ey, .sign = (s1 ^ s2) } };
     return y;
 }
 
@@ -203,18 +203,18 @@ FLOAT_HELPER fsqrt(FLOAT_HELPER x) {
     u32 mx = x.decoder.mantissa;
 
     if (ex == 0) {
-        return (FLOAT_HELPER){.decoder = {.mantissa = 0, .exp = 0, .sign = sx}};
+        return (FLOAT_HELPER){ .decoder = { .mantissa = 0, .exp = 0, .sign = sx } };
     }
 
-    FLOAT_HELPER a = {.f = fsqrt_table_a[BIT_GET(x.i, 23, 14)]};
-    FLOAT_HELPER b = {.f = fsqrt_table_b[BIT_GET(x.i, 23, 14)]};
-    FLOAT_HELPER offset = (ex & 1) ? (FLOAT_HELPER){.decoder = {.mantissa = mx , .exp = 0b01111110 | (ex & 1), .sign = 0}}:
-                                        (FLOAT_HELPER){.decoder = {.mantissa = mx , .exp = 0b10000000 | (ex & 1), .sign = 0}};
+    FLOAT_HELPER a = { .f = fsqrt_table_a[BIT_GET(x.i, 23, 14)] };
+    FLOAT_HELPER b = { .f = fsqrt_table_b[BIT_GET(x.i, 23, 14)] };
+    FLOAT_HELPER offset = (ex & 1) ? (FLOAT_HELPER){ .decoder = { .mantissa = mx , .exp = 0b01111110 | (ex & 1), .sign = 0 } }:
+                                        (FLOAT_HELPER){ .decoder = { .mantissa = mx , .exp = 0b10000000 | (ex & 1), .sign = 0 } };
     FLOAT_HELPER ax = fmul(a, offset);
-    FLOAT_HELPER c = {.f = b.f + ax.f}; // fadd
+    FLOAT_HELPER c = { .f = b.f + ax.f }; // fadd
     u32 ey = (ex & 1) ? (ex > 127 ? ((ex - 127) >> 1) + 127 : 127 - ((127 - ex) >> 1)):
                         (ex > 128 ? ((ex - 128) >> 1) + 127 : 127 - ((128 - ex) >> 1));
-    FLOAT_HELPER y = {.decoder = {.mantissa = c.decoder.mantissa, .exp = ey, .sign = sx}};
+    FLOAT_HELPER y = { .decoder = { .mantissa = c.decoder.mantissa, .exp = ey, .sign = sx } };
     return y;
 }   
 
@@ -321,56 +321,54 @@ void FSGNJ_EXEC(CORE* core, INSTR instr) {
 }
 
 void gen_finv_table(void) {
-    union {f32 f; s32 i;} index;
-    union {f32 f; s32 i;} x1;
-    union {f32 f; s32 i;} x2;
-    union {f32 f; s32 i;} x3;
-    int mask = (1<<10)-1;
+    union { f32 f; s32 i; } index;
+    union { f32 f; s32 i; } x1;
+    union { f32 f; s32 i; } x2;
+    union { f32 f; s32 i; } x3;
+    int mask = (1 << 10) - 1;
 
     for (int i = 0; i < 1024; i++) {
         index.i = i;
-        x1.i = (127<<23) + (i<<13);           // left
-        x2.i = (127<<23) + (i<<13) + (1<<12); // center
-        x3.i = (127<<23) + ((i+1)<<13);       // right
+        x1.i = (127 << 23) + (i << 13);             // left
+        x2.i = (127 << 23) + (i << 13) + (1 << 12); // center
+        x3.i = (127 << 23) + ((i + 1) << 13);       // right
 
-        f32 atmp  = (1.0/x1.f - 1.0/x3.f);
+        f32 atmp  = (1.0 / x1.f - 1.0 / x3.f);
         f32 a     = atmp * 1024.0; 
-        f32 amean = (1.0/x1.f + 1.0/x3.f) / 2.0;
-        f32 b     = (amean + 1.0/x2.f) / 2.0 + a*x2.f; 
+        f32 amean = (1.0 / x1.f + 1.0 / x3.f) / 2.0;
+        f32 b     = (amean + 1.0 / x2.f) / 2.0 + a * x2.f; 
         // b - a*x nearly equal 1/x 
 
         finv_table_a[index.i & mask] = a;
         finv_table_b[index.i & mask] = b;
     }
-    return;
 }
 
 void gen_fsqrt_table(void) {
-    union {f32 f; s32 i;} index;
-    union {f32 f; s32 i;} x1;
-    union {f32 f; s32 i;} x2;
-    union {f32 f; s32 i;} x3;
-    int mask = (1<<10)-1;
+    union { f32 f; s32 i; } index;
+    union { f32 f; s32 i; } x1;
+    union { f32 f; s32 i; } x2;
+    union { f32 f; s32 i; } x3;
+    int mask = (1 << 10) - 1;
     int mbit = 9;
 
     for (int i = 0; i < 1024; i++) {
         int e = 0b01111111; 
         index.i = i;
-        x1.i = (e<<23) + (index.i<<(23-mbit));                  // left
-        x2.i = (e<<23) + (index.i<<(23-mbit)) + (1<<(22-mbit)); // center
-        x3.i = (e<<23) + ((index.i+1)<<(23-mbit));              // right
+        x1.i = (e << 23) + (index.i << (23 - mbit));                      // left
+        x2.i = (e << 23) + (index.i << (23 - mbit)) + (1 << (22 - mbit)); // center
+        x3.i = (e << 23) + ((index.i + 1) << (23 - mbit));                // right
 
         f32 atmp  = (sqrt(x3.f) - sqrt(x1.f));
         f32 a     = atmp / (x3.f - x1.f);
-        f32 amean = (sqrt(x3.f) + sqrt(x1.f))/2.0;
-        f32 b     = (amean + sqrt(x2.f))/2.0 - a * x2.f;
+        f32 amean = (sqrt(x3.f) + sqrt(x1.f)) / 2.0;
+        f32 b     = (amean + sqrt(x2.f)) / 2.0 - a * x2.f;
         // a * x + b nearly equal sqrt(x)
 
-        index.i = (i+512) % 1024; // invert the first bit
+        index.i = (i + 512) % 1024; // invert the first bit
         fsqrt_table_a[index.i & mask] = a;
         fsqrt_table_b[index.i & mask] = b;
     }
-    return;
 }
 
 void init_fpu(void) {

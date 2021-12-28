@@ -1,5 +1,4 @@
 # assembler
-# pseudo code not supported
 
 import os, argparse, struct
 import decoder, encoder
@@ -12,7 +11,8 @@ class ASM(object):
     DATA_SECTION = False
 
     def __init__(self, forSim: bool=True) -> None:
-        self.__decoders = decoder.getDecoder(forSim)
+        self.__decoders = decoder.getDecoder()
+        self.__optimizers = encoder.getOptimizer()
         self.__encoders = encoder.getEncoder(forSim)
 
         self.fileName = None
@@ -37,6 +37,12 @@ class ASM(object):
         else:
             raise RuntimeError(f'unrecognizable instruction \'{instr}\'')
     
+    def __optimize(self, instr: tuple, length: int, addr: int) -> list:
+        if optimizer := self.__optimizers.get(instr[0], None):
+            return optimizer(instr, addr, {**self.codeTag, **self.dataTag})
+        else:
+            return [(instr, length)]
+
     def __encode(self, instr: tuple, addr: int) -> str:
         # print(f'encoding {instr}\t{hex(addr)}')
         if encoder := self.__encoders.get(instr[0], None):
@@ -73,12 +79,13 @@ class ASM(object):
             try:
                 instr, length = self.__decode(line)
                 name, *info = instr
-                instr = (instr, lineno)  # append line number
+                instr = (instr, length, lineno)  # append line number
             except RuntimeError as e:
                 raise RuntimeError(f'{e} at line {lineno}.')
             if name.startswith('TAG'):
                 if self.section == ASM.CODE_SECTION:
                     self.codeTag[info[0]] = self.codeCounter
+                    self.code.append(((name, *info), 0, lineno))
                 else:
                     self.dataTag[info[0]] = self.dataCounter
             elif name.startswith('DIREC'):
@@ -111,6 +118,28 @@ class ASM(object):
                 self.code.append(instr)
                 self.codeCounter += 4 * length
 
+    def optimize(self) -> None:
+        optimizedCode = list()
+        addr = ASM.DEFAULT_PC
+        for instr, length, lineno in self.code:
+            try:
+                optimized = self.__optimize(instr, length, addr)
+                optimizedCode += [(*code, lineno) for code in optimized]
+                addr += length * 4
+            except RuntimeError as e:
+                raise RuntimeError(f'{e} at line {lineno}')
+        # readdress
+        self.codeTag.clear()
+        self.code.clear()
+        self.codeCounter = ASM.DEFAULT_PC + 24
+        for instr, length, lineno in optimizedCode:
+            name, *info = instr
+            instr = (instr, length, lineno)
+            if name.startswith('TAG'): # only code-tag left
+                self.codeTag[info[0]] = self.codeCounter
+            self.code.append(instr)
+            self.codeCounter += 4 * length
+
     def __outputText(self) -> None:
         # output instruction
         with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
@@ -139,14 +168,14 @@ class ASM(object):
             hiOfStart, loOfStart = encoder.getHiLo(startAddr - ASM.DEFAULT_PC - 16)
             self.code = [
                 # preset sp to DEFAULT_SP
-                (('LUI', 'sp', str(hiOfSp)), -6),
-                (('ADDI', 'sp', 'sp', str(loOfSp)), -5),
+                (('LUI', 'sp', str(hiOfSp)), 1, -6),
+                (('ADDI', 'sp', 'sp', str(loOfSp)), 1, -5),
                 # preset hp right after static data
-                (('LUI', 'hp', str(hiOfHp)), -4),
-                (('ADDI', 'hp', 'hp', str(loOfHp)), -3),
+                (('LUI', 'hp', str(hiOfHp)), 1, -4),
+                (('ADDI', 'hp', 'hp', str(loOfHp)), 1, -3),
                 # jump to start point
-                (('AUIPC', 't0', str(hiOfStart)), -2),
-                (('JALR', 'zero', str(loOfStart), 't0'), -1)
+                (('AUIPC', 't0', str(hiOfStart)), 1, -2),
+                (('JALR', 'zero', str(loOfStart), 't0'), 1, -1)
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag defined.')
@@ -156,7 +185,7 @@ class ASM(object):
         # encode
         bc = list() # binary codes
         addr = ASM.DEFAULT_PC
-        for instr, lineno in self.code:
+        for instr, _, lineno in self.code:
             try:
                 mc = self.__encode(instr, addr) # machine codes
                 bc += mc
@@ -187,13 +216,12 @@ if __name__ == '__main__':
     try:
         asm = ASM(forSim=args.fpga)
         asm.load(args.fileName)
-        if args.tags:
-            for tag, addr in {**asm.codeTag, **asm.dataTag}.items():
-                print(f'{tag=}\taddr={hex(addr)}')
-        asm.save(args.binary, args.text)
+        asm.optimize()
 
         if args.tags:
             for tag, addr in {**asm.codeTag, **asm.dataTag}.items():
                 print(f'{tag=}\taddr={hex(addr)}')
+        
+        asm.save(args.binary, args.text)
     except RuntimeError as e:
         print(e)
