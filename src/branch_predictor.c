@@ -14,6 +14,7 @@ void bp_log(BRANCH_PREDICTOR* branch_predictor, u8 predicted, u8 result) {
 
 u8 bp_predict(BRANCH_PREDICTOR* branch_predictor, ADDR pc, u8 result) {
     u8 predicted;
+    pc >>= 2;
     #if defined(BP_AT)
     predicted = 1;
     #elif defined(BP_NT)

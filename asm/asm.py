@@ -118,27 +118,34 @@ class ASM(object):
                 self.code.append(instr)
                 self.codeCounter += 4 * length
 
-    def optimize(self) -> None:
+    def optimize(self, verbose: bool) -> None:
         optimizedCode = list()
         addr = ASM.DEFAULT_PC
+        verboseList = list()
         for instr, length, lineno in self.code:
             try:
                 optimized = self.__optimize(instr, length, addr)
                 optimizedCode += [(*code, lineno) for code in optimized]
                 addr += length * 4
+                verboseList += [(lineno, instr) for _ in optimized]
             except RuntimeError as e:
                 raise RuntimeError(f'{e} at line {lineno}')
         # readdress
         self.codeTag.clear()
         self.code.clear()
         self.codeCounter = ASM.DEFAULT_PC + 24
-        for instr, length, lineno in optimizedCode:
+        for idx, (instr, length, lineno) in enumerate(optimizedCode):
             name, *info = instr
             instr = (instr, length, lineno)
             if name.startswith('TAG'): # only code-tag left
                 self.codeTag[info[0]] = self.codeCounter
             self.code.append(instr)
+            verboseList[idx] = (*verboseList[idx], self.codeCounter)
             self.codeCounter += 4 * length
+        # verbose mode
+        if verbose:
+            for lineno, instr, address in verboseList:
+                print(f'{lineno}\t{", ".join(instr):20s}\t{hex(address)[2:].upper().zfill(8)}')
 
     def __outputText(self) -> None:
         # output instruction
@@ -211,12 +218,13 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--text', action='store_true', required=False, help='export text file')
     parser.add_argument('--fpga', action='store_false', required=False, help='output codes for fpga, default to false (codes for simulator)')
     parser.add_argument('--tags', action='store_true', required=False, help='print out tags')
+    parser.add_argument('-v', '--verbose', action='store_true', required=False, help='print out detailed information')
     args = parser.parse_args()
     # decode + encode + output
     try:
         asm = ASM(forSim=args.fpga)
         asm.load(args.fileName)
-        asm.optimize()
+        asm.optimize(args.verbose)
 
         if args.tags:
             for tag, addr in {**asm.codeTag, **asm.dataTag}.items():
