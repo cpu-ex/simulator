@@ -60,18 +60,24 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     }
 }
 
+#if defined(TIME_TEST_MODE)
 void sim_run(SIM* sim) {
-    #if defined(TIME_TEST_MODE)
     // timer
     clock_t t1, t2;
-    BROADCAST(STAT_STEP | ((u64)STAT_INFO_MAX << STAT_SHIFT_AMOUNT));
     t1 = clock();
-    #else
+    while (BROADCAST.decoder.type ^ STAT_EXIT)
+        sim->core->step(sim->core);
+    t2 = clock();
+    u64 num = sim->core->instr_counter;
+    printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
+    sim->core->deinit(sim->core);
+}
+#else
+void sim_run(SIM* sim) {
     // init GUI
     static GUI gui;
     init_gui(&gui);
     sim->gui = &gui;
-    #endif
     // main loop of simulator
     for (;;) {
         switch (BROADCAST.decoder.type) {
@@ -94,13 +100,6 @@ void sim_run(SIM* sim) {
             BROADCAST(sim->gui->update(sim->gui, sim->core));
             break;
         case STAT_EXIT:
-            #if defined(TIME_TEST_MODE)
-            t2 = clock();
-            u64 num = sim->core->instr_counter;
-            printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
-            sim->core->deinit(sim->core);
-            return;
-            #endif
         case STAT_MEM_EXCEPTION:
         case STAT_INSTR_EXCEPTION:
             BROADCAST(sim->gui->update(sim->gui, sim->core));
@@ -127,6 +126,7 @@ void sim_run(SIM* sim) {
         }
     }
 }
+#endif
 
 void init_sim(SIM* sim) {
     // init core
