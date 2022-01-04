@@ -497,7 +497,7 @@ def pseudo_tail(instr: tuple, addr: int, tags: dict) -> list:
 def pseudo_ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
     return ebreak_sim(('EBREAK', '0'), addr, tags)
 def pseudo_ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
-    return pseudo_nop(instr, addr, tags)
+    return ebreak_fpga(('EBREAK', '0'), addr, tags)
 
 def pseudo_fmv(instr: tuple, addr: int, tags: dict) -> list:
     rd = instr[1]

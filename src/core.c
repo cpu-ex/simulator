@@ -88,10 +88,8 @@ void core_reset(CORE* core) {
     core->mmu->reset(core->mmu, core->regs[2]);
     // reset registers
     core->pc = DEFAULT_PC;
-    for (int i = 0; i < 32; i++) {
-        core->regs[i] = 0;
-        core->fregs[i] = 0;
-    }
+    memset(core->regs, 0, 32 * sizeof(u32));
+    memset(core->fregs, 0, 32 * sizeof(u32));
     // reset uart queue
     core->uart_in->left = 0;
     core->uart_out->right = 0;

@@ -34,15 +34,24 @@ void update_reg_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
     for (int idx = gui->reg_start; idx < min(gui->reg_start + 16, 64); idx++) {
         // print reg name
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
-        mvwprintw(win, idx - gui->reg_start, 0, "%-4s", (idx < 32) ? reg_name[idx] : freg_name[idx - 32]);
+        mvwprintw(win, idx - gui->reg_start, 0, "%-4s ", (idx < 32) ? reg_name[idx] : freg_name[idx - 32]);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         // print reg value
         if (focused && idx == gui->reg_start) wattron(win, A_STANDOUT);
         if (gui->reg_focus[idx]) wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
-        if (idx < 32)
-            wprintw(win, "%8X", core->regs[idx]);
-        else
-            wprintw(win, "%8.3f", *(f32*)&(core->fregs[idx - 32]));
+        if (idx < 32) {
+            u32 val = core->regs[idx];
+            if (focused)
+                wprintw(win, "0x%08X %11u %11d", val, val, val);
+            else
+                wprintw(win, "%8X", val);
+        } else {
+            u32 val = core->fregs[idx - 32];
+            if (focused)
+                wprintw(win, "0x%08X %23.8f", val, *(f32*)&val);
+            else
+                wprintw(win, "%8X", val);
+        }
         wattroff(win, A_STANDOUT);
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
     }
@@ -62,8 +71,9 @@ void update_reg(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
         while (gui->focused_win == REG_WIN) {
             // update
             gui->reg_start = max(0, min(gui->reg_start, 63));
-            mvwprintw(outer, 1, 7, (gui->reg_start > 0) ? "^" : " ");
-            mvwprintw(outer, 18, 7, (gui->reg_start < 63) ? "v" : " ");
+            mvwprintw(outer, 1, 2, (gui->reg_start > 0) ? "^" : " ");
+            mvwprintw(outer, 18, 2, (gui->reg_start < 63) ? "v" : " ");
+            mvwprintw(outer, 1, 13, (gui->reg_start < 32) ? "hex    unsigned      signed" : "hex                   float");
             update_reg_sub(inner, gui, core, 1);
             wrefresh(outer);
             wrefresh(inner);
@@ -73,7 +83,7 @@ void update_reg(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
             case KEY_DOWN: gui->reg_start += 1; break;
             case KEY_LEFT: gui->reg_start -= 16; break;
             case KEY_RIGHT: gui->reg_start += 16; break;
-            case '\n': gui->reg_focus[gui->reg_start] = gui->reg_focus[gui->reg_start] ? 0 : 1; break;
+            case '\n': gui->reg_focus[gui->reg_start] = !gui->reg_focus[gui->reg_start]; break;
             default: keypad(stdscr, 0); gui->focused_win = COM_WIN; break;
             }
         }
@@ -160,8 +170,14 @@ void show_main_win(GUI* gui, CORE* core) {
     // create outer windows
     WINDOW* pc_outer = newwin(3, 80, 0, 0);
     WINDOW* pc_inner = newwin(1, 78, 1, 1);
-    WINDOW* reg_outer = newwin((gui->focused_win == REG_WIN) ? 20 : 18, 16, 3, 0);
-    WINDOW* reg_inner = newwin(16, 14, (gui->focused_win == REG_WIN) ? 5 : 4, 1);
+    WINDOW *reg_outer, *reg_inner;
+    if (gui->focused_win == REG_WIN) {
+        reg_outer = newwin(20, 42, 3, 0);
+        reg_inner = newwin(16, 40, 5, 1);
+    } else {
+        reg_outer = newwin(18, 16, 3, 0);
+        reg_inner = newwin(16, 14, 4, 1);
+    }
     WINDOW* mem_outer = newwin((gui->focused_win == MEM_WIN) ? 20 : 18, 64, 3, 16);
     WINDOW* mem_inner = newwin(16, 62, (gui->focused_win == MEM_WIN) ? 5 : 4, 17);
     WINDOW* com_outer = newwin(3, 80, 21, 0);
