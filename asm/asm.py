@@ -23,7 +23,7 @@ class ASM(object):
 
         self.startTag = None
         self.section = ASM.CODE_SECTION
-        self.codeCounter = ASM.DEFAULT_PC + 24
+        self.codeCounter = ASM.DEFAULT_PC
         self.dataCounter = 0
     
     def load(self, fileName: str) -> None:
@@ -36,10 +36,10 @@ class ASM(object):
             raise RuntimeError(f'invalid file name: {fileName}.')
 
     def decode(self) -> None:
+        # 3 prepend pseudo instr * 2 assumed length * 4 bytes each
+        self.codeCounter += 24
         # remove empty lines and seprate tags and instructions
-        lineno = 0
-        for line in self.rawText:
-            lineno += 1
+        for lineno, line in enumerate(self.rawText):
             # skip empty lines
             if not line: continue
             # decode
