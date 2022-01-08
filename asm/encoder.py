@@ -1,675 +1,940 @@
-# encoder
+# code
 
-import re, struct
+from utils import *
 
-__all__ = ['getEncoder', 'getOptimizer', 'getHiLo']
+######################################## code ########################################
 
-reg = {
-    'zero': 0,
-    'ra': 1,
-    'sp': 2,
-    'gp': 3, 'hp': 3,
-    'tp': 4,
-    't0': 5, 't1': 6, 't2': 7,
-    's0': 8, 'fp': 8, 's1': 9,
-    'a0': 10, 'a1': 11, 'a2': 12, 'a3': 13, 'a4': 14, 'a5': 15, 'a6': 16, 'a7': 17,
-    's2': 18, 's3': 19, 's4': 20, 's5': 21, 's6': 22, 's7': 23, 's8': 24, 's9': 25, 's10': 26, 's11': 27,
-    't3': 28, 't4': 29, 't5': 30, 't6': 31
-}
+class Code(object):
 
-freg = {
-    'ft0': 0, 'ft1': 1, 'ft2': 2, 'ft3': 3, 'ft4': 4, 'ft5': 5, 'ft6': 6, 'ft7': 7,
-    'fs0': 8, 'fs1': 9,
-    'fa0': 10, 'fa1': 11, 'fa2': 12, 'fa3': 13, 'fa4': 14, 'fa5': 15, 'fa6': 16, 'fa7': 17,
-    'fs2': 18, 'fs3': 19, 'fs4': 20, 'fs5': 21, 'fs6': 22, 'fs7': 23, 'fs8': 24, 'fs9': 25, 'fs10': 26, 'fs11': 27,
-    'ft8': 28, 'ft9': 29, 'ft10': 30, 'ft11': 31
-}
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        self.forSim = forSim
 
-def getHiLo(val: int) -> tuple:
-    high = ((((val >> 12) & 0xFFFFF) + (1 if val & 0x800 else 0)) << 12) & 0xFFFFFFFF
-    low = (val & 0xFFF) | (0xFFFFF000 if val & 0x800 else 0)
-    high = struct.unpack('>i', struct.pack('>I', high))[0]
-    low = struct.unpack('>i', struct.pack('>I', low))[0]
-    return high, low
+        self.name = None
+        self.rd = None
+        self.rs1 = None
+        self.rs2 = None
+        self.imm = None
+        self.tag = None
 
-def reg2idx(name: str) -> int:
-    if (idx := reg.get(name, None)) is not None:
-        return idx
-    elif (idx := freg.get(name, None)) is not None:
-        return idx
-    elif res := re.match(r'[xf](\d+)', name):
-        idx = int(res.groups()[0])
-        if idx < 32:
-            return idx
-    raise RuntimeError(f'invalid register \'{name}\'')
+        self.assumedLength = 1
+        self.actualLength = 1
+    
+    def isDirec(self) -> bool: return isinstance(self, Direc)
+    def isTag(self) -> bool: return isinstance(self, Tags)
+    
+    def optimize(self, addr: int, tags: dict) -> list: return [self]
+    def finalize(self, addr: int, tags: dict) -> list: return [self]
+    def encode(self) -> list: pass
+    def __str__(self) -> str: pass
 
-def imm2int(imm: str) -> int:
-    try:
-        # prevent converting strings like 'a0' to 160
-        if imm in reg.keys() or imm in freg.keys():
-            raise ValueError
+######################################## tags ########################################
+
+class Tags(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0]
+        self.assumedLength = 0
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        self.actualLength = 0
+        return [self]
+    
+    def encode(self):
+        return []
+    
+    def __str__(self) -> str:
+        return f'{self.name}'
+
+######################################## direc ########################################
+
+class Direc(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool = True) -> None:
+        self.name = tokenizedCode[0]
+        self.data = list()
+        if self.name == 'globl':
+            self.tag = tokenizedCode[1]
+        elif self.name == 'byte':
+            self.data = pack2word([imm2int(x) & 0xFF for x in tokenizedCode[1].split(',')], 1)
+        elif self.name == 'half':
+            self.data = pack2word([imm2int(x) & 0xFFFF for x in tokenizedCode[1].split(',')], 2)
+        elif self.name == 'word':
+            self.data = [imm2int(x) & 0xFFFFFFFF for x in tokenizedCode[1].split(',')]
+        elif self.name == 'float':
+            self.data = [fimm2int(x) & 0xFFFFFFFF for x in tokenizedCode[1].split(',')]
+        elif self.name not in ['data', 'text']:
+            raise RuntimeError(f'unsupported directive \'{self.name}\'')
+        self.assumedLength = len(self.data) * 4
+    
+    def isStartDirec(self) -> bool:
+        return self.name == 'globl'
+    
+    def isDataDirec(self) -> bool:
+        return self.name == 'data'
+    
+    def isCodeDirec(self) -> bool:
+        return self.name == 'text'
+
+######################################## lui ########################################
+
+class Lui(Code):
+
+    # lui rd, imm
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+
+    # lui imm[31:12] rd[5] 0110111
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = imm2int(self.imm)
+        checkImm(imm, 32, True)
+
+        mc = 0b0110111
+        mc |= (rd & 0x1F) << 7
+        mc |= ((imm >> 12) & 0xFFFFF) << 12
+        return [mc]
+    
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        imm = imm2int(self.imm)
+        return f'{self.name} {rd}, {imm >> 12}'
+
+######################################## auipc ########################################
+
+class Auipc(Code):
+
+    # auipc rd, imm
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+
+    # auipc imm[31:12] rd[5] 0010111
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = imm2int(self.imm)
+        checkImm(imm, 32, True)
+    
+        mc = 0b0010111
+        mc |= (rd & 0x1F) << 7
+        mc |= ((imm >> 12) & 0xFFFFF) << 12
+        return [mc]
+    
+    def __str__(self):
+        rd = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        return f'{self.name} {rd}, {imm}'
+
+######################################## jal ########################################
+
+class Jal(Code):
+
+    # jal rd, tag
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.tag = tokenizedCode[2]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        self.imm = tag2offset(self.tag, tags, addr)
+        return [self]
+    
+    # jal imm[20,10:1,11,19:12] rd 110111
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = self.imm
+        checkImm(imm, 21, True)
+
+        mc = 0b1101111
+        mc |= (rd & 0x1F) << 7
+        mc |= ((imm & 0x000FF000) >> 12) << 12 # 19:12
+        mc |= ((imm & 0x00000800) >> 11) << 20 # 11
+        mc |= ((imm & 0x000007FE) >>  1) << 21 # 10:1
+        mc |= ((imm & 0x00100000) >> 20) << 31 # 20
+        return [mc]
+
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        return f'{self.name} {rd}, {imm}'
+
+######################################## jalr ########################################
+
+class Jalr(Code):
+
+    # jalr rd, offset(rs1)
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.rs1 = tokenizedCode[3]
+
+    # jalr imm[11:0] rs1 000 rd 1100111
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = imm2int(self.imm)
+        rs1 = reg2idx(self.rs1)
+        checkImm(imm, 12, True)
+
+        mc = 0b1100111
+        mc |= (rd & 0x1F) << 7
+        mc |= 0b000 << 12
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (imm & 0xFFF) << 20
+        return [mc]
+
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        rs1 = idx2reg(reg2idx(self.rs1))
+        return f'{self.name} {rd}, {imm}({rs1})'
+
+######################################## branch ########################################
+
+class Branch(Code):
+
+    # branch rs1, rs2, tag
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rs1 = tokenizedCode[1]
+        self.rs2 = tokenizedCode[2]
+        self.tag = tokenizedCode[3]
+        self.assumedLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        name = self.name
+        rs1 = reg2idx(self.rs1)
+        rs2 = reg2idx(self.rs2)
+        imm = tag2offset(self.tag, tags, addr)
+
         try:
-            return int(imm, base=10)
-        except ValueError:
-            return int(imm, base=16)
-    except ValueError:
-        raise RuntimeError(f'invalid digital value \'{imm}\'')
-
-def fimm2int(imm: str) -> int:
-    try:
-        bytes = struct.pack('>f', float(imm))
-        return struct.unpack('>I', bytes)[0]
-    except ValueError:
-        raise RuntimeError(f'invalid float value \'{imm}\'')
-
-def checkImm(imm: int, bitLen: int, signed: bool) -> None:
-    boundaryMin = -(1 << (bitLen - 1)) if signed else 0
-    boundaryMax = (1 << (bitLen - 1)) if signed else (1 << bitLen)
-    if not (boundaryMin <= imm < boundaryMax):
-        raise RuntimeError(f'digital value \'{imm}\' out of bound ({boundaryMin} ~ {boundaryMax})')
-
-def tag2offset(name: str, tags: dict, addr: int) -> int:
-    if (dst := tags.get(name, None)) is not None:
-        return dst - addr
-    else:
-        raise RuntimeError(f'no tag name \'{name}\'')
-
-#################### encoder ####################
-
-def tags(instr: tuple, addr: int, tags: dict) -> list:
-    return []
-
-# lui imm[31:12] rd[5] 0110111
-def lui(instr: tuple, addr: int, tags: dict) -> list:
-    rd = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    checkImm(imm, 32, True)
-
-    mc = 0b0110111
-    mc |= (rd & 0x1F) << 7
-    mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return [mc]
-
-# auipc imm[31:12] rd[5] 0010111
-def auipc(instr: tuple, addr: int, tags: dict) -> list:
-    rd = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    checkImm(imm, 32, True)
+            checkImm(imm, 13, True)
+            return [self]
+        except RuntimeError:
+            oppositeDict = {
+                'beq': 'bne', 'bne': 'beq',
+                'blt': 'bge', 'bge': 'blt',
+                'bltu': 'bgeu', 'bgeu': 'bltu'
+            }
+            oldTag = self.tag
+            newTag = f'additional_branch_tag_{inc()}'
+            newName = oppositeDict[name]
+            return [
+                Branch((newName, rs1, rs2, newTag)),
+                Jal(('jal', 'zero', oldTag)),
+                Tags(('tag', newTag))
+            ]
     
-    mc = 0b0010111
-    mc |= (rd & 0x1F) << 7
-    mc |= ((imm >> 12) & 0xFFFFF) << 12
-    return [mc]
+    def finalize(self, addr: int, tags: dict) -> list:
+        self.imm = tag2offset(self.tag, tags, addr)
+        return [self]
 
-# jal imm[20,10:1,11,19:12] rd 110111
-def jal(instr: tuple, addr: int, tags: dict) -> list:
-    rd = reg2idx(instr[1])
-    imm = tag2offset(instr[2], tags, addr)
-    checkImm(imm, 21, True)
-
-    mc = 0b1101111
-    mc |= (rd & 0x1F) << 7
-    mc |= ((imm & 0x000FF000) >> 12) << 12 # 19:12
-    mc |= ((imm & 0x00000800) >> 11) << 20 # 11
-    mc |= ((imm & 0x000007FE) >>  1) << 21 # 10:1
-    mc |= ((imm & 0x00100000) >> 20) << 31 # 20
-    return [mc]
-
-# jalr imm[11:0] rs1 000 rd 1100111
-def jalr(instr: tuple, addr: int, tags: dict) -> list:
-    rd = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    rs1 = reg2idx(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b1100111
-    mc |= (rd & 0x1F) << 7
-    mc |= 0b000 << 12
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (imm & 0xFFF) << 20
-    return [mc]
-
-# branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100011
-def branch(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rs1 = reg2idx(instr[1])
-    rs2 = reg2idx(instr[2])
-    imm = tag2offset(instr[3], tags, addr)
-    checkImm(imm, 13, True)
-
-    mc = 0b1100011
-    mc |= ((imm & 0x00000800) >> 11) << 7 # 11
-    mc |= ((imm & 0x0000001E) >>  1) << 8 # 4:1
-    if name == 'BEQ':
-        mc |= 0b000 << 12
-    elif name == 'BNE':
-        mc |= 0b001 << 12
-    elif name == 'BLT':
-        mc |= 0b100 << 12
-    elif name == 'BGE':
-        mc |= 0b101 << 12
-    elif name == 'BLTU':
-        mc |= 0b110 << 12
-    elif name == 'BGEU':
-        mc |= 0b111 << 12
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable branch type \'{name}\'')
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (rs2 & 0x1F) << 20
-    mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
-    mc |= ((imm & 0x00001000) >> 12) << 31 # 12
-    return [mc]
-
-# load imm[11:0] rs1 funct3 rd 0000011
-def load(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rd = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    rs1 = reg2idx(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b0000011
-    mc |= (rd & 0x1F) << 7
-    if name == 'LB':
-        mc |= 0b000 << 12
-    elif name == 'LH':
-        mc |= 0b001 << 12
-    elif name == 'LW':
-        mc |= 0b010 << 12
-    elif name == 'LBU':
-        mc |= 0b100 << 12
-    elif name == 'LHU':
-        mc |= 0b101 << 12
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable load type \'{name}\'')
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (imm & 0xFFF) << 20
-    return [mc]
-
-# store imm[11:5] rs2 rs1 funct3 imm[4:0] 0100011
-def store(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rs2 = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    rs1 = reg2idx(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b0100011
-    mc |= (imm & 0x1F) << 7 # [4:0]
-    if name == 'SB':
-        mc |= 0b000 << 12
-    elif name == 'SH':
-        mc |= 0b001 << 12
-    elif name == 'SW':
-        mc |= 0b010 << 12
-    elif name == 'SWI':
-        mc |= 0b011 << 12
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable store type \'{name}\'')
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (rs2 & 0x1F) << 20
-    mc |= ((imm & 0xFE0) >> 5) << 25
-    return [mc]
-
-# arith_i imm[11:0] rs1 funct3 rd 0010011
-def arith_i(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rd = reg2idx(instr[1])
-    rs1 = reg2idx(instr[2])
-    imm = imm2int(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b0010011
-    mc |= (rd & 0x1F) << 7
-    mc |= (rs1 & 0x1F) << 15
-    if name == 'ADDI':
-        mc |= 0b000 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'SLTI':
-        mc |= 0b010 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'SLTIU':
-        mc |= 0b011 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'XORI':
-        mc |= 0b100 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'ORI':
-        mc |= 0b110 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'ANDI':
-        mc |= 0b111 << 12
-        mc |= (imm & 0xFFF) << 20
-    elif name == 'SLLI':
-        mc |= 0b001 << 12
-        mc |= (imm & 0x1F) << 20 # shamt
-        mc |= 0b0000000 << 25
-    elif name == 'SRLI':
-        mc |= 0b101 << 12
-        mc |= (imm & 0x1F) << 20 # shamt
-        mc |= 0b0000000 << 25
-    elif name == 'SRAI':
-        mc |= 0b101 << 12
-        mc |= (imm & 0x1F) << 20 # shamt
-        mc |= 0b0100000 << 25
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith-i type \'{name}\'')
-    return [mc]
-
-# arith funct7 rs2 rs1 funct3 rd 0110011
-def arith(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rd = reg2idx(instr[1])
-    rs1 = reg2idx(instr[2])
-    rs2 = reg2idx(instr[3])
-
-    mc = 0b0110011
-    mc |= (rd & 0x1F) << 7
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (rs2 & 0x1F) << 20
-    # RV32I
-    if name == 'ADD':
-        mc |= 0b000 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'SUB':
-        mc |= 0b000 << 12
-        mc |= 0b0100000 << 25
-    elif name == 'SLL':
-        mc |= 0b001 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'SLT':
-        mc |= 0b010 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'SLTU':
-        mc |= 0b011 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'XOR':
-        mc |= 0b100 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'SRL':
-        mc |= 0b101 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'SRA':
-        mc |= 0b101 << 12
-        mc |= 0b0100000 << 25
-    elif name == 'OR':
-        mc |= 0b110 << 12
-        mc |= 0b0000000 << 25
-    elif name == 'AND':
-        mc |= 0b111 << 12
-        mc |= 0b0000000 << 25
-    # RV32M
-    elif name == 'MUL':
-        mc |= 0b000 << 12
-        mc |= 0b0000001 << 25
-    elif name == 'DIV':
-        mc |= 0b100 << 12
-        mc |= 0b0000001 << 25
-    elif name == 'DIVU':
-        mc |= 0b101 << 12
-        mc |= 0b0000001 << 25
-    elif name == 'REM':
-        mc |= 0b110 << 12
-        mc |= 0b0000001 << 25
-    elif name == 'REMU':
-        mc |= 0b111 << 12
-        mc |= 0b0000001 << 25
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith type \'{name}\'')
-    return [mc]
-
-# env
-# ebreak for sim
-def ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
-    imm = imm2int(instr[1])
-    checkImm(imm, 12, False)
-
-    mc = 0b1110011
-    mc |= (imm & 0xFFF) << 20
-    return [mc]
-# ebreak for fpga
-def ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
-    imm = imm2int(instr[1])
-    checkImm(imm, 12, False)
-
-    if imm == 0:
-        # infinity loop
-        return [0b1101111]
-    else:
-        # nop (do nothing)
-        return pseudo_nop(instr, addr, tags)
-
-# f-load imm[11:0] rs1 010 rd 0000111
-def f_load(instr: tuple, addr: int, tags: dict) -> list:
-    rd = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    rs1 = reg2idx(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b0000111
-    mc |= (rd & 0x1F) << 7
-    mc |= 0b010 << 12
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (imm & 0xFFF) << 20
-    return [mc]
-
-# f-store imm[11:5] rs2 rs1 010 imm[4:0] 0100111
-def f_store(instr: tuple, addr: int, tags: dict) -> list:
-    rs2 = reg2idx(instr[1])
-    imm = imm2int(instr[2])
-    rs1 = reg2idx(instr[3])
-    checkImm(imm, 12, True)
-
-    mc = 0b0100111
-    mc |= (imm & 0x1F) << 7 # [4:0]
-    mc |= 0b010 << 12
-    mc |= (rs1 & 0x1F) << 15
-    mc |= (rs2 & 0x1F) << 20
-    mc |= ((imm & 0xFE0) >> 5) << 25
-    return [mc]
-
-# f-arith funct7 rs2/funct5 rs1 rm/funct3 rd 1010011
-def f_arith(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rd = reg2idx(instr[1])
-    rs1 = reg2idx(instr[2])
-    try:
-        rs2 = reg2idx(instr[3])
-    except IndexError:
-        rs2 = 0
-    
-    mc = 0b1010011
-    mc |= (rd & 0x1F) << 7
-    mc |= (rs1 & 0x1F) << 15
-    # rm field ignored
-    if name == 'FMVXW':
-        mc |= 0b000 << 12
-        mc |= 0b1110000 << 25
-    elif name == 'FMVWX':
-        mc |= 0b000 << 12
-        mc |= 0b1111000 << 25
-    elif name == 'FADD':
-        mc |= 0b0000000 << 25
-    elif name == 'FSUB':
-        mc |= 0b0000100 << 25
-    elif name == 'FMUL':
-        mc |= 0b0001000 << 25
-    elif name == 'FDIV':
-        mc |= 0b0001100 << 25
-    elif name == 'FSQRT':
-        rs2 = 0b00000
-        mc |= 0b0101100 << 25
-    elif name == 'FEQ':
-        mc |= 0b010 << 12
-        mc |= 0b1010000 << 25
-    elif name == 'FLT':
-        mc |= 0b001 << 12
-        mc |= 0b1010000 << 25
-    elif name == 'FLE':
-        mc |= 0b000 << 12
-        mc |= 0b1010000 << 25
-    elif name == 'FCVTSW':
-        rs2 = 0b00000
-        mc |= 0b1101000 << 25
-    elif name == 'FCVTWS':
-        rs2 = 0b00000
-        mc |= 0b1100000 << 25
-    elif name == 'FCVTSWU':
-        rs2 = 0b00001
-        mc |= 0b1101000 << 25
-    elif name == 'FCVTWUS':
-        rs2 = 0b00001
-        mc |= 0b1100000 << 25
-    elif name == 'FSGNJ':
-        mc |= 0b000 << 12
-        mc |= 0b0010000 << 25
-    elif name == 'FSGNJN':
-        mc |= 0b001 << 12
-        mc |= 0b0010000 << 25
-    elif name == 'FSGNJX':
-        mc |= 0b010 << 12
-        mc |= 0b0010000 << 25
-    else:
-        # not suppose to be here
-        raise RuntimeError(f'unrecognizable arith type \'{name}\'')
-    mc |= (rs2 & 0x1F) << 20
-    return [mc]
-
-# pseudo
-def pseudo_nop(instr: tuple, addr: int, tags: dict) -> list:
-    return arith_i(('ADDI', 'zero', 'zero', '0'), addr, tags)
-
-def pseudo_la(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    tag = instr[2]
-
-    offset = tag2offset(tag, tags, addr)
-    hi, lo = getHiLo(offset)
-    return auipc(('AUIPC', rd, str(hi)), addr, tags) + \
-        arith_i(('ADDI', rd, rd, str(lo)), addr + 4, tags)
-
-def pseudo_not(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    rs = instr[2]
-    return arith_i(('XORI', rd, rs, '-1'), addr, tags)
-
-def pseudo_mv(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    rs = instr[2]
-    return arith_i(('ADDI', rd, rs, '0'), addr, tags)
-
-def pseudo_j(instr: tuple, addr: int, tags: dict) -> list:
-    offset = instr[1]
-    return jal(('JAL', 'zero', offset), addr, tags)
-
-def pseudo_jal(instr: tuple, addr: int, tags: dict) -> list:
-    offset = instr[1]
-    return jal(('JAL', 'ra', offset), addr, tags)
-
-def pseudo_jalr(instr: tuple, addr: int, tags: dict) -> list:
-    rs = instr[1]
-    return jalr(('JALR', 'ra', '0', rs), addr, tags)
-
-def pseudo_ret(instr: tuple, addr: int, tags: dict) -> list:
-    return jalr(('JALR', 'zero', '0', 'ra'), addr, tags)
-
-def pseudo_call(instr: tuple, addr: int, tags: dict) -> list:
-    tag = instr[1]
-
-    offset = tag2offset(tag, tags, addr)
-    hi, lo = getHiLo(offset)
-    return auipc(('AUIPC', 't1', str(hi)), addr, tags) + \
-        jalr(('JALR', 'ra', str(lo), 't1'), addr, tags)
-
-def pseudo_tail(instr: tuple, addr: int, tags: dict) -> list:
-    tag = instr[1]
-
-    offset = tag2offset(tag, tags, addr)
-    hi, lo = getHiLo(offset)
-    return auipc(('AUIPC', 't1', str(hi)), addr, tags) + \
-        jalr(('JALR', 'zero', str(lo), 't1'), addr, tags)
-
-def pseudo_ebreak_sim(instr: tuple, addr: int, tags: dict) -> list:
-    return ebreak_sim(('EBREAK', '0'), addr, tags)
-def pseudo_ebreak_fpga(instr: tuple, addr: int, tags: dict) -> list:
-    return ebreak_fpga(('EBREAK', '0'), addr, tags)
-
-def pseudo_fmv(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    rs = instr[2]
-    return f_arith(('FSGNJ', rd, rs, rs), addr, tags)
-
-def pseudo_fabs(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    rs = instr[2]
-    return f_arith(('FSGNJX', rd, rs, rs), addr, tags)
-
-def pseudo_fneg(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    rs = instr[2]
-    return f_arith(('FSGNJN', rd, rs, rs), addr, tags)
-
-encoder = {
-    # RV32I
-    'TAG': tags,
-    # pc
-    'LUI': lui,
-    'AUIPC': auipc,
-    # jal
-    'JAL': jal,
-    # jalr
-    'JALR': jalr,
-    # branch
-    'BEQ': branch,
-    'BNE': branch,
-    'BLT': branch,
-    'BGE': branch,
-    'BLTU': branch,
-    'BGEU': branch,
-    # load
-    'LB': load,
-    'LH': load,
-    'LW': load,
-    'LBU': load,
-    'LHU': load,
-    # store
-    'SB': store,
-    'SH': store,
-    'SW': store,
-    # arith_i
-    'ADDI': arith_i,
-    'SLLI': arith_i,
-    'SLTI': arith_i,
-    'SLTIU': arith_i,
-    'XORI': arith_i,
-    'SRLI': arith_i,
-    'SRAI': arith_i,
-    'ORI': arith_i,
-    'ANDI': arith_i,
-    # arith
-    'ADD': arith,
-    'SUB': arith,
-    'SLL': arith,
-    'SLT': arith,
-    'SLTU': arith,
-    'XOR': arith,
-    'SRL': arith,
-    'SRA': arith,
-    'OR': arith,
-    'AND': arith,
-    # env
-    'EBREAK': None,
-    
-
-    # RV32M
-    'MUL': arith,
-    'DIV': arith,
-    'DIVU': arith,
-    'REM': arith,
-    'REMU': arith,
-
-
-    # RV32F
-    'FLW': f_load,
-    'FSW': f_store,
-    'FMVXW': f_arith,
-    'FMVWX': f_arith,
-    'FADD': f_arith,
-    'FSUB': f_arith,
-    'FMUL': f_arith,
-    'FDIV': f_arith,
-    'FSQRT': f_arith,
-    'FEQ': f_arith,
-    'FLT': f_arith,
-    'FLE': f_arith,
-    'FCVTSW': f_arith,
-    'FCVTWS': f_arith,
-    'FCVTSWU': f_arith,
-    'FCVTWUS': f_arith,
-    'FSGNJ': f_arith,
-    'FSGNJN': f_arith,
-    'FSGNJX': f_arith,
-
-
-    # pseudo
-    'PSEUDO-NOP': pseudo_nop,
-    'PSEUDO-LA': pseudo_la,
-    'PSEUDO-NOT': pseudo_not,
-    'PSEUDO-MV': pseudo_mv,
-    'PSEUDO-J': pseudo_j,
-    'PSEUDO-JAL': pseudo_jal,
-    'PSEUDO-JALR': pseudo_jalr,
-    'PSEUDO-RET': pseudo_ret,
-    'PSEUDO-CALL': pseudo_call,
-    'PSEUDO-TAIL': pseudo_tail,
-    'PSEUDO-EBREAK': None,
-    'PSEUDO-FMV': pseudo_fmv,
-    'PSEUDO-FABS': pseudo_fabs,
-    'PSEUDO-FNEG': pseudo_fneg,
-    # special
-    'SWI': store,
-}
-
-def getEncoder(forSim: bool) -> dict:
-    encoder['EBREAK'] = ebreak_sim if forSim else ebreak_fpga
-    encoder['PSEUDO-EBREAK'] = pseudo_ebreak_sim if forSim else pseudo_ebreak_fpga
-    return encoder
-
-#################### optimizer ####################
-
-def inc():
-    counter = -1
-    def inner():
-        nonlocal counter
-        counter += 1
-        return counter
-    return inner
-inc = inc()
-
-def optimize_branch(instr: tuple, addr: int, tags: dict) -> list:
-    name = instr[0]
-    rs1 = instr[1]
-    rs2 = instr[2]
-    imm = tag2offset(instr[3], tags, addr)
-
-    try:
+    # branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100011
+    def encode(self) -> list:
+        name = self.name
+        rs1 = reg2idx(self.rs1)
+        rs2 = reg2idx(self.rs2)
+        imm = self.imm
         checkImm(imm, 13, True)
-        return [(instr, 1)]
-    except RuntimeError:
-        oppositeDict  = {
-            'BEQ': 'BNE', 'BNE': 'BEQ',
-            'BLT': 'BGE', 'BGE': 'BLT',
-            'BLTU': 'BGEU', 'BGEU': 'BLTU'
-        }
-        oldTag = instr[3]
-        newTag = f'additional_branch_tag_{inc()}'
-        newName = oppositeDict[name]
-        return [((newName, rs1, rs2, newTag), 1), (('PSEUDO-J', oldTag), 1), (('TAG', newTag), 0)]
 
-def optimize_li(instr: tuple, addr: int, tags: dict) -> list:
-    rd = instr[1]
-    imm = instr[2]
+        mc = 0b1100011
+        mc |= ((imm & 0x00000800) >> 11) << 7 # 11
+        mc |= ((imm & 0x0000001E) >>  1) << 8 # 4:1
+        if name == 'beq':
+            mc |= 0b000 << 12
+        elif name == 'bne':
+            mc |= 0b001 << 12
+        elif name == 'blt':
+            mc |= 0b100 << 12
+        elif name == 'bge':
+            mc |= 0b101 << 12
+        elif name == 'bltu':
+            mc |= 0b110 << 12
+        elif name == 'bgeu':
+            mc |= 0b111 << 12
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable branch type \'{name}\'')
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (rs2 & 0x1F) << 20
+        mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
+        mc |= ((imm & 0x00001000) >> 12) << 31 # 12
+        return [mc]
+    
+    def __str__(self) -> str:
+        rs1 = idx2reg(reg2idx(self.rs1))
+        rs2 = idx2reg(reg2idx(self.rs2))
+        imm = self.imm
+        return f'{self.name} {rs1}, {rs2}, {imm}'
 
-    hi, lo = getHiLo(imm2int(imm))
-    if hi == 0:
-        return [(('ADDI', rd, 'zero', str(lo)), 1)]
-    else:
-        return [(('LUI', rd, str(hi)), 1), (('ADDI', rd, rd, str(lo)), 1)]
+######################################## load ########################################
 
-optimizer = {
-    'BEQ': optimize_branch,
-    'BNE': optimize_branch,
-    'BLT': optimize_branch,
-    'BGE': optimize_branch,
-    'BLTU': optimize_branch,
-    'BGEU': optimize_branch,
-    'PSEUDO-LI': optimize_li,
-}
+class Load(Code):
 
-def getOptimizer() -> dict:
-    return optimizer
+    # load rd, offset(rs1)
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.rs1 = tokenizedCode[3]
+
+    # load imm[11:0] rs1 funct3 rd 0000011
+    def encode(self) -> list:
+        name = self.name
+        rd = reg2idx(self.rd)
+        imm = imm2int(self.imm)
+        rs1 = reg2idx(self.rs1)
+        checkImm(imm, 12, True)
+
+        mc = 0b0000011
+        mc |= (rd & 0x1F) << 7
+        if name == 'lb':
+            mc |= 0b000 << 12
+        elif name == 'lh':
+            mc |= 0b001 << 12
+        elif name == 'lw':
+            mc |= 0b010 << 12
+        elif name == 'lbu':
+            mc |= 0b100 << 12
+        elif name == 'lhu':
+            mc |= 0b101 << 12
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable load type \'{name}\'')
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (imm & 0xFFF) << 20
+        return [mc]
+    
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        rs1 = idx2reg(reg2idx(self.rs1))
+        return f'{self.name} {rd}, {imm}({rs1})'
+
+######################################## store ########################################
+
+class Store(Code):
+
+    # store rs2, offset(rs1)
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rs2 = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.rs1 = tokenizedCode[3]
+    
+    # store imm[11:5] rs2 rs1 funct3 imm[4:0] 0100011
+    def encode(self) -> list:
+        name = self.name
+        rs2 = reg2idx(self.rs2)
+        imm = imm2int(self.imm)
+        rs1 = reg2idx(self.rs1)
+        checkImm(imm, 12, True)
+
+        mc = 0b0100011
+        mc |= (imm & 0x1F) << 7 # [4:0]
+        if name == 'sb':
+            mc |= 0b000 << 12
+        elif name == 'sh':
+            mc |= 0b001 << 12
+        elif name == 'sw':
+            mc |= 0b010 << 12
+        elif name == 'swi':
+            mc |= 0b011 << 12
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable store type \'{name}\'')
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (rs2 & 0x1F) << 20
+        mc |= ((imm & 0xFE0) >> 5) << 25
+        return [mc]
+    
+    def __str__(self) -> str:
+        rs2 = idx2reg(reg2idx(self.rs2))
+        imm = self.imm
+        rs1 = idx2reg(reg2idx(self.rs1))
+        return f'{self.name} {rs2}, {imm}({rs1})'
+
+######################################## arith-i ########################################
+
+class Arith_i(Code):
+
+    # arith_i rd, rs1, imm
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+        self.imm = tokenizedCode[3]
+
+    # arith_i imm[11:0] rs1 funct3 rd 0010011
+    def encode(self) -> list:
+        name = self.name
+        rd = reg2idx(self.rd)
+        rs1 = reg2idx(self.rs1)
+        imm = imm2int(self.imm)
+        checkImm(imm, 12, True)
+
+        mc = 0b0010011
+        mc |= (rd & 0x1F) << 7
+        mc |= (rs1 & 0x1F) << 15
+        if name == 'addi':
+            mc |= 0b000 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'slti':
+            mc |= 0b010 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'sltiu':
+            mc |= 0b011 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'xori':
+            mc |= 0b100 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'ori':
+            mc |= 0b110 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'andi':
+            mc |= 0b111 << 12
+            mc |= (imm & 0xFFF) << 20
+        elif name == 'slli':
+            mc |= 0b001 << 12
+            mc |= (imm & 0x1F) << 20 # shamt
+            mc |= 0b0000000 << 25
+        elif name == 'srli':
+            mc |= 0b101 << 12
+            mc |= (imm & 0x1F) << 20 # shamt
+            mc |= 0b0000000 << 25
+        elif name == 'srai':
+            mc |= 0b101 << 12
+            mc |= (imm & 0x1F) << 20 # shamt
+            mc |= 0b0100000 << 25
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable arith-i type \'{name}\'')
+        return [mc]
+
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        rs1 = idx2reg(reg2idx(self.rs1))
+        imm = self.imm
+        return f'{self.name} {rd}, {rs1}, {imm}'
+
+######################################## arith ########################################
+
+class Arith(Code):
+
+    # arith rd, rs1, rs2
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+        self.rs2 = tokenizedCode[3]
+
+    # arith funct7 rs2 rs1 funct3 rd 0110011
+    def encode(self) -> list:
+        name = self.name
+        rd = reg2idx(self.rd)
+        rs1 = reg2idx(self.rs1)
+        rs2 = reg2idx(self.rs2)
+
+        mc = 0b0110011
+        mc |= (rd & 0x1F) << 7
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (rs2 & 0x1F) << 20
+        # RV32I
+        if name == 'add':
+            mc |= 0b000 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'sub':
+            mc |= 0b000 << 12
+            mc |= 0b0100000 << 25
+        elif name == 'sll':
+            mc |= 0b001 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'slt':
+            mc |= 0b010 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'sltu':
+            mc |= 0b011 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'xor':
+            mc |= 0b100 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'srl':
+            mc |= 0b101 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'sra':
+            mc |= 0b101 << 12
+            mc |= 0b0100000 << 25
+        elif name == 'or':
+            mc |= 0b110 << 12
+            mc |= 0b0000000 << 25
+        elif name == 'and':
+            mc |= 0b111 << 12
+            mc |= 0b0000000 << 25
+        # RV32M
+        elif name == 'mul':
+            mc |= 0b000 << 12
+            mc |= 0b0000001 << 25
+        elif name == 'div':
+            mc |= 0b100 << 12
+            mc |= 0b0000001 << 25
+        elif name == 'divu':
+            mc |= 0b101 << 12
+            mc |= 0b0000001 << 25
+        elif name == 'rem':
+            mc |= 0b110 << 12
+            mc |= 0b0000001 << 25
+        elif name == 'remu':
+            mc |= 0b111 << 12
+            mc |= 0b0000001 << 25
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable arith type \'{name}\'')
+        return [mc]
+    
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        rs1 = idx2reg(reg2idx(self.rs1))
+        rs2 = idx2reg(reg2idx(self.rs2))
+        return f'{self.name} {rd}, {rs1}, {rs2}'
+
+######################################## ebreak ########################################
+
+class Ebreak(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.imm = tokenizedCode[1]
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        imm = imm2int(self.imm)
+        checkImm(imm, 12, False)
+        if (not self.forSim) and (imm != 0):
+            return [Pseudo_nop(('nop'))]
+
+    def encode(self) -> list:
+        imm = imm2int(self.imm)
+        checkImm(imm, 12, False)
+
+        if self.forSim:
+            mc = 0b1110011
+            mc |= (imm & 0xFFF) << 20
+            return [mc]
+        elif imm == 0:
+            # infinity loop
+            return [0b1101111]
+        else:
+            raise RuntimeError(f'ebreak {imm} is invalid for fpga.')
+
+    def __str__(self) -> str:
+        return f'{self.name} {self.imm}'
+
+######################################## f-load ########################################
+
+class F_load(Code):
+
+    # flw rd, offset(rs1)
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.rs1 = tokenizedCode[3]
+    
+    # f-load imm[11:0] rs1 010 rd 0000111
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = imm2int(self.imm)
+        rs1 = reg2idx(self.rs1)
+        checkImm(imm, 12, True)
+
+        mc = 0b0000111
+        mc |= (rd & 0x1F) << 7
+        mc |= 0b010 << 12
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (imm & 0xFFF) << 20
+        return [mc]
+    
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        rs1 = idx2reg(reg2idx(self.rs1))
+        return f'{self.name} {rd}, {imm}({rs1})'
+
+######################################## f-store ########################################
+
+class F_store(Code):
+
+    # fsw rs2, offset(rs1)
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rs2 = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.rs1 = tokenizedCode[3]
+    
+    # f-store imm[11:5] rs2 rs1 010 imm[4:0] 0100111
+    def encode(self) -> list:
+        rs2 = reg2idx(self.rs2)
+        imm = imm2int(self.imm)
+        rs1 = reg2idx(self.rs1)
+        checkImm(imm, 12, True)
+
+        mc = 0b0100111
+        mc |= (imm & 0x1F) << 7 # [4:0]
+        mc |= 0b010 << 12
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (rs2 & 0x1F) << 20
+        mc |= ((imm & 0xFE0) >> 5) << 25
+        return [mc]
+    
+    def __str__(self) -> str:
+        rs2 = idx2reg(reg2idx(self.rd))
+        imm = self.imm
+        rs1 = idx2reg(reg2idx(self.rs1))
+        return f'{self.name} {rs2}, {imm}({rs1})'
+
+######################################## f-arith ########################################
+
+class F_arith(Code):
+
+    # f-arith rd, rs1, rs2
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+        try:
+            self.rs2 = tokenizedCode[3]
+        except IndexError:
+            self.rs2 = 'zero'
+
+    # f-arith funct7 rs2/funct5 rs1 rm/funct3 rd 1010011
+    def encode(self) -> list:
+        name = self.name
+        rd = reg2idx(self.rd)
+        rs1 = reg2idx(self.rs1)
+        rs2 = reg2idx(self.rs2)
+        
+        mc = 0b1010011
+        mc |= (rd & 0x1F) << 7
+        mc |= (rs1 & 0x1F) << 15
+        # rm field ignored
+        if name == 'fmv.x.w':
+            mc |= 0b000 << 12
+            mc |= 0b1110000 << 25
+        elif name == 'fmv.w.x':
+            mc |= 0b000 << 12
+            mc |= 0b1111000 << 25
+        elif name == 'fadd':
+            mc |= 0b0000000 << 25
+        elif name == 'fsub':
+            mc |= 0b0000100 << 25
+        elif name == 'fmul':
+            mc |= 0b0001000 << 25
+        elif name == 'fdiv':
+            mc |= 0b0001100 << 25
+        elif name == 'fsqrt':
+            rs2 = 0b00000
+            mc |= 0b0101100 << 25
+        elif name == 'feq':
+            mc |= 0b010 << 12
+            mc |= 0b1010000 << 25
+        elif name == 'flt':
+            mc |= 0b001 << 12
+            mc |= 0b1010000 << 25
+        elif name == 'fle':
+            mc |= 0b000 << 12
+            mc |= 0b1010000 << 25
+        elif name == 'fcvt.s.w':
+            rs2 = 0b00000
+            mc |= 0b1101000 << 25
+        elif name == 'fcvt.w.s':
+            rs2 = 0b00000
+            mc |= 0b1100000 << 25
+        elif name == 'fcvt.s.wu':
+            rs2 = 0b00001
+            mc |= 0b1101000 << 25
+        elif name == 'fcvt.wu.s':
+            rs2 = 0b00001
+            mc |= 0b1100000 << 25
+        elif name == 'fsgnj':
+            mc |= 0b000 << 12
+            mc |= 0b0010000 << 25
+        elif name == 'fsgnjn':
+            mc |= 0b001 << 12
+            mc |= 0b0010000 << 25
+        elif name == 'fsgnjx':
+            mc |= 0b010 << 12
+            mc |= 0b0010000 << 25
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable arith type \'{name}\'')
+        mc |= (rs2 & 0x1F) << 20
+        return [mc]
+    
+    def __str__(self) -> str:
+        rd = idx2reg(reg2idx(self.rd))
+        rs1 = idx2reg(reg2idx(self.rs1))
+        rs2 = idx2reg(reg2idx(self.rs2))
+        if self.name == 'fsqrt':
+            return f'{self.name} {rd}, {rs1}'
+        else:
+            return f'{self.name} {rd}, {rs1}, {rs2}'
+
+######################################## pseudo-nop ########################################
+
+class Pseudo_nop(Code):
+
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Arith_i(('addi', 'zero', 'zero', '0'))]
+    
+    def __str__(self) -> str:
+        return f'nop'
+
+######################################## pseudo-li ########################################
+
+class Pseudo_li(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.assumedLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        hi, lo = getHiLo(imm2int(self.imm))
+        if hi == 0:
+            self.actualLength = 1
+            return [Arith_i(('addi', self.rd, 'zero', str(lo)))]
+        else:
+            self.actualLength = 2
+            return [
+                Lui(('lui', self.rd, str(hi))),
+                Arith_i(('addi', self.rd, self.rd, str(lo)))
+            ]
+    
+    def __str__(self) -> str:
+        return f'li {self.rd}, {self.imm}'
+
+######################################## pseudo-la ########################################
+
+class Pseudo_la(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.tag = tokenizedCode[2]
+        self.assumedLength = 2
+
+    def optimize(self, addr: int, tags: dict) -> list:
+        self.actualLength = 2
+        return [self]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        offset = tag2offset(self.tag, tags, addr)
+        hi, lo = getHiLo(offset)
+        return [
+            Auipc(('auipc', self.rd, str(hi))),
+            Arith_i(('addi', self.rd, self.rd, str(lo)))
+        ]
+    
+    def __str__(self) -> str:
+        return f'la {self.rd}, {self.tag}'
+
+######################################## pseudo-not ########################################
+
+class Pseudo_not(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Arith_i(('xori', self.rd, self.rs1, '-1'))]
+    
+    def __str__(self) -> str:
+        return f'not {self.rd}, {self.rs1}'
+
+######################################## pseudo-mv ########################################
+
+class Pseudo_mv(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Arith_i(('addi', self.rd, self.rs1, '0'))]
+    
+    def __str__(self) -> str:
+        return f'mv {self.rd}, {self.rs1}'
+
+######################################## pseudo-j ########################################
+
+class Pseudo_j(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.tag = tokenizedCode[1]
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        return [Jal(('jal', 'zero', self.tag))]
+    
+    def __str__(self) -> str:
+        return f'j {self.tag}'
+
+######################################## pseudo-jal ########################################
+
+class Pseudo_jal(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.tag = tokenizedCode[1]
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        return [Jal(('jal', 'ra', self.tag))]
+    
+    def __str__(self) -> str:
+        return f'jal {self.tag}'
+
+######################################## pseudo-jalr ########################################
+
+class Pseudo_jalr(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rs1 = tokenizedCode[1]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Jalr(('jalr', 'ra', '0', self.rs1))]
+
+    def __str__(self) -> str:
+        return f'jalr {self.rs1}'
+
+######################################## pseudo-ret ########################################
+
+class Pseudo_ret(Code):
+
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Jalr(('jalr', 'zero', '0', 'ra'))]
+    
+    def __str__(self) -> str:
+        return f'ret'
+
+######################################## pseudo-call ########################################
+
+class Pseudo_call(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.tag = tokenizedCode[1]
+        self.assumedLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        self.actualLength = 2
+        return [self]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        offset = tag2offset(self.tag, tags, addr)
+        hi, lo = getHiLo(offset)
+        return [
+            Auipc(('auipc', 't1', str(hi))),
+            Jalr(('jalr', 'ra', str(lo), 't1'))
+        ]
+
+    def __str__(self) -> str:
+        return f'call {self.tag}'
+
+######################################## pseudo-tail ########################################
+
+class Pseudo_tail(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.tag = tokenizedCode[1]
+        self.assumedLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        self.actualLength = 2
+        return [self]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        offset = tag2offset(self.tag, tags, addr)
+        hi, lo = getHiLo(offset)
+        return [
+            Auipc(('auipc', 't1', str(hi))),
+            Jalr(('jalr', 'zero', str(lo), 't1'))
+        ]
+
+    def __str__(self) -> str:
+        return f'tail {self.tag}'
+
+######################################## pseudo-ebreak ########################################
+
+class Pseudo_ebreak(Code):
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [Ebreak(('ebreak', '0'), self.forSim)]
+    
+    def __str__(self) -> str:
+        return f'ebreak'
+
+######################################## pseudo-fmv ########################################
+
+class Pseudo_fmv(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [F_arith(('fsgnj', self.rd, self.rs1, self.rs1))]
+    
+    def __str__(self) -> str:
+        return f'fmv {self.rd}, {self.rs1}'
+
+######################################## pseudo-fabs ########################################
+
+class Pseudo_fabs(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [F_arith(('fsgnjx', self.rd, self.rs1, self.rs1))]
+    
+    def __str__(self) -> str:
+        return f'fabs {self.rd}, {self.rs1}'
+
+######################################## pseudo-fneg ########################################
+
+class Pseudo_fneg(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool=True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.rs1 = tokenizedCode[2]
+    
+    def finalize(self, addr: int, tags: dict) -> list:
+        return [F_arith(('fsgnjn', self.rd, self.rs1, self.rs1))]
+    
+    def __str__(self) -> str:
+        return f'fneg {self.rd}, {self.rs1}'

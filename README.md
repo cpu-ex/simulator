@@ -21,6 +21,7 @@
 - [2021/12/21] implement uart output for simulator
 - [2021/12/24] implement uart input for simulator
 - [2021/12/28] fix the exception of branching too far for assembler
+- [2022/01/08] refactor assembler
 
 ![sample](sample.gif)
 
@@ -88,11 +89,3 @@
 
 - [2021/12/12] fib 35: 230686620 instructions in 17853138 clk, 12921348.616697 per sec
 - [2021/12/21] fib 35: 249141551 instructions in 17645914 clk, 14118937.165850 per sec
-
-## 4. debug tips
-
-- assembler
-	- add `ebreak [n]` to set up a breakpoint after visiting certain instruction for n times, default to 0 which means stopping the program completely
-- simulator
-	- step 1 instruction forward by typing `KEY_ENTER`
-	- use `dump [steps]` to log the information of registers
