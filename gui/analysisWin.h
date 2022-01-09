@@ -28,6 +28,9 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block1, 19, 0, "time in second: %.6f", (f32)cycles / CLK_FREQUENCY);
     // block2: cache info
     wattron(block2, COLOR_PAIR(STANDOUT_COLOR));
+    #if defined(NO_CACHE)
+    mvwprintw(block2, 5, 6, "cache system not equipted");
+    #else
     mvwprintw(block2, 0, 0, "%u way Set-associative Cache Info:", ASSOCIATIVITY);
     wattroff(block2, COLOR_PAIR(STANDOUT_COLOR));
     mvwprintw(block2, 2, 0,
@@ -47,6 +50,7 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
     mvwprintw(block2, 8, 0, "hit   %u times", core->mmu->data_cache->hit_counter);
     mvwprintw(block2, 9, 0, "miss  %u times", core->mmu->data_cache->miss_counter);
+    #endif
     // block3: branch predictor
     wattron(block3, COLOR_PAIR(STANDOUT_COLOR));
     mvwprintw(block3, 0, 0, "Branch Predictor Info:");

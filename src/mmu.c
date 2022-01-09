@@ -1,4 +1,5 @@
 #include "mmu.h"
+#include "core.h"
 
 WORD mmu_read_instr(MMU* mmu, ADDR addr) {
     return (addr < mmu->instr_len) ? mmu->instr_mem[addr] : 0;
@@ -9,24 +10,34 @@ void mmu_write_instr(MMU* mmu, ADDR addr, WORD val) {
         mmu->instr_mem[addr] = val;
 }
 
-BYTE mmu_read_data(MMU* mmu, ADDR addr) {
-    BYTE val;
+BYTE mmu_read_data(MMU* mmu, void* core, ADDR addr) {
+    register BYTE val;
+    #if defined(NO_CACHE)
+    val = mmu->data_mem->read_byte(mmu->data_mem, addr);
+    ((CORE*)core)->stall_counter += 13;
+    #else
     // cache miss
     if (!mmu->data_cache->read_byte(mmu->data_cache, addr, &val)) {
         // load certain block to cache
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         val = mmu->data_mem->read_byte(mmu->data_mem, addr);
     }
+    #endif
     return val;
 }
 
-void mmu_write_data(MMU* mmu, ADDR addr, BYTE val) {
+void mmu_write_data(MMU* mmu, void* core, ADDR addr, BYTE val) {
+    #if defined(NO_CACHE)
+    mmu->data_mem->write_byte(mmu->data_mem, addr, val);
+    ((CORE*)core)->stall_counter += 13;
+    #else
     // cache miss
     if (!mmu->data_cache->write_byte(mmu->data_cache, addr, val)) {
         // write allocate
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         mmu->data_cache->write_byte(mmu->data_cache, addr, val);
     }
+    #endif
 }
 
 BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
@@ -37,8 +48,12 @@ BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
     } else {
         // data
         BYTE val;
+        #if defined(NO_CACHE)
+        val = mmu->data_mem->read_byte(mmu->data_mem, addr);
+        #else
         if (!mmu->data_cache->sneak(mmu->data_cache, addr, &val))
             val = mmu->data_mem->read_byte(mmu->data_mem, addr);
+        #endif
         return val;
     }
 }

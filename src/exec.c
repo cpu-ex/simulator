@@ -94,7 +94,7 @@ void LOAD_EXEC(CORE* core, INSTR instr) {
     core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11), funct3 & 0b011, !(funct3 >> 2));
     core->pc += 4;
     // stall check
-    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
+    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 5 : 0;
 }
 
 // store: sb, sh, sw

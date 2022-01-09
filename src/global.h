@@ -5,7 +5,7 @@
 #include <time.h>
 
 // #define TIME_TEST_MODE
-#define NO_CHACHE
+// #define NO_CACHE
 
 typedef unsigned char      u8;
 typedef signed char        s8;

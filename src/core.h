@@ -3,7 +3,7 @@
 #include "mmu.h"
 #include "branch_predictor.h"
 
-#define CLK_FREQUENCY 1000000
+#define CLK_FREQUENCY 10000000
 #define DEFAULT_PC    0x100
 #define UART_ADDR     0x3FFFFFC
 #define UART_BUF_SIZE 0x32000 // 200KB
