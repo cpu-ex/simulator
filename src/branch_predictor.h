@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 
 // customizable variables
 // #define BP_AT // always taken

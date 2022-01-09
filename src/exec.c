@@ -289,8 +289,6 @@ void execute(CORE* core, INSTR instr) {
     case 0b0010011: ARITH_I_EXEC(core, instr); core->instr_analysis[ARITH_I]++; break;
     // arith
     case 0b0110011: ARITH_EXEC(core, instr); core->instr_analysis[ARITH]++; break;
-    // fence
-    case 0b0001111: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     // env + csr
     case 0b1110011: ENV_EXEC(core, instr); core->instr_analysis[ENV_CSR]++; break;
     

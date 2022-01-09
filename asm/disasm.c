@@ -1,4 +1,4 @@
-#include "../src/types.h"
+#include "../src/global.h"
 #include "../src/instr.h"
 
 int main(int argc, char* argv[]) {

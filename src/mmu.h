@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 #include "mem.h"
 #include "cache.h"
 

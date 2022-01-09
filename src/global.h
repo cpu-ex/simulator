@@ -4,6 +4,9 @@
 #include <string.h>
 #include <time.h>
 
+// #define TIME_TEST_MODE
+#define NO_CHACHE
+
 typedef unsigned char      u8;
 typedef signed char        s8;
 typedef unsigned short     u16;

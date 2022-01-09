@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 #include "mem.h"
 
 #define LOG_1(n) (((n) < 1 << 1) ? 0 : 1)

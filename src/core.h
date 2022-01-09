@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 #include "mmu.h"
 #include "branch_predictor.h"
 

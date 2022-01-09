@@ -60,8 +60,8 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     }
 }
 
-#if defined(TIME_TEST_MODE)
 void sim_run(SIM* sim) {
+    #if defined(TIME_TEST_MODE)
     // timer
     clock_t t1, t2;
     t1 = clock();
@@ -71,9 +71,7 @@ void sim_run(SIM* sim) {
     u64 num = sim->core->instr_counter;
     printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
     sim->core->deinit(sim->core);
-}
-#else
-void sim_run(SIM* sim) {
+    #else
     // init GUI
     static GUI gui;
     init_gui(&gui);
@@ -125,8 +123,8 @@ void sim_run(SIM* sim) {
             break;
         }
     }
+    #endif
 }
-#endif
 
 void init_sim(SIM* sim) {
     // init core

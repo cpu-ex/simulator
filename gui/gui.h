@@ -1,6 +1,6 @@
 #pragma once
 #include <ncurses.h>
-#include "../src/types.h"
+#include "../src/global.h"
 #include "../src/core.h"
 #include "../src/instr.h"
 

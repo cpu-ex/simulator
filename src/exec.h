@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 #include "instr.h"
 #include "core.h"
 

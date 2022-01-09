@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "global.h"
 
 #define MAX_ADDR 0x04000000
 
