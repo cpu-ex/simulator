@@ -412,27 +412,8 @@ u8 disasm(INSTR instr, char* buffer) {
 }
 
 u8 isLwStall(BYTE rd, WORD op) {
-    INSTR instr = { .raw = op };
-    static char buffer[36];
-    
-    switch (disasm(instr, buffer)) {
-    case JALR:
-    case ARITH_I:
-    case LOAD: case F_LOAD:
-        return (rd == instr.i.rs1) ? 1 : 0;
-    case BRANCH:
-        return ((rd == instr.b.rs1) || (rd == instr.b.rs2)) ? 1 : 0;
-    case STORE: case F_STORE:
-        return ((rd == instr.s.rs1) || (rd == instr.s.rs2)) ? 1 : 0;
-    case ARITH: case FADD: case FSUB: case FMUL: case FDIV:
-    case FCMP:
-    case FCVT2F: case FCVT2I:
-    case FSGNJ:
-        return ((rd == instr.r.rs1) || (rd == instr.r.rs2)) ? 1 : 0;
-    case FMV2I: case FMV2F:
-    case FSQRT:
-        return (rd == instr.r.rs1) ? 1 : 0;
-    default:
-        return 0;
-    }
-}
+    if (!rd) return 0;
+    register BYTE rs1 = (INSTR){ .raw = op }.r.rs1;
+    register BYTE rs2 = (INSTR){ .raw = op }.r.rs2;
+    return ((rd == rs1) || (rd == rs2)) ? 1 : 0;
+ }
