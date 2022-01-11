@@ -104,6 +104,8 @@ COMMAND get_command(GUI* gui) {
         com.type = 'a';
     } else if (!strcmp(output[0], "cache")) {
         com.type = 'c';
+        com.argc = 1;
+        com.argv[0] = argc > 1 ? atoi(output[1]) : 0;
     } else {
         // parse as step 1
         com.type = 's';
@@ -143,7 +145,7 @@ STATE wait4command(GUI* gui, CORE* core) {
         show_analysis_win(core);
         return STAT_HALT;
     case 'c':
-        show_cache_win(core);
+        show_cache_win(core, com.argv[0]);
         return STAT_HALT;
     case 'h':
         show_help_win();

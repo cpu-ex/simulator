@@ -9,16 +9,15 @@
 #define LOG(n)   (((n) < 1 << 16) ? LOG_8(n) : (16 + LOG_8((n) >> 16)))
 
 // customizable variables
-#define BLOCK_SIZE    64 // in bytes
-#define ASSOCIATIVITY 8 // aka way
+#define BLOCK_SIZE    64  // in bytes
+#define ASSOCIATIVITY 1    // aka way
+#define SET_NUM       2048 // aka depth
 // #define CACHE_FIFO
 #define CACHE_LRU
 // #define CACHE_RR // round robin
 
 // constants
-#define CACHE_SIZE  (1 << 12) // without tags
-#define BLOCK_NUM   (CACHE_SIZE / BLOCK_SIZE)
-#define SET_NUM     (CACHE_SIZE / BLOCK_SIZE / ASSOCIATIVITY)
+#define BLOCK_NUM   (SET_NUM * ASSOCIATIVITY)
 #define OFFSET_LEN  LOG(BLOCK_SIZE)
 #define SET_IDX_LEN LOG(SET_NUM)
 #define TAG_LEN     (32 - SET_IDX_LEN - OFFSET_LEN)

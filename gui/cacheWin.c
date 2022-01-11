@@ -27,7 +27,7 @@ void update_info(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
         .set_idx = cache_block->set_idx
     } };
 
-    mvwprintw(inner, 0, 0, "block idx = %u : ", focused->line);
+    mvwprintw(inner, 0, 0, "block idx = %u (%u) : ", focused->line, focused->line % ASSOCIATIVITY);
     print_info(inner, cache_block->valid, "valid, ", "invalid, ");
     print_info(inner, cache_block->modified, "modified", "unmodified");
     mvwprintw(inner, 1, 0, "tag = 0x%X, set idx = %u -> ", cache_block->tag, cache_block->set_idx);
@@ -91,7 +91,7 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
     wrefresh(inner);
 }
 
-void show_cache_win(CORE* core) {
+void show_cache_win(CORE* core, u32 setIdx) {
     clear();
     // create windows
     WINDOW* info_outer = newwin(4, 80, 0, 0);
@@ -103,7 +103,7 @@ void show_cache_win(CORE* core) {
     // refresh
     refresh();
     // main loop
-    FOCUS_INFO focused = { .win = list_outer, .line = 0, .offset = 0 };
+    FOCUS_INFO focused = { .win = list_outer, .line = setIdx * ASSOCIATIVITY, .offset = 0 };
     s32* offset = &focused.line;
     keypad(stdscr, 1);
     while (1) {

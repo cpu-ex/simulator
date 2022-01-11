@@ -28,7 +28,7 @@ void show_help_win() {
         arrow key, direct to certain address by giving a Hex number\n\
         exit focusing mode by pressing any key");
     mvwprintw(help_win_inner, 14, 0,
-        "cache: display cache window, move contents with arrow key\n\
+        "cache [setIdx]: display cache window, move contents with arrow key\n\
         exit focusing mode by pressing any key");
     mvwprintw(help_win_inner, 16, 0, "analysis: display analysis window and press any key to close");
     mvwprintw(help_win_inner, 17, 0, "help: display help window and press any key to close");

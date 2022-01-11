@@ -150,6 +150,7 @@ void cache_reset(CACHE* cache) {
         if (cache->blocks[idx] != NULL)
             free(cache->blocks[idx]);
         cache->blocks[idx] = (CACHE_BLOCK*)malloc(sizeof(CACHE_BLOCK));
+        memset(cache->blocks[idx], 0, sizeof(CACHE_BLOCK));
     }
 }
 
