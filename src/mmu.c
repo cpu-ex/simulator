@@ -11,7 +11,7 @@ void mmu_write_instr(MMU* mmu, ADDR addr, WORD val) {
 }
 
 BYTE mmu_read_data(MMU* mmu, void* core, ADDR addr) {
-    register BYTE val;
+    BYTE val;
     #if defined(NO_CACHE)
     val = mmu->data_mem->read_byte(mmu->data_mem, addr);
     ((CORE*)core)->stall_counter += 13;

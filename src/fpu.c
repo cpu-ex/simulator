@@ -29,7 +29,7 @@ void FLW_EXEC(CORE* core, INSTR instr) {
     }
     core->pc += 4;
     // stall check
-    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 5 : 0;
+    core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
 }
 
 // f-store
