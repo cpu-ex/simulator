@@ -9,9 +9,9 @@
 #define LOG(n)   (((n) < 1 << 16) ? LOG_8(n) : (16 + LOG_8((n) >> 16)))
 
 // customizable variables
-#define BLOCK_SIZE    64  // in bytes
-#define ASSOCIATIVITY 1    // aka way
-#define SET_NUM       2048 // aka depth
+#define BLOCK_SIZE    16   // in bytes
+#define ASSOCIATIVITY 2    // aka way
+#define SET_NUM       1024 // aka depth
 // #define CACHE_FIFO
 #define CACHE_LRU
 // #define CACHE_RR // round robin

@@ -66,9 +66,9 @@ class ASM(object):
         # prepend initialization codes
         if _ := self.codeTag.get(self.startTag, None):
             self.code = [
-                Block.decode(f'li sp, {ASM.DEFAULT_SP}', -3, self.forSim),
-                Block.decode(f'li hp, {len(self.data) * 4}', -2, self.forSim),
-                Block.decode(f'tail {self.startTag}', -1, self.forSim)
+                Block.decode(f'li sp, {ASM.DEFAULT_SP}', 0, self.forSim),
+                Block.decode(f'li hp, {len(self.data) * 4}', 0, self.forSim),
+                Block.decode(f'tail {self.startTag}', 0, self.forSim)
             ] + self.code
         else:
             raise RuntimeError(f'no starting tag defined.')
@@ -102,7 +102,7 @@ class ASM(object):
         if not os.path.exists('../bin/'):
             os.mkdir('../bin/')
         # output binary file
-        if binaryOutput or (not (binaryOutput ^ textOutput)):
+        if binaryOutput:
             with open(f'../bin/{self.fileName}.code', 'wb') as file:
                 for mc in self.machineCode:
                     file.write(struct.pack('>I', mc))
@@ -110,13 +110,16 @@ class ASM(object):
                 for d in self.data:
                     file.write(struct.pack('>I', d))
         # output text file
-        if textOutput or (not (binaryOutput ^ textOutput)):
+        if textOutput:
             with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
                 for mc in self.machineCode:
                     file.write(f'{bin(mc)[2:].zfill(32)}\n')
             with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
                 for d in self.data:
                     file.write(f'{bin(d)[2:].zfill(32)}\n')
+        # warn
+        if not (binaryOutput or textOutput):
+            print(f'none of the output format specified, check \'python3 asm.py --help\' for detailed information.')
 
     def printTagInfo(self) -> None:
         print('\n'.join(f'{tag=}\taddr={addr:#08X}' for tag, addr in {**self.codeTag, **self.dataTag}.items()))
