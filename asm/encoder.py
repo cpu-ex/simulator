@@ -297,16 +297,8 @@ class Load(Code):
 
         mc = 0b0000011
         mc |= (rd & 0x1F) << 7
-        if name == 'lb':
-            mc |= 0b000 << 12
-        elif name == 'lh':
-            mc |= 0b001 << 12
-        elif name == 'lw':
+        if name == 'lw':
             mc |= 0b010 << 12
-        elif name == 'lbu':
-            mc |= 0b100 << 12
-        elif name == 'lhu':
-            mc |= 0b101 << 12
         else:
             # not suppose to be here
             raise RuntimeError(f'unrecognizable load type \'{name}\'')
@@ -342,11 +334,7 @@ class Store(Code):
 
         mc = 0b0100011
         mc |= (imm & 0x1F) << 7 # [4:0]
-        if name == 'sb':
-            mc |= 0b000 << 12
-        elif name == 'sh':
-            mc |= 0b001 << 12
-        elif name == 'sw':
+        if name == 'sw':
             mc |= 0b010 << 12
         elif name == 'swi':
             mc |= 0b011 << 12

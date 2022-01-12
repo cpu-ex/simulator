@@ -67,16 +67,8 @@ void LOAD_DISASM(INSTR instr, char* buffer) {
     BYTE rs1 = instr.i.rs1;
     BYTE funct3 = instr.i.funct3;
     switch (funct3) {
-    // lb
-    case 0b000: sprintf(buffer, "lb %s, %d(%s)", reg_name[rd], sext(imm, 11), reg_name[rs1]); break;
-    // lh
-    case 0b001: sprintf(buffer, "lh %s, %d(%s)", reg_name[rd], sext(imm, 11), reg_name[rs1]); break;
     // lw
     case 0b010: sprintf(buffer, "lw %s, %d(%s)", reg_name[rd], sext(imm, 11), reg_name[rs1]); break;
-    // lbu
-    case 0b100: sprintf(buffer, "lbu %s, %d(%s)", reg_name[rd], sext(imm, 11), reg_name[rs1]); break;
-    // lhu
-    case 0b101: sprintf(buffer, "lhu %s, %d(%s)", reg_name[rd], sext(imm, 11), reg_name[rs1]); break;
     // unexpected
     default: sprintf(buffer, "unexpected load"); break;
     }
@@ -90,10 +82,6 @@ void STORE_DISASM(INSTR instr, char* buffer) {
     BYTE rs2 = instr.s.rs2;
     BYTE funct3 = instr.s.funct3;
     switch (funct3) {
-    // sb
-    case 0b000: sprintf(buffer, "sb %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
-    // sh
-    case 0b001: sprintf(buffer, "sh %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
     // sw
     case 0b010: sprintf(buffer, "sw %s, %d(%s)", reg_name[rs2], sext(imm, 11), reg_name[rs1]); break;
     // swi

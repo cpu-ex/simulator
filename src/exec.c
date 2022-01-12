@@ -82,22 +82,21 @@ void BRANCH_EXEC(CORE* core, INSTR instr) {
     core->pc += cmp ? sext(imm, 12) : 4;
 }
 
-// load: lb, lh, lw, lbu, lhu
+// load: lw
 void LOAD_EXEC(CORE* core, INSTR instr) {
     register BYTE rd = instr.i.rd;
     register WORD imm = instr.i.imm;
     register BYTE rs1 = instr.i.rs1;
     register BYTE funct3 = instr.i.funct3;
 
-    // funct3: 000 -> lb, 001 -> lh, 010 -> lw
-    //         100 -> lbu, 101 -> lhu
-    core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11), funct3 & 0b011, !(funct3 >> 2));
+    // funct3: 010 -> lw
+    core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
     core->pc += 4;
     // stall check
     core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
 }
 
-// store: sb, sh, sw
+// store: sw
 void STORE_EXEC(CORE* core, INSTR instr) {
     register WORD imm = instr.s.imm11_5 << 5 |
                         instr.s.imm4_0;
@@ -105,10 +104,11 @@ void STORE_EXEC(CORE* core, INSTR instr) {
     register BYTE rs2 = instr.s.rs2;
     register BYTE funct3 = instr.s.funct3;
 
+    // funct3: 011 -> swi, 010 -> sw
     if (funct3 == 0b011)
         core->store_instr(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
-    else // funct3: 000 -> sb, 001 -> sh, 010 -> sw
-        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2], funct3);
+    else
+        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
     core->pc += 4;
 }
 

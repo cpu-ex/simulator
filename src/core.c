@@ -41,32 +41,22 @@ WORD core_load_instr(CORE* core, ADDR addr) {
     return core->mmu->read_instr(core->mmu, addr >> 2);
 }
 
-WORD core_load_data(CORE* core, ADDR addr, u8 bytes, u8 sign) {
-    if (addr ^ UART_ADDR) {
-        register WORD val = 0;
-        for (int i = 0; i < (1 << bytes); i++) {
-            val <<= 8;
-            val |= core->mmu->read_data(core->mmu, core, addr + i);
-        }
-        return sign ? sext(val, (1 << bytes) * 8 - 1) : val;
-    } else {
+WORD core_load_data(CORE* core, ADDR addr) {
+    if (addr ^ UART_ADDR)
+        return core->mmu->read_data(core->mmu, core, addr);
+    else
         return core->uart_in->pop(core->uart_in);
-    }
 }
 
 void core_store_instr(CORE* core, ADDR addr, WORD val) {
     core->mmu->write_instr(core->mmu, addr >> 2, val);
 }
 
-void core_store_data(CORE* core, ADDR addr, WORD val, u8 bytes) {
-    if (addr ^ UART_ADDR) {
-        for (int i = (1 << bytes) - 1; i >= 0; i--) {
-            core->mmu->write_data(core->mmu, core, addr + i, val & 0xFF);
-            val >>= 8;
-        }
-    } else {
+void core_store_data(CORE* core, ADDR addr, WORD val) {
+    if (addr ^ UART_ADDR)
+        core->mmu->write_data(core->mmu, core, addr, val);
+    else
         core->uart_out->push(core->uart_out, val & 0xFF);
-    }
 }
 
 void core_dump(CORE* core) {
@@ -96,7 +86,7 @@ void core_reset(CORE* core) {
     // reset instruction analysis
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 23 * sizeof(u32));
+    memset(core->instr_analysis, 0, 23 * sizeof(u64));
     // reset branch predictor
     core->branch_predictor->reset(core->branch_predictor);
 }

@@ -29,14 +29,8 @@ class Block(object):
         'BLTU': (re.compile(r'(bltu)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
         'BGEU': (re.compile(r'(bgeu)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
         # load rd, offset(rs1)
-        'LB': (re.compile(r'(lb)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
-        'LH': (re.compile(r'(lh)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
         'LW': (re.compile(r'(lw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
-        'LBU': (re.compile(r'(lbu)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
-        'LHU': (re.compile(r'(lhu)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
         # store rs2, offset(rs1)
-        'SB': (re.compile(r'(sb)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Store),
-        'SH': (re.compile(r'(sh)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Store),
         'SW': (re.compile(r'(sw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Store),
         # arith_i rd, rs1, imm
         'ADDI': (re.compile(r'(addi)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),

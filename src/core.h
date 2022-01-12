@@ -56,9 +56,9 @@ typedef struct core {
     u64 instr_analysis[23];
     // interfaces
     WORD (*load_instr)(struct core*, ADDR);
-    WORD (*load_data)(struct core*, ADDR, u8 ,u8);
+    WORD (*load_data)(struct core*, ADDR);
     void (*store_instr)(struct core*, ADDR, WORD);
-    void (*store_data)(struct core*, ADDR, WORD, u8);
+    void (*store_data)(struct core*, ADDR, WORD);
     void (*step)(struct core*);
     void (*dump)(struct core*);
     void (*reset)(struct core*);
