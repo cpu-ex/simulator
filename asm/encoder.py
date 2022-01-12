@@ -589,7 +589,7 @@ class F_store(Code):
         return [mc]
     
     def __str__(self) -> str:
-        rs2 = idx2reg(reg2idx(self.rd))
+        rs2 = idx2reg(reg2idx(self.rs2))
         imm = self.imm
         rs1 = idx2reg(reg2idx(self.rs1))
         return f'{self.name} {rs2}, {imm}({rs1})'
@@ -704,13 +704,15 @@ class Pseudo_li(Code):
     
     def optimize(self, addr: int, tags: dict) -> list:
         hi, lo = getHiLo(imm2int(self.imm))
-        optimizedCode = list()
-        if hi != 0:
-            optimizedCode.append(Lui(('lui', self.rd, str(hi))))
-        if hi == 0 or lo != 0:
-            optimizedCode.append(Arith_i(('addi', self.rd, self.rd, str(lo))))
-        self.actualLength = len(optimizedCode)
-        return optimizedCode
+        if hi == 0:
+            self.actualLength = 1
+            return [Arith_i(('addi', self.rd, 'zero', str(lo)))]
+        elif lo == 0:
+            self.actualLength = 1
+            return [Lui(('lui', self.rd, str(hi)))]
+        else:
+            self.actualLength = 2
+            return [Lui(('lui', self.rd, str(hi))), Arith_i(('addi', self.rd, self.rd, str(lo)))]
     
     def __str__(self) -> str:
         return f'li {self.rd}, {self.imm}'
