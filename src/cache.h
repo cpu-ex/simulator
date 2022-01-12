@@ -9,8 +9,8 @@
 #define LOG(n)   (((n) < 1 << 16) ? LOG_8(n) : (16 + LOG_8((n) >> 16)))
 
 // customizable variables
-#define BLOCK_SIZE    16   // in bytes
-#define ASSOCIATIVITY 2    // aka way
+#define BLOCK_SIZE    8    // in words
+#define ASSOCIATIVITY 4    // aka way
 #define SET_NUM       1024 // aka depth
 // #define CACHE_FIFO
 #define CACHE_LRU
@@ -18,7 +18,7 @@
 
 // constants
 #define BLOCK_NUM   (SET_NUM * ASSOCIATIVITY)
-#define OFFSET_LEN  LOG(BLOCK_SIZE)
+#define OFFSET_LEN  (LOG(BLOCK_SIZE) + 2)
 #define SET_IDX_LEN LOG(SET_NUM)
 #define TAG_LEN     (32 - SET_IDX_LEN - OFFSET_LEN)
 
@@ -26,34 +26,35 @@ typedef union cache_addr_helper {
     u32 raw;
 
     struct addr_decoder {
-        u32 offset : OFFSET_LEN;
-        u32 set_idx : SET_IDX_LEN;
-        u32 tag : TAG_LEN;
+        u32        : 2;
+        u32 offset : OFFSET_LEN - 2;
+        u32 set_idx: SET_IDX_LEN;
+        u32 tag    : TAG_LEN;
     } __attribute__((packed)) d;
 } CACHE_ADDR_HELPER;
 
 typedef struct cache_block {
     u8 valid;
     u8 modified;
-    u32 start_point; // the first time the block was settled
-    u32 last_referenced;
+    u64 start_point; // the first time the block was settled
+    u64 last_referenced;
     u32 tag;
     u32 set_idx;
-    u8 data[BLOCK_SIZE];
+    u32 data[BLOCK_SIZE];
 } CACHE_BLOCK;
 
 typedef struct cache {
     // attributes
     CACHE_BLOCK* blocks[BLOCK_NUM];
-    u32 hit_counter;
-    u32 miss_counter;
-    u32 read_counter;
-    u32 write_counter;
-    u32 reference_counter;
+    u64 hit_counter;
+    u64 miss_counter;
+    u64 read_counter;
+    u64 write_counter;
+    u64 reference_counter;
     // interfaces
-    u8 (*read_byte)(struct cache*, ADDR, BYTE*);
-    u8 (*write_byte)(struct cache*, ADDR, BYTE);
-    u8 (*sneak)(struct cache*, ADDR, BYTE*);
+    u8 (*read_word)(struct cache*, ADDR, WORD*);
+    u8 (*write_word)(struct cache*, ADDR, WORD);
+    u8 (*sneak)(struct cache*, ADDR, WORD*);
     void (*load_block)(struct cache*, ADDR, MEM*);
     void (*reset)(struct cache*);
 } CACHE;

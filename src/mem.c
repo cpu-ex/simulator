@@ -4,26 +4,27 @@ typedef union mem_addr_helper {
     u32 raw;
 
     struct addr_decoder {
+        u16        : 2;
         u16 offset : 8;
-        u16 index2 : 10;
+        u16 index2 : 8;
         u16 index1 : 8;
-        u16 padding : 6;
+        u16        : 6;
     } __attribute__((packed)) d;
 } MEM_ADDR_HELPER;
 
 void mem_assure_page(MEM* mem, ADDR addr) {
     MEM_ADDR_HELPER helper = { .raw = addr };
     if (!mem->data[helper.d.index1]) {
-        mem->data[helper.d.index1] = (BYTE**)malloc(0x400 * sizeof(BYTE*));
-        memset(mem->data[helper.d.index1], 0, 0x400 * sizeof(BYTE*));
+        mem->data[helper.d.index1] = (WORD**)malloc(0x100 * sizeof(WORD*));
+        memset(mem->data[helper.d.index1], 0, 0x100 * sizeof(WORD*));
     }
     if (!mem->data[helper.d.index1][helper.d.index2]) {
-        mem->data[helper.d.index1][helper.d.index2] = (BYTE*)malloc(0x100 * sizeof(BYTE));
-        memset(mem->data[helper.d.index1][helper.d.index2], 0, 0x100 * sizeof(BYTE));
+        mem->data[helper.d.index1][helper.d.index2] = (WORD*)malloc(0x100 * sizeof(WORD));
+        memset(mem->data[helper.d.index1][helper.d.index2], 0, 0x100 * sizeof(WORD));
     }
 }
 
-BYTE mem_read_byte(MEM* mem, ADDR addr) {
+WORD mem_read_word(MEM* mem, ADDR addr) {
     MEM_ADDR_HELPER helper = { .raw = addr };
     if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << STAT_SHIFT_AMOUNT));
@@ -35,7 +36,7 @@ BYTE mem_read_byte(MEM* mem, ADDR addr) {
     }
 }
 
-void mem_write_byte(MEM* mem, ADDR addr, BYTE val) {
+void mem_write_word(MEM* mem, ADDR addr, WORD val) {
     if (!(addr < MAX_ADDR)) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << STAT_SHIFT_AMOUNT));
     } else {
@@ -46,14 +47,14 @@ void mem_write_byte(MEM* mem, ADDR addr, BYTE val) {
 }
 
 void mem_reset_stack(MEM* mem, ADDR addr) {
-    for (; addr < MAX_ADDR; addr++)
-        mem->write_byte(mem, addr, 0);
+    for (addr &= ~3; addr < MAX_ADDR; addr += 4)
+        mem->write_word(mem, addr, 0);
 }
 
 void init_mem(MEM* mem) {
     memset(mem->data, 0, 0x100 * sizeof(BYTE**));
     // assign interfaces
-    mem->read_byte = mem_read_byte;
-    mem->write_byte = mem_write_byte;
+    mem->read_word = mem_read_word;
+    mem->write_word = mem_write_word;
     mem->reset_stack = mem_reset_stack;
 }

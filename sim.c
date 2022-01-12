@@ -38,19 +38,18 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     // load data
     file_size = get_file_size(data_name);
     if (file_size) {
-        FILE *file = fopen(data_name, "rb");
-        u8 byte = 0;
-        ADDR addr = 0;
-        for (int i = 0; i < file_size; i++) {
-            fread(&byte, 1, 1, file);
-            sim->core->mmu->data_mem->write_byte(sim->core->mmu->data_mem, addr++, byte);
+        FILE* file = fopen(data_name, "rd");
+        u32 word = 0;
+        for (ADDR addr = 0; addr < file_size; addr += 4) {
+            fread(&word, 4, 1, file);
+            format2big(word);
+            sim->core->mmu->data_mem->write_word(sim->core->mmu->data_mem, addr, word);
         }
-        fclose(file);
     }
     // load sld
     file_size = get_file_size(sld_name);
     if (file_size) {
-        FILE *file = fopen(sld_name, "rb");
+        FILE* file = fopen(sld_name, "rb");
         u8 byte = 0;
         for (int i = 0; i < UART_BUF_SIZE && i < file_size; i++) {
             fread(&byte, 1, 1, file);

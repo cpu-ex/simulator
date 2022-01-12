@@ -48,8 +48,11 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block2, 4, 0, "cache size = %u block * 0x%X bytes", BLOCK_NUM, BLOCK_SIZE);
     mvwprintw(block2, 6, 0, "read  %u times", core->mmu->data_cache->read_counter);
     mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
-    mvwprintw(block2, 8, 0, "hit   %u times", core->mmu->data_cache->hit_counter);
-    mvwprintw(block2, 9, 0, "miss  %u times", core->mmu->data_cache->miss_counter);
+    u64 hitTimes = core->mmu->data_cache->hit_counter;
+    u64 missTimes = core->mmu->data_cache->miss_counter;
+    f64 total = (f64)(hitTimes + missTimes);
+    mvwprintw(block2, 8, 0, "hit   %u times (%.3lf%%)", hitTimes, (total > 0) ? ((f64)hitTimes / total * 100) : 0);
+    mvwprintw(block2, 9, 0, "miss  %u times (%.3lf%%)", missTimes, (total > 0) ? ((f64)missTimes / total * 100) : 0);
     #endif
     // block3: branch predictor
     wattron(block3, COLOR_PAIR(STANDOUT_COLOR));

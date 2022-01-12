@@ -1,7 +1,5 @@
 #include "cache.h"
 
-// #define is_valid_setting (((TAG_LEN / 8 + BLOCK_SIZE) * BLOCK_NUM) <= CACHE_SIZE ? 1 : 0)
-
 s32 cache_get_valid_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
     register s32 idx = helper.d.set_idx * ASSOCIATIVITY;
@@ -28,7 +26,7 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
     CACHE_ADDR_HELPER helper = { .raw = addr };
     register s32 start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
     #if defined(CACHE_FIFO) // fifo
-    register u32 min = 0xFFFFFFFF;
+    register u64 min = 0xFFFFFFFFFFFFFFFF;
     for (register int i = 0; i < ASSOCIATIVITY; i++) {
         if (cache->blocks[start_idx + i]->start_point < min) {
             min = cache->blocks[start_idx + i]->start_point;
@@ -36,7 +34,7 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
         }
     }
     #elif defined(CACHE_LRU) // lru
-    register u32 min = 0xFFFFFFFF;
+    register u64 min = 0xFFFFFFFFFFFFFFFF;
     for (register int i = 0; i < ASSOCIATIVITY; i++) {
         if (cache->blocks[start_idx + i]->last_referenced < min) {
             min = cache->blocks[start_idx + i]->last_referenced;
@@ -44,7 +42,7 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
         }
     }
     #elif defined(CACHE_RR) // round robin
-    register u32 max = 0;
+    register u64 max = 0;
     for (register int i = 0; i < ASSOCIATIVITY; i++) {
         if (cache->blocks[start_idx + i]->last_referenced > max) {
             max = cache->blocks[start_idx + i]->last_referenced;
@@ -58,7 +56,7 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
     return block_idx;
 }
 
-u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
+u8 cache_read_word(CACHE* cache, ADDR addr, WORD* val) {
     cache->reference_counter++;
     cache->read_counter++;
     register s32 block_idx = cache_get_valid_block(cache, addr);
@@ -76,7 +74,7 @@ u8 cache_read_byte(CACHE* cache, ADDR addr, BYTE* val) {
     }
 }
 
-u8 cache_write_byte(CACHE* cache, ADDR addr, BYTE val) {
+u8 cache_write_word(CACHE* cache, ADDR addr, WORD val) {
     cache->reference_counter++;
     cache->write_counter++;
     register s32 block_idx = cache_get_valid_block(cache, addr);
@@ -107,7 +105,7 @@ void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
             helper.d.set_idx = cache->blocks[block_idx]->set_idx;
             for (register int offset = 0; offset < BLOCK_SIZE; offset++) {
                 helper.d.offset = offset;
-                mem->write_byte(mem, helper.raw, cache->blocks[block_idx]->data[offset]);
+                mem->write_word(mem, helper.raw, cache->blocks[block_idx]->data[offset]);
                 cache->blocks[block_idx]->data[offset] = 0;
             }
         }
@@ -122,12 +120,12 @@ void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
     cache->blocks[block_idx]->set_idx = helper.d.set_idx;
     for (register int offset = 0; offset < BLOCK_SIZE; offset++) {
         helper.d.offset = offset;
-        cache->blocks[block_idx]->data[offset] = mem->read_byte(mem, helper.raw);
+        cache->blocks[block_idx]->data[offset] = mem->read_word(mem, helper.raw);
     }
 }
 
 // get data without incrementing counters
-u8 cache_sneak(CACHE* cache, ADDR addr, BYTE* val) {
+u8 cache_sneak(CACHE* cache, ADDR addr, WORD* val) {
     s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
@@ -155,14 +153,16 @@ void cache_reset(CACHE* cache) {
 }
 
 void init_cache(CACHE* cache) {
-    // if (!is_valid_setting) {
-    //     printf("cache setting is not valid.\n");
-    //     exit(-1);
-    // }
+    // check BLOCK_SIZE
+    if (BLOCK_SIZE & 0x3) {
+        printf("cache: block size should be the multiple of 4(words).\n");
+        exit(-1);
+    }
+    // setup parameters
     cache_reset(cache);
     // assign interfaces
-    cache->read_byte = cache_read_byte;
-    cache->write_byte = cache_write_byte;
+    cache->read_word = cache_read_word;
+    cache->write_word = cache_write_word;
     cache->sneak = cache_sneak;
     cache->load_block = cache_load_block;
     cache->reset = cache_reset;

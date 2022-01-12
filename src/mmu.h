@@ -13,8 +13,8 @@ typedef struct mmu {
     void (*allocate_instr)(struct mmu*, u64);
     WORD (*read_instr)(struct mmu*, ADDR);
     void (*write_instr)(struct mmu*, ADDR, WORD);
-    BYTE (*read_data)(struct mmu*, void*, ADDR);
-    void (*write_data)(struct mmu*, void*, ADDR, BYTE);
+    WORD (*read_data)(struct mmu*, void*, ADDR);
+    void (*write_data)(struct mmu*, void*, ADDR, WORD);
     BYTE (*sneak)(struct mmu*, ADDR, u8);
     void (*reset)(struct mmu*, ADDR);
 } MMU;

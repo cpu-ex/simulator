@@ -69,22 +69,22 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
     wattroff(outer, COLOR_PAIR(TITLE_COLOR));
     wattroff(outer, COLOR_PAIR(STANDOUT_COLOR));
 
-    focused->offset = max(0, min(focused->offset, (BLOCK_SIZE >> 4) - 1));
+    focused->offset = max(0, min(focused->offset, (BLOCK_SIZE >> 2) - 1));
     mvwprintw(outer, 1, 31, (focused->offset > 0) ? "^" : " ");
-    mvwprintw(outer, 18, 31, (focused->offset < (BLOCK_SIZE >> 4) - 1) ? "v" : " ");
+    mvwprintw(outer, 18, 31, (focused->offset < (BLOCK_SIZE >> 2) - 1) ? "v" : " ");
 
     CACHE_BLOCK* cache_block = core->mmu->data_cache->blocks[focused->line];
     CACHE_ADDR_HELPER helper = { .d = {
         .tag = cache_block->tag,
         .set_idx = cache_block->set_idx
     } };
-    for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 4); i++) {
+    for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 2); i++) {
         wattron(inner, COLOR_PAIR(SUBTITLE_COLOR));
         helper.d.offset = i << 4;
         mvwprintw(inner, i - focused->offset, 0, "0x%08X   ", helper.raw);
         wattroff(inner, COLOR_PAIR(SUBTITLE_COLOR));
         for (int j = 0; j < 0x10; j++)
-            wprintw(inner, " %02X", cache_block->data[(i << 4) + j]);
+            wprintw(inner, " %02X", (cache_block->data[(i << 4) + (j / 4)] >> ((3 - (j & 0x3)) * 8)) & 0xFF);
     }
 
     wrefresh(outer);

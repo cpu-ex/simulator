@@ -89,3 +89,4 @@
 
 - [2021/12/12] fib 35: 230686620 instructions in 17853138 clk, 12921348.616697 per sec
 - [2021/12/21] fib 35: 249141551 instructions in 17645914 clk, 14118937.165850 per sec
+- [2022/01/12] minrt16: 162007498 instructions in 6881938 clk, 23540970.290636 per sec
