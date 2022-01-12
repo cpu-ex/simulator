@@ -103,20 +103,24 @@ class ASM(object):
             os.mkdir('../bin/')
         # output binary file
         if binaryOutput:
-            with open(f'../bin/{self.fileName}.code', 'wb') as file:
-                for mc in self.machineCode:
-                    file.write(struct.pack('>I', mc))
-            with open(f'../bin/{self.fileName}.data', 'wb') as file:
-                for d in self.data:
-                    file.write(struct.pack('>I', d))
+            if self.machineCode:
+                with open(f'../bin/{self.fileName}.code', 'wb') as file:
+                    for mc in self.machineCode:
+                        file.write(struct.pack('>I', mc))
+            if self.data:
+                with open(f'../bin/{self.fileName}.data', 'wb') as file:
+                    for d in self.data:
+                        file.write(struct.pack('>I', d))
         # output text file
         if textOutput:
-            with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
-                for mc in self.machineCode:
-                    file.write(f'{bin(mc)[2:].zfill(32)}\n')
-            with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
-                for d in self.data:
-                    file.write(f'{bin(d)[2:].zfill(32)}\n')
+            if self.machineCode:
+                with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
+                    for mc in self.machineCode:
+                        file.write(f'{bin(mc)[2:].zfill(32)}\n')
+            if self.data:
+                with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
+                    for d in self.data:
+                        file.write(f'{bin(d)[2:].zfill(32)}\n')
         # warn
         if not (binaryOutput or textOutput):
             print(f'none of the output format specified, check \'python3 asm.py --help\' for detailed information.')
