@@ -29,8 +29,7 @@ void init_uart_queue(UART_QUEUE* uart) {
 
 void core_step(CORE* core) {
     // fetch and decode
-    static INSTR curr_instr;
-    curr_instr.raw = core->load_instr(core, core->pc);
+    register const INSTR curr_instr = { .raw = core->load_instr(core, core->pc) };
     // execute
     execute(core, curr_instr);
     core->regs[0] = 0;

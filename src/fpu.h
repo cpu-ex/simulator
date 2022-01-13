@@ -3,10 +3,6 @@
 #include "instr.h"
 #include "core.h"
 
-void FLW_EXEC(CORE* core, INSTR instr);
-void FSW_EXEC(CORE* core, INSTR instr);
-void FMV2F_EXEC(CORE* core, INSTR instr);
-void FMV2I_EXEC(CORE* core, INSTR instr);
 void FADD_EXEC(CORE* core, INSTR instr);
 void FSUB_EXEC(CORE* core, INSTR instr);
 void FMUL_EXEC(CORE* core, INSTR instr);
