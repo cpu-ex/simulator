@@ -39,7 +39,7 @@ class ASM(object):
         # 3 prepend pseudo instr * 2 assumed length * 4 bytes each
         self.codeCounter += 24
         # remove empty lines and seprate tags and instructions
-        for lineno, line in enumerate(self.rawText):
+        for lineno, line in enumerate(self.rawText, start=1):
             # skip empty lines
             if not line: continue
             # decode

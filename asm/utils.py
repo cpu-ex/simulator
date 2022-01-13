@@ -97,4 +97,4 @@ def inc():
         counter += 1
         return counter
     return inner
-inc = inc
+inc = inc()

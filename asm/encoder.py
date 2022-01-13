@@ -211,8 +211,6 @@ class Branch(Code):
     
     def optimize(self, addr: int, tags: dict) -> list:
         name = self.name
-        rs1 = reg2idx(self.rs1)
-        rs2 = reg2idx(self.rs2)
         imm = tag2offset(self.tag, tags, addr)
 
         try:
@@ -228,9 +226,9 @@ class Branch(Code):
             newTag = f'additional_branch_tag_{inc()}'
             newName = oppositeDict[name]
             return [
-                Branch((newName, rs1, rs2, newTag)),
+                Branch((newName, self.rs1, self.rs2, newTag)),
                 Jal(('jal', 'zero', oldTag)),
-                Tags(('tag', newTag))
+                Tags((newTag,))
             ]
     
     def finalize(self, addr: int, tags: dict) -> list:
@@ -511,6 +509,8 @@ class Ebreak(Code):
         checkImm(imm, 12, False)
         if (not self.forSim) and (imm != 0):
             return [Pseudo_nop(('nop'))]
+        else:
+            return [self]
 
     def encode(self) -> list:
         imm = imm2int(self.imm)

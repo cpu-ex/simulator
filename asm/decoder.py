@@ -114,21 +114,27 @@ class Block(object):
         self.address = 0
 
     def optimize(self, assumedAddress: int, assumedTagDict: dict, actualAddress: int) -> dict:
-        # optimize
-        self.processedCodeList = self.originalCodeObj.optimize(assumedAddress, assumedTagDict)
-        # return readdressing info
-        self.address = actualAddress
-        readdressingInfo = dict()
-        for offset, code in enumerate(self.processedCodeList):
-            if code.isTag():
-                readdressingInfo[code.name] = self.address + offset * 4
-        return readdressingInfo
+        try:
+            # optimize
+            self.processedCodeList = self.originalCodeObj.optimize(assumedAddress, assumedTagDict)
+            # return readdressing info
+            self.address = actualAddress
+            readdressingInfo = dict()
+            for offset, code in enumerate(self.processedCodeList):
+                if code.isTag():
+                    readdressingInfo[code.name] = self.address + offset * 4
+            return readdressingInfo
+        except RuntimeError as e:
+            raise RuntimeError(f'{self.originalCodeObj}: {e} at line {self.lineno} when optimizing.')
     
     def finalize(self, tags: dict) -> None:
-        tempCodeList = list()
-        for offset, code in enumerate(self.processedCodeList):
-            tempCodeList.extend(code.finalize(self.address + offset * 4, tags))
-        self.processedCodeList = tempCodeList
+        try:
+            tempCodeList = list()
+            for offset, code in enumerate(self.processedCodeList):
+                tempCodeList.extend(code.finalize(self.address + offset * 4, tags))
+            self.processedCodeList = tempCodeList
+        except RuntimeError as e:
+            raise RuntimeError(f'{self.originalCodeObj}: {e} at line {self.lineno} when finalizing.')
 
     def encode(self) -> list:
         try:
@@ -137,7 +143,7 @@ class Block(object):
                 tempCodeList.extend(code.encode())
             return tempCodeList
         except RuntimeError as e:
-            raise RuntimeError(f'{self.originalCodeObj}: {e} at line {self.lineno}.')
+            raise RuntimeError(f'{self.originalCodeObj}: {e} at line {self.lineno} when encoding.')
 
     @property
     def assumedLength(self) -> int:
@@ -195,4 +201,4 @@ class Block(object):
             if res := decoder.match(codeText):
                 return Block(packer(res.groups(), forSim), lineno)
         else:
-            raise RuntimeError(f'unrecognizable instruction \'{codeText}\' at line {lineno}.')
+            raise RuntimeError(f'unrecognizable instruction \'{codeText}\' at line {lineno} when decoding.')
