@@ -136,9 +136,13 @@ STATE wait4command(GUI* gui, CORE* core) {
         show_main_win(gui, core);
         return STAT_HALT;
     case 'm':
-        gui->focused_win = MEM_WIN;
-        gui->mem_type = com.argv[0] == 'i' ? MEM_INSTR : MEM_DATA;
-        gui->mem_start = com.argc > 1 ? (com.argv[1] >> 4) : (gui->mem_type ? DEFAULT_PC >> 4 : 0);
+        if (com.argv[0] == 'i') {
+            gui->mem_type = MEM_INSTR;
+        } else {
+            gui->focused_win = MEM_WIN;
+            gui->mem_type = MEM_DATA;
+            gui->mem_start = (com.argc > 1) ? (com.argv[1] >> 4) : 0;
+        }
         show_main_win(gui, core);
         return STAT_HALT;
     case 'a':
@@ -186,7 +190,6 @@ void init_gui(GUI* gui) {
     gui->reg_start = 0;
     memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;
-    gui->mem_start = DEFAULT_PC / 0x10;
     gui->stepping_interval = -1;
     // assign interfaces
     gui->update = gui_update;

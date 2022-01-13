@@ -1,4 +1,5 @@
 #include "mainWin.h"
+#include "../src/instr.h"
 
 void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     wattron(outer, COLOR_PAIR(TITLE_COLOR));
@@ -98,15 +99,25 @@ void update_reg(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
 
 void update_mem_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
     wclear(win);
-    for (int i = gui->mem_start; i < min(gui->mem_start + 16, MAX_ADDR >> 4); i++) {
-        wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
-        mvwprintw(win, i - gui->mem_start, 0, "0x%08X   ", i << 4);
-        wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-        for (int j = 0; j < 0x10; j++) {
-            if (gui->mem_type && (((i << 4) + j) & (~0x3)) == core->pc)
-                wattron(win, COLOR_PAIR(STANDOUT_COLOR));
-            wprintw(win, " %02X", core->mmu->sneak(core->mmu, (i << 4) + j, gui->mem_type));
+    if (gui->mem_type == MEM_INSTR) {
+        gui->mem_start = (core->pc >> 2) & (~0xF);
+        for (int i = gui->mem_start; i < min(gui->mem_start + 16, core->mmu->instr_len); i++) {
+            wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
+            mvwprintw(win, i - gui->mem_start, 0, "0x%08X ", i << 2);
+            wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
+            INSTR instr = { .raw = core->mmu->read_instr(core->mmu, i) };
+            if (i == core->pc >> 2) wattron(win, COLOR_PAIR(STANDOUT_COLOR));
+            char asmText[36]; disasm(instr, asmText);
+            wprintw(win, "%08X     %-36s", instr.raw, asmText);
             wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
+        }
+    } else {
+        for (int i = gui->mem_start; i < min(gui->mem_start + 16, MAX_ADDR >> 4); i++) {
+            wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
+            mvwprintw(win, i - gui->mem_start, 0, "0x%08X   ", i << 4);
+            wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
+            for (int j = 0; j < 0x10; j++)
+                wprintw(win, " %02X", core->mmu->sneak(core->mmu, (i << 4) + j, gui->mem_type));
         }
     }
 }
@@ -170,16 +181,19 @@ void show_main_win(GUI* gui, CORE* core) {
     // create outer windows
     WINDOW* pc_outer = newwin(3, 80, 0, 0);
     WINDOW* pc_inner = newwin(1, 78, 1, 1);
-    WINDOW *reg_outer, *reg_inner;
-    if (gui->focused_win == REG_WIN) {
-        reg_outer = newwin(20, 42, 3, 0);
-        reg_inner = newwin(16, 40, 5, 1);
-    } else {
-        reg_outer = newwin(18, 16, 3, 0);
-        reg_inner = newwin(16, 14, 4, 1);
-    }
-    WINDOW* mem_outer = newwin((gui->focused_win == MEM_WIN) ? 20 : 18, 64, 3, 16);
-    WINDOW* mem_inner = newwin(16, 62, (gui->focused_win == MEM_WIN) ? 5 : 4, 17);
+    WINDOW* reg_outer = newwin(
+        (gui->focused_win == REG_WIN) ? 20 : 18, (gui->focused_win == REG_WIN) ? 42 : 16,
+        (gui->focused_win == REG_WIN) ? 2 : 3, 0
+    );
+    WINDOW* reg_inner = newwin(
+        16, (gui->focused_win == REG_WIN) ? 40 : 14,
+        4, 1
+    );
+    WINDOW* mem_outer = newwin(
+        (gui->focused_win == MEM_WIN) ? 20 : 18, 64,
+        (gui->focused_win == MEM_WIN) ? 2 : 3, 16
+    );
+    WINDOW* mem_inner = newwin(16, 62, 4, 17);
     WINDOW* com_outer = newwin(3, 80, 21, 0);
     // refresh
     refresh();
