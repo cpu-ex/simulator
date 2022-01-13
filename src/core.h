@@ -7,6 +7,7 @@
 #define DEFAULT_PC    0x100
 #define UART_ADDR     0x3FFFFFC
 #define UART_BUF_SIZE 0x32000 // 200KB
+#define UART_BAUDRATE 576000
 
 static char* reg_name[32] = {
     "zero",
@@ -63,6 +64,7 @@ typedef struct core {
     void (*dump)(struct core*);
     void (*reset)(struct core*);
     void (*deinit)(struct core*);
+    f64 (*predict_exec_time)(struct core*);
 } CORE;
 
 void init_core(CORE* core);

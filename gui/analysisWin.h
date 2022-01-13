@@ -22,14 +22,13 @@ void show_analysis_win(CORE* core) {
     for (int i = 10; i < 23; i++)
         mvwprintw(block1, i - 10 + 3, 18, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 16, 0, "instruction(s): %u", core->instr_counter);
-    u64 cycles = core->instr_counter + core->stall_counter;
-    mvwprintw(block1, 17, 0, "cycle(s)      : %llu", cycles, core->stall_counter);
+    mvwprintw(block1, 17, 0, "cycle(s)      : %llu", core->instr_counter + core->stall_counter);
     mvwprintw(block1, 18, 0, "stall(s)      : %llu", core->stall_counter);
-    mvwprintw(block1, 19, 0, "time in second: %.6f", (f32)cycles / CLK_FREQUENCY);
+    mvwprintw(block1, 19, 0, "time in second: %.6lf", core->predict_exec_time(core));
     // block2: cache info
     wattron(block2, COLOR_PAIR(STANDOUT_COLOR));
     #if defined(NO_CACHE)
-    mvwprintw(block2, 5, 6, "cache system not equipted");
+    mvwprintw(block2, 5, 6, "cache system not equipped");
     #else
     mvwprintw(block2, 0, 0, "%u way Set-associative Cache Info:", ASSOCIATIVITY);
     wattroff(block2, COLOR_PAIR(STANDOUT_COLOR));
@@ -45,7 +44,7 @@ void show_analysis_win(CORE* core) {
         #endif
     );
     mvwprintw(block2, 3, 0, "addr = tag[%u] : idx[%u] : offset[%u]", TAG_LEN, SET_IDX_LEN, OFFSET_LEN);
-    mvwprintw(block2, 4, 0, "cache size = %u block * 0x%X bytes", BLOCK_NUM, BLOCK_SIZE);
+    mvwprintw(block2, 4, 0, "cache size = %u block * 0x%X words", BLOCK_NUM, BLOCK_SIZE);
     mvwprintw(block2, 6, 0, "read  %u times", core->mmu->data_cache->read_counter);
     mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
     u64 hitTimes = core->mmu->data_cache->hit_counter;

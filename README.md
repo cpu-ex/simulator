@@ -22,6 +22,7 @@
 - [2021/12/24] implement uart input for simulator
 - [2021/12/28] fix the exception of branching too far for assembler
 - [2022/01/08] refactor assembler
+- [2022/01/13] adjust some parameters for executing time prediction
 
 ![sample](sample.gif)
 

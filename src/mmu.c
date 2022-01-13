@@ -14,7 +14,7 @@ WORD mmu_read_data(MMU* mmu, void* core, ADDR addr) {
     WORD val;
     #if defined(NO_CACHE)
     val = mmu->data_mem->read_word(mmu->data_mem, addr);
-    ((CORE*)core)->stall_counter += 13;
+    ((CORE*)core)->stall_counter += 12;
     #else
     // cache miss
     if (!mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
@@ -29,7 +29,7 @@ WORD mmu_read_data(MMU* mmu, void* core, ADDR addr) {
 void mmu_write_data(MMU* mmu, void* core, ADDR addr, WORD val) {
     #if defined(NO_CACHE)
     mmu->data_mem->write_word(mmu->data_mem, addr, val);
-    ((CORE*)core)->stall_counter += 13;
+    ((CORE*)core)->stall_counter += 12;
     #else
     // cache miss
     if (!mmu->data_cache->write_word(mmu->data_cache, addr, val)) {

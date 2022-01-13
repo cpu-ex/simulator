@@ -108,6 +108,12 @@ void core_deinit(CORE* core) {
     close_file(core->dumpfile_fp, core->dumpfile_name);
 }
 
+f64 core_predict_exec_time(CORE* core) {
+    f64 code_sending = (f64)core->mmu->instr_len * 40.0 / UART_BAUDRATE;
+    f64 instr_executing = (f64)(core->instr_counter + core->stall_counter) / CLK_FREQUENCY;
+    return code_sending + instr_executing;
+}
+
 void init_core(CORE* core) {
     // init basic info
     core->pc = DEFAULT_PC;
@@ -146,4 +152,5 @@ void init_core(CORE* core) {
     core->dump = core_dump;
     core->reset = core_reset;
     core->deinit = core_deinit;
+    core->predict_exec_time = core_predict_exec_time;
 }
