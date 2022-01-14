@@ -469,21 +469,21 @@ class Arith(Code):
             mc |= 0b111 << 12
             mc |= 0b0000000 << 25
         # RV32M
-        elif name == 'mul':
-            mc |= 0b000 << 12
-            mc |= 0b0000001 << 25
-        elif name == 'div':
-            mc |= 0b100 << 12
-            mc |= 0b0000001 << 25
-        elif name == 'divu':
-            mc |= 0b101 << 12
-            mc |= 0b0000001 << 25
-        elif name == 'rem':
-            mc |= 0b110 << 12
-            mc |= 0b0000001 << 25
-        elif name == 'remu':
-            mc |= 0b111 << 12
-            mc |= 0b0000001 << 25
+        # elif name == 'mul':
+        #     mc |= 0b000 << 12
+        #     mc |= 0b0000001 << 25
+        # elif name == 'div':
+        #     mc |= 0b100 << 12
+        #     mc |= 0b0000001 << 25
+        # elif name == 'divu':
+        #     mc |= 0b101 << 12
+        #     mc |= 0b0000001 << 25
+        # elif name == 'rem':
+        #     mc |= 0b110 << 12
+        #     mc |= 0b0000001 << 25
+        # elif name == 'remu':
+        #     mc |= 0b111 << 12
+        #     mc |= 0b0000001 << 25
         else:
             # not suppose to be here
             raise RuntimeError(f'unrecognizable arith type \'{name}\'')

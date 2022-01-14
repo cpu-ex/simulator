@@ -58,11 +58,11 @@ class Block(object):
 
 
         # RV32M
-        'MUL': (re.compile(r'(mul)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        'DIV': (re.compile(r'(div)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        'DIVU': (re.compile(r'(divu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        'REM': (re.compile(r'(rem)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        'REMU': (re.compile(r'(remu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
+        # 'MUL': (re.compile(r'(mul)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
+        # 'DIV': (re.compile(r'(div)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
+        # 'DIVU': (re.compile(r'(divu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
+        # 'REM': (re.compile(r'(rem)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
+        # 'REMU': (re.compile(r'(remu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
 
 
         # RV32F

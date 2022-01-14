@@ -12,19 +12,13 @@
 #define ARITH_SRA(a1, a2) (u32)(((s32)(a1)) >> ((a2) & 0b11111)) // same with sll
 #define ARITH_OR(a1, a2) ((a1) | (a2))
 #define ARITH_AND(a1, a2) ((a1) & (a2))
-// RV32M
-#define ARITH_MUL(a1, a2) ((a1) * (a2))
-#define ARITH_DIV(a1, a2) ((s32)(a1)) / ((s32)(a2))
-#define ARITH_DIVU(a1, a2) ((a1) / (a2))
-#define ARITH_REM(a1, a2) ((s32)(a1)) % ((s32)(a2))
-#define ARITH_REMU(a1, a2) ((a1) % (a2))
 
 void execute(CORE* const core, const INSTR instr) {
     register WORD rd, rs1, rs2, imm, funct3, funct7;
     register u32 tmp, a1, a2;
 
     switch (instr.decoder.opcode) {
-    /* RV32I + RV32M */
+    /* RV32I */
     // lui
     case 0b0110111:
         rd = instr.u.rd;
@@ -62,7 +56,7 @@ void execute(CORE* const core, const INSTR instr) {
         imm = instr.i.imm;
         rs1 = instr.i.rs1;
     
-        register WORD t = core->pc + 4;
+        register const WORD t = core->pc + 4;
         core->pc = (core->regs[rs1] + sext(imm, 11)) & ~1;
         core->regs[rd] = t;
         // count stall
@@ -98,7 +92,7 @@ void execute(CORE* const core, const INSTR instr) {
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         // predict branch
-        register u32 predicted = core->branch_predictor->predict(core->branch_predictor, core->pc, tmp);
+        register const u32 predicted = core->branch_predictor->predict(core->branch_predictor, core->pc, tmp);
         // count stall
         core->stall_counter += (predicted == tmp) ? 0 : 2;
         // increment pc
@@ -145,31 +139,24 @@ void execute(CORE* const core, const INSTR instr) {
         a2 = sext(imm, 11);
         switch (funct3) {
         // addi
-        case 0b000: tmp = ARITH_ADD(a1, a2); break;
+        case 0b000: core->regs[rd] = ARITH_ADD(a1, a2); break;
         // slli (legal when shamt[5] = 0, but not implemented)
-        case 0b001: tmp = ARITH_SLL(a1, a2); break;
+        case 0b001: core->regs[rd] = ARITH_SLL(a1, a2); break;
         // slti
-        case 0b010: tmp = ARITH_SLT(a1, a2); break;
+        case 0b010: core->regs[rd] = ARITH_SLT(a1, a2); break;
         // sltiu
-        case 0b011: tmp = ARITH_SLTU(a1, a2); break;
+        case 0b011: core->regs[rd] = ARITH_SLTU(a1, a2); break;
         // xori
-        case 0b100: tmp = ARITH_XOR(a1, a2); break;
+        case 0b100: core->regs[rd] = ARITH_XOR(a1, a2); break;
         // srli + srai (same with slli)
-        case 0b101:
-            switch (a2 >> 5) {
-            case 0b0000000: tmp = ARITH_SRL(a1, a2); break;
-            case 0b0100000: tmp = ARITH_SRA(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
+        case 0b101: core->regs[rd] = (a2 >> 5) ? ARITH_SRA(a1, a2) : ARITH_SRL(a1, a2); break;
         // ori
-        case 0b110: tmp = ARITH_OR(a1, a2); break;
+        case 0b110: core->regs[rd] = ARITH_OR(a1, a2); break;
         // andi
-        case 0b111: tmp = ARITH_AND(a1, a2); break;
+        case 0b111: core->regs[rd] = ARITH_AND(a1, a2); break;
         // unexpected
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
-        core->regs[rd] = tmp;
         core->pc += 4;
         core->instr_analysis[ARITH_I]++;
         break;
@@ -185,57 +172,24 @@ void execute(CORE* const core, const INSTR instr) {
         a2 = core->regs[rs2];
         switch (funct3) {
         // add + sub + mul
-        case 0b000:
-            switch (funct7) {
-            case 0b0000000: tmp = ARITH_ADD(a1, a2); break;
-            case 0b0100000: tmp = ARITH_SUB(a1, a2); break;
-            case 0b0000001: tmp = ARITH_MUL(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
+        case 0b000: core->regs[rd] = funct7 ? ARITH_SUB(a1, a2) : ARITH_ADD(a1, a2); break;
         // sll
-        case 0b001: tmp = ARITH_SLL(a1, a2); break;
+        case 0b001: core->regs[rd] = ARITH_SLL(a1, a2); break;
         // slt
-        case 0b010: tmp = ARITH_SLT(a1, a2); break;
+        case 0b010: core->regs[rd] = ARITH_SLT(a1, a2); break;
         // sltu
-        case 0b011: tmp = ARITH_SLTU(a1, a2); break;
-        // xor + div
-        case 0b100:
-            switch (funct7) {
-            case 0b0000000: tmp = ARITH_XOR(a1, a2); break;
-            case 0b0000001: tmp = ARITH_DIV(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
-        // srl + sra + divu
-        case 0b101:
-            switch (funct7) {
-            case 0b0000000: tmp = ARITH_SRL(a1, a2); break;
-            case 0b0100000: tmp = ARITH_SRA(a1, a2); break;
-            case 0b0000001: tmp = ARITH_DIVU(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
-        // or + rem
-        case 0b110:
-            switch (funct7) {
-            case 0b0000000: tmp = ARITH_OR(a1, a2); break;
-            case 0b0000001: tmp = ARITH_REM(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
-        // and + remu
-        case 0b111:
-            switch (funct7) {
-            case 0b0000000: tmp = ARITH_AND(a1, a2); break;
-            case 0b0000001: tmp = ARITH_REMU(a1, a2); break;
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            break;
+        case 0b011: core->regs[rd] = ARITH_SLTU(a1, a2); break;
+        // xor
+        case 0b100: core->regs[rd] = ARITH_XOR(a1, a2); break;
+        // srl + sra
+        case 0b101: core->regs[rd] = funct7 ? ARITH_SRA(a1, a2) : ARITH_SRL(a1, a2); break;
+        // or
+        case 0b110: core->regs[rd] = ARITH_OR(a1, a2); break;
+        // and
+        case 0b111: core->regs[rd] = ARITH_AND(a1, a2); break;
         // unexpected
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
-        core->regs[rd] = tmp;
         core->pc += 4;
         core->instr_analysis[ARITH]++;
         break;
@@ -280,14 +234,8 @@ void execute(CORE* const core, const INSTR instr) {
         rd = instr.i.rd;
         imm = instr.i.imm;
         rs1 = instr.i.rs1;
-        funct3 = instr.i.funct3;
 
-        if (funct3 == 0b010) {
-            core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
-        } else {
-            // unexpected
-            BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT));
-        }
+        core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
         core->pc += 4;
         // count stall
         core->stall_counter += isLwStall(rd, core->load_instr(core, core->pc)) ? 1 : 0;
@@ -298,14 +246,8 @@ void execute(CORE* const core, const INSTR instr) {
         imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
         rs1 = instr.s.rs1;
         rs2 = instr.s.rs2;
-        funct3 = instr.s.funct3;
 
-        if (funct3 == 0b010) {
-            core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2]);
-        } else {
-            // unexpected
-            BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT));
-        }
+        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2]);
         core->pc += 4;
         core->instr_analysis[F_STORE]++;
         break;
