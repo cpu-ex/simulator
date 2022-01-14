@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
             u64 size = ftell(code) >> 2;
             fseek(code, 0, SEEK_SET);
             // disasm
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < size; ++i) {
                 // fetch
                 u32 input;
                 fread(&input, 1, 4, code);

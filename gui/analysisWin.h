@@ -16,10 +16,10 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block1, 0, 0, "Instruction Counter Info:");
     wattroff(block1, COLOR_PAIR(STANDOUT_COLOR));
     mvwprintw(block1, 2, 0, "RV32I & RV32M");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; ++i)
         mvwprintw(block1, i + 3, 0, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 2, 18, "RV32F");
-    for (int i = 10; i < 23; i++)
+    for (int i = 10; i < 23; ++i)
         mvwprintw(block1, i - 10 + 3, 18, "%-8s %8u", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 16, 0, "instruction(s): %u", core->instr_counter);
     mvwprintw(block1, 17, 0, "cycle(s)      : %llu", core->instr_counter + core->stall_counter);

@@ -48,7 +48,7 @@ void update_list(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
     mvwprintw(outer, 1, 7, (focused->line > 0) ? "^" : " ");
     mvwprintw(outer, 18, 7, (focused->line < BLOCK_NUM - 1) ? "v" : " ");
 
-    for (int i = focused->line; i < min(focused->line + 16, BLOCK_NUM); i++) {
+    for (int i = focused->line; i < min(focused->line + 16, BLOCK_NUM); ++i) {
         char block_name[15];
         sprintf(block_name, "block %u", i);
         if (i == focused->line)
@@ -78,12 +78,12 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
         .tag = cache_block->tag,
         .set_idx = cache_block->set_idx
     } };
-    for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 2); i++) {
+    for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 2); ++i) {
         wattron(inner, COLOR_PAIR(SUBTITLE_COLOR));
         helper.d.offset = i << 4;
         mvwprintw(inner, i - focused->offset, 0, "0x%08X   ", helper.raw);
         wattroff(inner, COLOR_PAIR(SUBTITLE_COLOR));
-        for (int j = 0; j < 0x10; j++)
+        for (int j = 0; j < 0x10; ++j)
             wprintw(inner, " %02X", (cache_block->data[(i << 4) + (j / 4)] >> ((3 - (j & 0x3)) * 8)) & 0xFF);
     }
 

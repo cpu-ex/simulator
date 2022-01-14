@@ -17,7 +17,7 @@ WORD mmu_read_data(const MMU* mmu, void* const core, const ADDR addr) {
     ((CORE*)core)->stall_counter += 12;
     #else
     // cache miss
-    if (!mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
+    if (mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
         // load certain block to cache
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         val = mmu->data_mem->read_word(mmu->data_mem, addr);
@@ -32,7 +32,7 @@ void mmu_write_data(const MMU* mmu, void* const core, const ADDR addr, const WOR
     ((CORE*)core)->stall_counter += 12;
     #else
     // cache miss
-    if (!mmu->data_cache->write_word(mmu->data_cache, addr, val)) {
+    if (mmu->data_cache->write_word(mmu->data_cache, addr, val)) {
         // write allocate
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         mmu->data_cache->write_word(mmu->data_cache, addr, val);
@@ -50,7 +50,7 @@ BYTE mmu_sneak(MMU* mmu, ADDR addr, u8 type) {
         #if defined(NO_CACHE)
         val = mmu->data_mem->read_word(mmu->data_mem, addr);
         #else
-        if (!mmu->data_cache->sneak(mmu->data_cache, addr, &val))
+        if (mmu->data_cache->sneak(mmu->data_cache, addr, &val))
             val = mmu->data_mem->read_word(mmu->data_mem, addr);
         #endif
     }

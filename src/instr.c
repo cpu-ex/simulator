@@ -360,10 +360,3 @@ u8 disasm(INSTR instr, char* buffer) {
     default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
     }
 }
-
-u8 isLwStall(const BYTE rd, const WORD op) {
-    if (!rd) return 0;
-    register const BYTE rs1 = (INSTR){ .raw = op }.r.rs1;
-    register const BYTE rs2 = (INSTR){ .raw = op }.r.rs2;
-    return ((rd == rs1) || (rd == rs2)) ? 1 : 0;
-}

@@ -22,7 +22,7 @@ typedef struct branch_predictor {
     #endif
     u32 hit_counter;
     u32 miss_counter;
-    u8 (*predict)(struct branch_predictor*, ADDR, u8);
+    u32 (*get_branch_stall)(struct branch_predictor* const, const ADDR, const u32);
     void (*reset)(struct branch_predictor*);
 } BRANCH_PREDICTOR;
 

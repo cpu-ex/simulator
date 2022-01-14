@@ -3,13 +3,18 @@
 #include "instr.h"
 #include "core.h"
 
-void FADD_EXEC(CORE* const core, const INSTR instr);
-void FSUB_EXEC(CORE* const core, const INSTR instr);
-void FMUL_EXEC(CORE* const core, const INSTR instr);
-void FDIV_EXEC(CORE* const core, const INSTR instr);
-void FSQRT_EXEC(CORE* const core, const INSTR instr);
-void FCMP_EXEC(CORE* const core, const INSTR instr);
-void FCVT2F_EXEC(CORE* const core, const INSTR instr);
-void FCVT2I_EXEC(CORE* const core, const INSTR instr);
-void FSGNJ_EXEC(CORE* const core, const INSTR instr);
+typedef union float_helper {
+    u32 i;
+    f32 f;
+
+    struct float_decoder {
+        u32 mantissa : 23;
+        u32 exp : 8;
+        u32 sign : 1;
+    } __attribute__((packed)) decoder;
+} FLOAT_HELPER;
+
+FLOAT_HELPER fmul(const FLOAT_HELPER, const FLOAT_HELPER);
+FLOAT_HELPER fdiv(const FLOAT_HELPER, const FLOAT_HELPER);
+FLOAT_HELPER fsqrt(const FLOAT_HELPER);
 void init_fpu(void);

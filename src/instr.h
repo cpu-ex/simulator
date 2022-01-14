@@ -91,4 +91,3 @@ typedef union instr {
 } INSTR;
 
 u8 disasm(INSTR instr, char* buffer);
-u8 isLwStall(const BYTE rd, const WORD op);

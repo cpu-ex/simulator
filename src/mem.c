@@ -26,7 +26,7 @@ void mem_assure_page(MEM* const mem, const ADDR addr) {
 
 WORD mem_read_word(const MEM* mem, const ADDR addr) {
     register const MEM_ADDR_HELPER helper = { .raw = addr };
-    if (!(addr < MAX_ADDR)) {
+    if (addr >= MAX_ADDR) {
         BROADCAST(STAT_MEM_EXCEPTION | ((u64)addr << STAT_SHIFT_AMOUNT));
         return 0;
     } else if (mem->data[helper.d.index1] && mem->data[helper.d.index1][helper.d.index2]) {

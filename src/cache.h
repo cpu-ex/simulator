@@ -52,10 +52,10 @@ typedef struct cache {
     u64 write_counter;
     u64 reference_counter;
     // interfaces
-    u8 (*read_word)(struct cache* const, const ADDR, WORD* const);
-    u8 (*write_word)(struct cache* const, const ADDR, const WORD);
+    u32 (*read_word)(struct cache* const, const ADDR, WORD* const);
+    u32 (*write_word)(struct cache* const, const ADDR, const WORD);
     void (*load_block)(struct cache* const, const ADDR, const MEM*);
-    u8 (*sneak)(struct cache*, ADDR, WORD*);
+    u32 (*sneak)(struct cache*, ADDR, WORD*);
     void (*reset)(struct cache*);
 } CACHE;
 

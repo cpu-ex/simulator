@@ -29,10 +29,10 @@ void init_uart_queue(UART_QUEUE* uart, u32 size) {
 /******************** core ********************/
 
 void core_step(CORE* const core) {
-    // fetch + decode + execute
-    execute(core, (INSTR){ .raw = core->load_instr(core, core->pc) });
+    // rudely fetch + decode + execute
+    execute(core, (INSTR){ .raw = core->mmu->instr_mem[core->pc >> 2] });
     core->regs[0] = 0;
-    core->instr_counter++;
+    ++core->instr_counter;
 }
 
 WORD core_load_instr(const CORE* core, const ADDR addr) {
@@ -40,10 +40,7 @@ WORD core_load_instr(const CORE* core, const ADDR addr) {
 }
 
 WORD core_load_data(const CORE* core, const ADDR addr) {
-    if (addr ^ UART_ADDR)
-        return core->mmu->read_data(core->mmu, (void* const)core, addr);
-    else
-        return core->uart_in->pop(core->uart_in);
+    return (addr != UART_ADDR) ? core->mmu->read_data(core->mmu, (void* const)core, addr) : core->uart_in->pop(core->uart_in);
 }
 
 void core_store_instr(const CORE* core, const ADDR addr, const WORD val) {
@@ -51,7 +48,7 @@ void core_store_instr(const CORE* core, const ADDR addr, const WORD val) {
 }
 
 void core_store_data(const CORE* core, const ADDR addr, const WORD val) {
-    if (addr ^ UART_ADDR)
+    if (addr != UART_ADDR)
         core->mmu->write_data(core->mmu, (void* const)core, addr, val);
     else
         core->uart_out->push(core->uart_out, val & 0xFF);
@@ -64,7 +61,7 @@ void core_dump(CORE* core) {
     // step, pc
     fprintf(core->dumpfile_fp, "step:%016llx pc:%08x", core->instr_counter, core->pc); 
     // register file
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < 64; ++i) {
         if (i < 32) {
             fprintf(core->dumpfile_fp, " x%d:%08x", i, core->regs[i]);
         } else {

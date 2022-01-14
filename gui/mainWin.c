@@ -32,7 +32,7 @@ void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
 
 void update_reg_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
     wclear(win);
-    for (int idx = gui->reg_start; idx < min(gui->reg_start + 16, 64); idx++) {
+    for (int idx = gui->reg_start; idx < min(gui->reg_start + 16, 64); ++idx) {
         // print reg name
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
         mvwprintw(win, idx - gui->reg_start, 0, "%-4s ", (idx < 32) ? reg_name[idx] : freg_name[idx - 32]);
@@ -101,7 +101,7 @@ void update_mem_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
     wclear(win);
     if (gui->mem_type == MEM_INSTR) {
         gui->mem_start = (core->pc >> 2) & (~0xF);
-        for (int i = gui->mem_start; i < min(gui->mem_start + 16, core->mmu->instr_len); i++) {
+        for (int i = gui->mem_start; i < min(gui->mem_start + 16, core->mmu->instr_len); ++i) {
             wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
             mvwprintw(win, i - gui->mem_start, 0, "0x%08X ", i << 2);
             wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
@@ -112,11 +112,11 @@ void update_mem_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
             wattroff(win, COLOR_PAIR(STANDOUT_COLOR));
         }
     } else {
-        for (int i = gui->mem_start; i < min(gui->mem_start + 16, MAX_ADDR >> 4); i++) {
+        for (int i = gui->mem_start; i < min(gui->mem_start + 16, MAX_ADDR >> 4); ++i) {
             wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
             mvwprintw(win, i - gui->mem_start, 0, "0x%08X   ", i << 4);
             wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
-            for (int j = 0; j < 0x10; j++)
+            for (int j = 0; j < 0x10; ++j)
                 wprintw(win, " %02X", core->mmu->sneak(core->mmu, (i << 4) + j, gui->mem_type));
         }
     }

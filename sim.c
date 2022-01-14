@@ -25,7 +25,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
         FILE* file = fopen(code_name, "rb");
         u32 word = 0;
         ADDR addr = DEFAULT_PC >> 2;
-        for (int i = 0; i < file_size; i++) {
+        for (int i = 0; i < file_size; ++i) {
             fread(&word, 1, 4, file);
             format2big(word);
             sim->core->mmu->write_instr(sim->core->mmu, addr++, word);
@@ -51,7 +51,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     if (file_size) {
         FILE* file = fopen(sld_name, "rb");
         u8 byte = 0;
-        for (int i = 0; i < UART_IN_SIZE && i < file_size; i++) {
+        for (int i = 0; i < UART_IN_SIZE && i < file_size; ++i) {
             fread(&byte, 1, 1, file);
             sim->core->uart_in->push(sim->core->uart_in, byte);
         }

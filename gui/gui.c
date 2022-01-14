@@ -16,7 +16,7 @@ s8 reg2idx(char* reg) {
     if (!strcmp(reg, "gp")) return 3;
     if (!strcmp(reg, "s0")) return 8;
     // try regs and fregs
-    for (s8 idx = 0; idx < 32; idx++) {
+    for (s8 idx = 0; idx < 32; ++idx) {
         if (!strcmp(reg, reg_name[idx]))
             return idx;
         if (!strcmp(reg, freg_name[idx]))
@@ -42,14 +42,14 @@ COMMAND get_command(GUI* gui) {
     // split with space (exactly 1 space)
     s32 counter = 0, argc = 0;
     strcat(input, " "); // add an end point
-    for (int idx = 0; idx < strlen(input); idx++) {
+    for (int idx = 0; idx < strlen(input); ++idx) {
         if (input[idx] == ' ') {
             output[argc][counter] = '\0';
-            argc++;
+            ++argc;
             counter = 0;
         } else {
             output[argc][counter] = input[idx];
-            counter++;
+            ++counter;
         }
     }
     // pack into COMMAND
