@@ -3,4 +3,4 @@
 #include "instr.h"
 #include "core.h"
 
-void execute(CORE* core, INSTR instr);
+void execute(CORE* const core, const INSTR instr);

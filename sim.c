@@ -51,7 +51,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     if (file_size) {
         FILE* file = fopen(sld_name, "rb");
         u8 byte = 0;
-        for (int i = 0; i < UART_BUF_SIZE && i < file_size; i++) {
+        for (int i = 0; i < UART_IN_SIZE && i < file_size; i++) {
             fread(&byte, 1, 1, file);
             sim->core->uart_in->push(sim->core->uart_in, byte);
         }
@@ -59,13 +59,15 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     }
 }
 
-void sim_run(SIM* sim) {
+void sim_run(SIM* const sim) {
     #if defined(TIME_TEST_MODE)
     // timer
     clock_t t1, t2;
     t1 = clock();
-    while (BROADCAST.decoder.type ^ STAT_EXIT)
+    for (;;) {
         sim->core->step(sim->core);
+        if (BROADCAST.decoder.type == STAT_EXIT) break;
+    }
     t2 = clock();
     u64 num = sim->core->instr_counter;
     printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
@@ -126,10 +128,24 @@ void sim_run(SIM* sim) {
 }
 
 void init_sim(SIM* sim) {
+    // init mmu
+    static MMU mmu;
+    init_mmu(&mmu);
+    // init branch predictor
+    static BRANCH_PREDICTOR branch_predictor;
+    init_branch_predictor(&branch_predictor);
+    // init uart queue
+    static UART_QUEUE uart_in, uart_out;
+    init_uart_queue(&uart_in, UART_IN_SIZE);
+    init_uart_queue(&uart_out, UART_OUT_SIZE);
     // init core
     static CORE core;
     init_core(&core);
     sim->core = &core;
+    sim->core->mmu = &mmu;
+    sim->core->branch_predictor = &branch_predictor;
+    sim->core->uart_in = &uart_in;
+    sim->core->uart_out = &uart_out;
     // assign interfaces
     sim->load = sim_load_file;
     sim->run = sim_run;

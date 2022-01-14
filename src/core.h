@@ -6,7 +6,8 @@
 #define CLK_FREQUENCY 10000000
 #define DEFAULT_PC    0x100
 #define UART_ADDR     0x3FFFFFC
-#define UART_BUF_SIZE 0x32000 // 200KB
+#define UART_IN_SIZE  0x800   // 2KB
+#define UART_OUT_SIZE 0x32000 // 200KB
 #define UART_BAUDRATE 576000
 
 static char* reg_name[32] = {
@@ -31,14 +32,14 @@ static char* freg_name[32] = {
 };
 
 typedef struct uart_queue {
-    u32 left, right;
+    u32 left, right, size;
     u8* buffer;
-    void (*push)(struct uart_queue*, u8);
-    u8 (*pop)(struct uart_queue*);
-    u8 (*isempty)(struct uart_queue*);
+    void (*push)(struct uart_queue* const, const u8);
+    u8 (*pop)(struct uart_queue* const);
+    u8 (*isempty)(const struct uart_queue*);
 } UART_QUEUE;
 
-void init_uart_queue(UART_QUEUE* uart);
+void init_uart_queue(UART_QUEUE* uart, u32 size);
 
 typedef struct core {
     // attributes
@@ -50,17 +51,17 @@ typedef struct core {
     BRANCH_PREDICTOR* branch_predictor;
     // output files
     char outputfile_name[30], dumpfile_name[30];
-    FILE *outputfile_fp, *dumpfile_fp;
+    FILE* dumpfile_fp;
     // analysis
     u64 instr_counter;
     u64 stall_counter;
     u64 instr_analysis[23];
     // interfaces
-    WORD (*load_instr)(struct core*, ADDR);
-    WORD (*load_data)(struct core*, ADDR);
-    void (*store_instr)(struct core*, ADDR, WORD);
-    void (*store_data)(struct core*, ADDR, WORD);
-    void (*step)(struct core*);
+    void (*step)(struct core* const);
+    WORD (*load_instr)(const struct core*, const ADDR);
+    WORD (*load_data)(const struct core*, const ADDR);
+    void (*store_instr)(const struct core*, const ADDR, const WORD);
+    void (*store_data)(const struct core*, const ADDR, const WORD);
     void (*dump)(struct core*);
     void (*reset)(struct core*);
     void (*deinit)(struct core*);

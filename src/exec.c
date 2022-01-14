@@ -19,7 +19,7 @@
 #define ARITH_REM(a1, a2) ((s32)(a1)) % ((s32)(a2))
 #define ARITH_REMU(a1, a2) ((a1) % (a2))
 
-void execute(CORE* core, const INSTR instr) {
+void execute(CORE* const core, const INSTR instr) {
     register WORD rd, rs1, rs2, imm, funct3, funct7;
     register u32 tmp, a1, a2;
 

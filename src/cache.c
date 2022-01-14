@@ -1,30 +1,53 @@
 #include "cache.h"
 
-s32 cache_get_valid_block(CACHE* cache, ADDR addr) {
-    CACHE_ADDR_HELPER helper = { .raw = addr };
+s32 cache_get_valid_block(const CACHE* cache, const ADDR addr) {
+    register const CACHE_ADDR_HELPER helper = { .raw = addr };
     register s32 idx = helper.d.set_idx * ASSOCIATIVITY;
-    register u32 tag = helper.d.tag;
+    register const u32 tag = helper.d.tag;
+    #if (ASSOCIATIVITY == 1)
+    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
+    #elif (ASSOCIATIVITY == 2)
+    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
+    if (cache->blocks[idx + 1]->valid && (cache->blocks[idx + 1]->tag == tag)) return idx + 1;
+    #elif (ASSOCIATIVITY == 4)
+    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
+    if (cache->blocks[idx + 1]->valid && (cache->blocks[idx + 1]->tag == tag)) return idx + 1;
+    if (cache->blocks[idx + 2]->valid && (cache->blocks[idx + 2]->tag == tag)) return idx + 2;
+    if (cache->blocks[idx + 3]->valid && (cache->blocks[idx + 3]->tag == tag)) return idx + 3;
+    #else
     for (register int i = 0; i < ASSOCIATIVITY; i++, idx++) {
         if (!cache->blocks[idx]->valid) continue;
         if (cache->blocks[idx]->tag ^ tag) continue;
         return idx;
     }
+    #endif
     return -1;
 }
 
-s32 cache_get_empty_block(CACHE* cache, ADDR addr) {
-    CACHE_ADDR_HELPER helper = { .raw = addr };
-    register s32 idx = helper.d.set_idx * ASSOCIATIVITY;
+s32 cache_get_empty_block(const CACHE* cache, const ADDR addr) {
+    register s32 idx = (CACHE_ADDR_HELPER){ .raw = addr }.d.set_idx * ASSOCIATIVITY;
+    #if (ASSOCIATIVITY == 1)
+    if (!cache->blocks[idx]->valid) return idx;
+    #elif (ASSOCIATIVITY == 2)
+    if (!cache->blocks[idx]->valid) return idx;
+    if (!cache->blocks[idx + 1]->valid) return idx + 1;
+    #elif (ASSOCIATIVITY == 4)
+    if (!cache->blocks[idx]->valid) return idx;
+    if (!cache->blocks[idx + 1]->valid) return idx + 1;
+    if (!cache->blocks[idx + 2]->valid) return idx + 2;
+    if (!cache->blocks[idx + 3]->valid) return idx + 3;
+    #else
     for (register int i = 0; i < ASSOCIATIVITY; i++, idx++) {
         if (!cache->blocks[idx]->valid)
             return idx;
     }
+    #endif
     return -1;
 }
 
-s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
-    CACHE_ADDR_HELPER helper = { .raw = addr };
-    register s32 start_idx = helper.d.set_idx * ASSOCIATIVITY, block_idx;
+s32 cache_get_replacable_block(const CACHE* cache, const ADDR addr) {
+    register const s32 start_idx = (CACHE_ADDR_HELPER){ .raw = addr }.d.set_idx * ASSOCIATIVITY;
+    register s32 block_idx;
     #if defined(CACHE_FIFO) // fifo
     register u64 min = 0xFFFFFFFFFFFFFFFF;
     for (register int i = 0; i < ASSOCIATIVITY; i++) {
@@ -56,10 +79,10 @@ s32 cache_get_replacable_block(CACHE* cache, ADDR addr) {
     return block_idx;
 }
 
-u8 cache_read_word(CACHE* cache, ADDR addr, WORD* val) {
+u8 cache_read_word(CACHE* const cache, const ADDR addr, WORD* const val) {
     cache->reference_counter++;
     cache->read_counter++;
-    register s32 block_idx = cache_get_valid_block(cache, addr);
+    register const s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -67,17 +90,16 @@ u8 cache_read_word(CACHE* cache, ADDR addr, WORD* val) {
     } else {
         // hit
         cache->hit_counter++;
-        CACHE_ADDR_HELPER helper = { .raw = addr };
-        *val = cache->blocks[block_idx]->data[helper.d.offset];
+        *val = cache->blocks[block_idx]->data[(CACHE_ADDR_HELPER){ .raw = addr }.d.offset];
         cache->blocks[block_idx]->last_referenced = cache->reference_counter;
         return 1;
     }
 }
 
-u8 cache_write_word(CACHE* cache, ADDR addr, WORD val) {
+u8 cache_write_word(CACHE* const cache, const ADDR addr, const WORD val) {
     cache->reference_counter++;
     cache->write_counter++;
-    register s32 block_idx = cache_get_valid_block(cache, addr);
+    register const s32 block_idx = cache_get_valid_block(cache, addr);
     if (block_idx < 0) {
         // miss
         cache->miss_counter++;
@@ -85,17 +107,16 @@ u8 cache_write_word(CACHE* cache, ADDR addr, WORD val) {
     } else {
         // hit
         cache->hit_counter++;
-        CACHE_ADDR_HELPER helper = { .raw = addr };
-        cache->blocks[block_idx]->data[helper.d.offset] = val;
+        cache->blocks[block_idx]->data[(CACHE_ADDR_HELPER){ .raw = addr }.d.offset] = val;
         cache->blocks[block_idx]->modified = 1;
         cache->blocks[block_idx]->last_referenced = cache->reference_counter;
         return 1;
     }
 }
 
-void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
+void cache_load_block(CACHE* const cache, const ADDR addr, const MEM* mem) {
     register s32 block_idx = cache_get_empty_block(cache, addr);
-    CACHE_ADDR_HELPER helper;
+    register CACHE_ADDR_HELPER helper = { .raw = 0 };
     // write back
     if (block_idx < 0) {
         // all blocks occupied
@@ -105,8 +126,7 @@ void cache_load_block(CACHE* cache, ADDR addr, MEM* mem) {
             helper.d.set_idx = cache->blocks[block_idx]->set_idx;
             for (register int offset = 0; offset < BLOCK_SIZE; offset++) {
                 helper.d.offset = offset;
-                mem->write_word(mem, helper.raw, cache->blocks[block_idx]->data[offset]);
-                cache->blocks[block_idx]->data[offset] = 0;
+                mem->write_word((MEM* const)mem, helper.raw, cache->blocks[block_idx]->data[offset]);
             }
         }
     }
@@ -156,6 +176,9 @@ void init_cache(CACHE* cache) {
     // check BLOCK_SIZE
     if (BLOCK_SIZE & 0x3) {
         printf("cache: block size should be the multiple of 4(words).\n");
+        exit(-1);
+    } else if (ASSOCIATIVITY == 0) {
+        printf("cache: associativity (AKA way) should be at least 1.\n");
         exit(-1);
     }
     // setup parameters

@@ -399,9 +399,9 @@ u8 disasm(INSTR instr, char* buffer) {
     }
 }
 
-u8 isLwStall(BYTE rd, WORD op) {
+u8 isLwStall(const BYTE rd, const WORD op) {
     if (!rd) return 0;
-    register BYTE rs1 = (INSTR){ .raw = op }.r.rs1;
-    register BYTE rs2 = (INSTR){ .raw = op }.r.rs2;
+    register const BYTE rs1 = (INSTR){ .raw = op }.r.rs1;
+    register const BYTE rs2 = (INSTR){ .raw = op }.r.rs2;
     return ((rd == rs1) || (rd == rs2)) ? 1 : 0;
- }
+}

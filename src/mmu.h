@@ -11,10 +11,10 @@ typedef struct mmu {
     MEM* data_mem;
     // interfaces
     void (*allocate_instr)(struct mmu*, u64);
-    WORD (*read_instr)(struct mmu*, ADDR);
-    void (*write_instr)(struct mmu*, ADDR, WORD);
-    WORD (*read_data)(struct mmu*, void*, ADDR);
-    void (*write_data)(struct mmu*, void*, ADDR, WORD);
+    WORD (*read_instr)(const struct mmu*, const ADDR);
+    void (*write_instr)(const struct mmu*, const ADDR, const WORD);
+    WORD (*read_data)(const struct mmu*, void* const, const ADDR);
+    void (*write_data)(const struct mmu*, void* const, const ADDR, const WORD);
     BYTE (*sneak)(struct mmu*, ADDR, u8);
     void (*reset)(struct mmu*, ADDR);
 } MMU;

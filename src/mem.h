@@ -12,8 +12,8 @@
 typedef struct mem {
     WORD** data[0x100];
     // interfaces
-    WORD (*read_word)(struct mem*, ADDR);
-    void (*write_word)(struct mem*, ADDR, WORD);
+    WORD (*read_word)(const struct mem*, const ADDR);
+    void (*write_word)(struct mem* const, const ADDR, const WORD);
     void (*reset_stack)(struct mem*, ADDR);
 } MEM;
 

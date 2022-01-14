@@ -9,7 +9,7 @@ typedef struct sim {
     GUI* gui;
     // insterfaces
     void (*load)(struct sim*, char*, char*);
-    void (*run)(struct sim*);
+    void (*run)(struct sim* const);
 } SIM;
 
 void init_sim(SIM* sim);

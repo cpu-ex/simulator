@@ -4,22 +4,23 @@
 
 /******************** uart ********************/
 
-u8 uart_isempty(UART_QUEUE* uart) {
+u8 uart_isempty(const UART_QUEUE* uart) {
     return (uart->left < uart->right) ? 0 : 1;
 }
 
-void uart_push(UART_QUEUE* uart, u8 val) {
-    uart->buffer[(uart->right++) % UART_BUF_SIZE] = val;
+void uart_push(UART_QUEUE* const uart, const u8 val) {
+    uart->buffer[(uart->right++) % uart->size] = val;
 }
 
-u8 uart_pop(UART_QUEUE* uart) {
-    return (uart->left < uart->right) ? uart->buffer[(uart->left++) % UART_BUF_SIZE] : 0;
+u8 uart_pop(UART_QUEUE* const uart) {
+    return (uart->left < uart->right) ? uart->buffer[(uart->left++) % uart->size] : 0;
 }
 
-void init_uart_queue(UART_QUEUE* uart) {
+void init_uart_queue(UART_QUEUE* uart, u32 size) {
     uart->left = 0;
     uart->right = 0;
-    uart->buffer = (u8*)malloc(UART_BUF_SIZE * sizeof(u8));
+    uart->size = size;
+    uart->buffer = (u8*)malloc(size * sizeof(u8));
     uart->push = uart_push;
     uart->pop = uart_pop;
     uart->isempty = uart_isempty;
@@ -27,38 +28,39 @@ void init_uart_queue(UART_QUEUE* uart) {
 
 /******************** core ********************/
 
-void core_step(CORE* core) {
-    // fetch and decode
-    register const INSTR curr_instr = { .raw = core->load_instr(core, core->pc) };
-    // execute
-    execute(core, curr_instr);
+void core_step(CORE* const core) {
+    // fetch + decode + execute
+    execute(core, (INSTR){ .raw = core->load_instr(core, core->pc) });
     core->regs[0] = 0;
     core->instr_counter++;
 }
 
-WORD core_load_instr(CORE* core, ADDR addr) {
+WORD core_load_instr(const CORE* core, const ADDR addr) {
     return core->mmu->read_instr(core->mmu, addr >> 2);
 }
 
-WORD core_load_data(CORE* core, ADDR addr) {
+WORD core_load_data(const CORE* core, const ADDR addr) {
     if (addr ^ UART_ADDR)
-        return core->mmu->read_data(core->mmu, core, addr);
+        return core->mmu->read_data(core->mmu, (void* const)core, addr);
     else
         return core->uart_in->pop(core->uart_in);
 }
 
-void core_store_instr(CORE* core, ADDR addr, WORD val) {
+void core_store_instr(const CORE* core, const ADDR addr, const WORD val) {
     core->mmu->write_instr(core->mmu, addr >> 2, val);
 }
 
-void core_store_data(CORE* core, ADDR addr, WORD val) {
+void core_store_data(const CORE* core, const ADDR addr, const WORD val) {
     if (addr ^ UART_ADDR)
-        core->mmu->write_data(core->mmu, core, addr, val);
+        core->mmu->write_data(core->mmu, (void* const)core, addr, val);
     else
         core->uart_out->push(core->uart_out, val & 0xFF);
 }
 
 void core_dump(CORE* core) {
+    // check dumpfile
+    if (core->dumpfile_fp == NULL)
+        core->dumpfile_fp = fopen(core->dumpfile_name, "w");
     // step, pc
     fprintf(core->dumpfile_fp, "step:%016llx pc:%08x", core->instr_counter, core->pc); 
     // register file
@@ -90,20 +92,23 @@ void core_reset(CORE* core) {
     core->branch_predictor->reset(core->branch_predictor);
 }
 
-#define close_file(fp, name)         \
-    {                                \
-        fseek(fp, 0, SEEK_END);      \
-        u64 filesize = ftell(fp);    \
-        fclose(fp);                  \
-        if (!filesize) remove(name); \
-        fp = NULL;                   \
+#define close_file(fp, name)             \
+    {                                    \
+        if (fp != NULL) {                \
+            fseek(fp, 0, SEEK_END);      \
+            u64 filesize = ftell(fp);    \
+            fclose(fp);                  \
+            if (!filesize) remove(name); \
+            fp = NULL;                   \
+        }                                \
     }
 void core_deinit(CORE* core) {
+    FILE* outputfile_fp = fopen(core->outputfile_name, "w");
     while (!core->uart_out->isempty(core->uart_out)) {
         u8 byte = core->uart_out->pop(core->uart_out);
-        fwrite(&byte, 1, 1, core->outputfile_fp);
+        fwrite(&byte, 1, 1, outputfile_fp);
     }
-    close_file(core->outputfile_fp, core->outputfile_name);
+    close_file(outputfile_fp, core->outputfile_name);
     close_file(core->dumpfile_fp, core->dumpfile_name);
 }
 
@@ -118,28 +123,12 @@ void init_core(CORE* core) {
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 23 * sizeof(u32));
-    // open files for outputs
+    memset(core->instr_analysis, 0, 23 * sizeof(u64));
+    // prepare for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);
     strftime(core->outputfile_name, 30, "output-%Y%m%d-%H%M%S", info);
     strftime(core->dumpfile_name, 30, "dumpfile-%Y%m%d-%H%M%S", info);
-    core->outputfile_fp = fopen(core->outputfile_name, "w");
-    core->dumpfile_fp = fopen(core->dumpfile_name, "w");
-    // init uart queue
-    static UART_QUEUE uart_in, uart_out;
-    init_uart_queue(&uart_in);
-    init_uart_queue(&uart_out);
-    core->uart_in = &uart_in;
-    core->uart_out = &uart_out;
-    // init mmu
-    static MMU mmu;
-    init_mmu(&mmu);
-    core->mmu = &mmu;
-    // init branch predictor
-    static BRANCH_PREDICTOR branch_predictor;
-    init_branch_predictor(&branch_predictor);
-    core->branch_predictor = &branch_predictor;
     // init fpu
     init_fpu();
     // assign interfaces

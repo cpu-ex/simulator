@@ -16,130 +16,128 @@ typedef union float_helper {
 #define BIT_GET(val, h, l) ((val >> l) & ((1 << (h - l + 1)) - 1))
 
 // fadd
-void FADD_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FADD_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
     
-    register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
-    register FLOAT_HELPER val = { .f = f1.f + f2.f };
-
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = (FLOAT_HELPER){
+        .f = (FLOAT_HELPER){
+            .i = core->fregs[rs1]
+        }.f + (FLOAT_HELPER){
+            .i = core->fregs[rs2]
+        }.f
+    }.i;
     core->pc += 4;
 }
 
 // fsub
-void FSUB_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FSUB_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
     
-    register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
-    register FLOAT_HELPER val = { .f = f1.f - f2.f };
-
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = (FLOAT_HELPER){
+        .f = (FLOAT_HELPER){
+            .i = core->fregs[rs1]
+        }.f - (FLOAT_HELPER){
+            .i = core->fregs[rs2]
+        }.f
+    }.i;
     core->pc += 4;
 }
 
 // fmul
 FLOAT_HELPER fmul(const FLOAT_HELPER x1 ,const FLOAT_HELPER x2) {
-    register u32 s1 = x1.decoder.sign;
-    register u32 s2 = x2.decoder.sign;
-    register u32 e1 = x1.decoder.exp;
-    register u32 e2 = x2.decoder.exp;
-    register u32 m1h = BIT_GET(x1.decoder.mantissa, 22, 11); // x1[22:11]
-    register u32 m1l = BIT_GET(x1.decoder.mantissa, 10, 0); // x1[10:0]
-    register u32 m2h = BIT_GET(x2.decoder.mantissa, 22, 11);
-    register u32 m2l = BIT_GET(x2.decoder.mantissa, 10, 0);
+    // register const u32 s1 = x1.decoder.sign;
+    // register const u32 s2 = x2.decoder.sign;
+    // register const u32 e1 = x1.decoder.exp;
+    // register const u32 e2 = x2.decoder.exp;
+    // register const u32 m1h = BIT_GET(x1.decoder.mantissa, 22, 11); // x1[22:11]
+    // register const u32 m1l = BIT_GET(x1.decoder.mantissa, 10, 0); // x1[10:0]
+    // register const u32 m2h = BIT_GET(x2.decoder.mantissa, 22, 11);
+    // register const u32 m2l = BIT_GET(x2.decoder.mantissa, 10, 0);
 
     /* stage 1 */
     // step 2
-    register u32 h1 = BIT_SET(m1h, 12, 12);
-    register u32 h2 = BIT_SET(m2h, 12, 12);
-    register u32 hh = h1 * h2;
-    register u32 hl = h1 * m2l;
-    register u32 lh = m1l * h2;
+    register const u32 h1 = BIT_SET(BIT_GET(x1.decoder.mantissa, 22, 11), 12, 12); // BIT_SET(m1h, 12, 12)
+    register const u32 h2 = BIT_SET(BIT_GET(x2.decoder.mantissa, 22, 11), 12, 12); // BIT_SET(m2h, 12, 12)
+    register const u32 hh = h1 * h2;
+    register const u32 hl = h1 * BIT_GET(x2.decoder.mantissa, 10, 0); // h1 * m2l
+    register const u32 lh = BIT_GET(x1.decoder.mantissa, 10, 0) * h2; // m1l * h2
     // step 5
-    register u32 s3 = s1 ^ s2;
-    register u32 e3 = e1 + e2 + 129;
+    register const u32 s3 = x1.decoder.sign ^ x2.decoder.sign; // s1 ^ s2
+    register const u32 e3 =  x1.decoder.exp + x2.decoder.exp + 129; // e1 + e2 + 129
 
     /* stage 2 */
     // step 3
-    register u32 m3 = hh + (hl >> 11) + (lh >> 11) + 2;
-    register u32 e4 = e3 + 1;
+    register const u32 m3 = hh + (hl >> 11) + (lh >> 11) + 2;
+    register const u32 e4 = e3 + 1;
 
     /* stage 3 */
-    register u32 e5 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(e4, 7, 0) : BIT_GET(e3, 7, 0));
+    register const u32 e5 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(e4, 7, 0) : BIT_GET(e3, 7, 0));
     // step 4
-    register u32 m4 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(m3, 24, 2) : BIT_GET(m3, 23, 1));
+    register const u32 m4 = (BIT_GET(e3, 8, 8) == 0) ? 0 : ((BIT_GET(m3, 25, 25) == 1) ? BIT_GET(m3, 24, 2) : BIT_GET(m3, 23, 1));
 
-    register FLOAT_HELPER val = { .decoder = { .mantissa = m4, .exp = e5, .sign = s3 } };
-    return val;
+    return (FLOAT_HELPER){ .decoder = { .mantissa = m4, .exp = e5, .sign = s3 } };
 }
 
-void FMUL_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FMUL_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
 
-    register FLOAT_HELPER x1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER x2 = { .i = core->fregs[rs2] };
-    register FLOAT_HELPER val = fmul(x1, x2);
-
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = fmul(
+        (FLOAT_HELPER){ .i = core->fregs[rs1] },
+        (FLOAT_HELPER){ .i = core->fregs[rs2] }
+    ).i;
     core->pc += 4;
 }
 
 // finv
-f32 finv_table_a[1024];
-f32 finv_table_b[1024];
-FLOAT_HELPER finv_m(const u32 mx){
+static f32 finv_table_a[1024];
+static f32 finv_table_b[1024];
+FLOAT_HELPER finv_m(const u32 mx) {
     // assume mx 23bit
-    register FLOAT_HELPER offset = { .decoder = { .mantissa = mx, .exp = 0b01111111, .sign = 0 } };
-    register FLOAT_HELPER a      = { .f = finv_table_a[mx >> 13] };
-    register FLOAT_HELPER b      = { .f = finv_table_b[mx >> 13] };
-    register FLOAT_HELPER ax     = fmul(a, offset);
-    register FLOAT_HELPER c      = { .f = b.f - ax.f }; // fsub
-    return c;
+    register const FLOAT_HELPER offset = { .decoder = { .mantissa = mx, .exp = 0b01111111, .sign = 0 } };
+    register const FLOAT_HELPER a      = { .f = finv_table_a[mx >> 13] };
+    register const FLOAT_HELPER b      = { .f = finv_table_b[mx >> 13] };
+    return (FLOAT_HELPER){ .f = b.f - fmul(a, offset).f };
 }
 
 // fdiv
 FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
     // x1
-    register u32 s1 = x1.decoder.sign;
-    register u32 e1 = x1.decoder.exp;
-    register u32 m1 = x1.decoder.mantissa;
+    register const u32 s1 = x1.decoder.sign;
+    register const u32 e1 = x1.decoder.exp;
+    register const u32 m1 = x1.decoder.mantissa;
     // x2
-    register u32 s2 = x2.decoder.sign;
-    register u32 e2 = x2.decoder.exp;
-    register u32 m2 = x2.decoder.mantissa;
+    register const u32 s2 = x2.decoder.sign;
+    register const u32 e2 = x2.decoder.exp;
+    register const u32 m2 = x2.decoder.mantissa;
 
     if (e1 == 0) {
         return (FLOAT_HELPER){ .i = 0 };
     }
 
-    register FLOAT_HELPER c   = finv_m(m2);
-    register FLOAT_HELPER x1n = { .decoder = { .mantissa = m1                , .exp = 127, .sign = 0 } };
-    register FLOAT_HELPER x2n = { .decoder = { .mantissa = c.decoder.mantissa, .exp = 127, .sign = 0 } };
-    register FLOAT_HELPER yn  = fmul(x1n, x2n);
+    register const FLOAT_HELPER c   = finv_m(m2);
+    register const FLOAT_HELPER x1n = { .decoder = { .mantissa = m1                , .exp = 127, .sign = 0 } };
+    register const FLOAT_HELPER x2n = { .decoder = { .mantissa = c.decoder.mantissa, .exp = 127, .sign = 0 } };
+    register const FLOAT_HELPER yn  = fmul(x1n, x2n);
 
-    register u32 ey = (c.decoder.mantissa == 0) ? e1 - e2 + yn.decoder.exp : e1 - e2 - 1 + yn.decoder.exp;
-    register FLOAT_HELPER y = { .decoder = { .mantissa = yn.decoder.mantissa, .exp = ey, .sign = (s1 ^ s2) } };
-    return y;
+    register const u32 ey = (c.decoder.mantissa == 0) ? e1 - e2 + yn.decoder.exp : e1 - e2 - 1 + yn.decoder.exp;
+    return (FLOAT_HELPER){ .decoder = { .mantissa = yn.decoder.mantissa, .exp = ey, .sign = (s1 ^ s2) } };
 }
 
-void FDIV_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FDIV_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
 
-    register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
-    register FLOAT_HELPER val = fdiv(f1, f2);
-
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = fdiv(
+        (FLOAT_HELPER){ .i = core->fregs[rs1] },
+        (FLOAT_HELPER){ .i = core->fregs[rs2] }
+    ).i;
     core->pc += 4;
 }
 
@@ -147,67 +145,60 @@ void FDIV_EXEC(CORE* core, const INSTR instr) {
 static f32 fsqrt_table_a[1024];
 static f32 fsqrt_table_b[1024];
 FLOAT_HELPER fsqrt(const FLOAT_HELPER x) {
-    register u32 sx = x.decoder.sign;
-    register u32 ex = x.decoder.exp;
-    register u32 mx = x.decoder.mantissa;
+    register const u32 sx = x.decoder.sign;
+    register const u32 ex = x.decoder.exp;
+    register const u32 mx = x.decoder.mantissa;
 
     if (ex == 0) {
         return (FLOAT_HELPER){ .decoder = { .mantissa = 0, .exp = 0, .sign = sx } };
     }
 
-    register FLOAT_HELPER a = { .f = fsqrt_table_a[BIT_GET(x.i, 23, 14)] };
-    register FLOAT_HELPER b = { .f = fsqrt_table_b[BIT_GET(x.i, 23, 14)] };
-    register FLOAT_HELPER offset = (ex & 1) ? (FLOAT_HELPER){ .decoder = { .mantissa = mx , .exp = 0b01111110 | (ex & 1), .sign = 0 } }:
+    register const FLOAT_HELPER a = { .f = fsqrt_table_a[BIT_GET(x.i, 23, 14)] };
+    register const FLOAT_HELPER b = { .f = fsqrt_table_b[BIT_GET(x.i, 23, 14)] };
+    register const FLOAT_HELPER offset = (ex & 1) ? (FLOAT_HELPER){ .decoder = { .mantissa = mx , .exp = 0b01111110 | (ex & 1), .sign = 0 } }:
                                         (FLOAT_HELPER){ .decoder = { .mantissa = mx , .exp = 0b10000000 | (ex & 1), .sign = 0 } };
-    register FLOAT_HELPER ax = fmul(a, offset);
-    register FLOAT_HELPER c = { .f = b.f + ax.f }; // fadd
-    register u32 ey = (ex & 1) ? (ex > 127 ? ((ex - 127) >> 1) + 127 : 127 - ((127 - ex) >> 1)):
+    register const FLOAT_HELPER c = { .f = b.f + fmul(a, offset).f }; // fadd
+    register const u32 ey = (ex & 1) ? (ex > 127 ? ((ex - 127) >> 1) + 127 : 127 - ((127 - ex) >> 1)):
                         (ex > 128 ? ((ex - 128) >> 1) + 127 : 127 - ((128 - ex) >> 1));
-    register FLOAT_HELPER y = { .decoder = { .mantissa = c.decoder.mantissa, .exp = ey, .sign = sx } };
-    return y;
+    return (FLOAT_HELPER){ .decoder = { .mantissa = c.decoder.mantissa, .exp = ey, .sign = sx } };
 }   
 
-void FSQRT_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
+void FSQRT_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
 
-    register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER val = fsqrt(f1);
-
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = fsqrt((FLOAT_HELPER){ .i = core->fregs[rs1] }).i;
     core->pc += 4;
 }
 
 // fcmp
-void FCMP_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
-    register BYTE funct3 = instr.r.funct3;
+void FCMP_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
+    register const BYTE funct3 = instr.r.funct3;
 
-    register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
-    register u32 val;
+    register const FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
+    register const FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
     switch (funct3) {
     // feq
-    case 0b010: val = (f1.f == f2.f) ? 1 : 0; break;
+    case 0b010: core->regs[rd] = (f1.f == f2.f) ? 1 : 0; break;
     // flt
-    case 0b001: val = (f1.f < f2.f) ? 1 : 0; break;
+    case 0b001: core->regs[rd] = (f1.f < f2.f) ? 1 : 0; break;
     // fle
-    case 0b000: val = (f1.f <= f2.f) ? 1 : 0; break;
+    case 0b000: core->regs[rd] = (f1.f <= f2.f) ? 1 : 0; break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
-    core->regs[rd] = val;
     core->pc += 4;
 }
 
 // fcvt2f convert to float from (unsigned)integer
-void FCVT2F_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FCVT2F_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
 
     register FLOAT_HELPER f;
     switch (rs2) {
@@ -224,12 +215,12 @@ void FCVT2F_EXEC(CORE* core, const INSTR instr) {
 }
 
 // fcvt2i convert to (unsigned)integer from float
-void FCVT2I_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
+void FCVT2I_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
 
-    register FLOAT_HELPER f = {.i = core->fregs[rs1]};
+    register const FLOAT_HELPER f = { .i = core->fregs[rs1] };
     register u32 i;
     switch (rs2) {
     // fcvt.w.s
@@ -245,27 +236,27 @@ void FCVT2I_EXEC(CORE* core, const INSTR instr) {
 }
 
 // fsgnj float sign inject
-void FSGNJ_EXEC(CORE* core, const INSTR instr) {
-    register BYTE rd = instr.r.rd;
-    register BYTE rs1 = instr.r.rs1;
-    register BYTE rs2 = instr.r.rs2;
-    register BYTE funct3 = instr.r.funct3;
+void FSGNJ_EXEC(CORE* const core, const INSTR instr) {
+    register const BYTE rd = instr.r.rd;
+    register const BYTE rs1 = instr.r.rs1;
+    register const BYTE rs2 = instr.r.rs2;
+    register const BYTE funct3 = instr.r.funct3;
 
     register FLOAT_HELPER f1 = { .i = core->fregs[rs1] };
-    register FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
-    register FLOAT_HELPER val = { .decoder = { .mantissa = f2.decoder.mantissa, .exp = f2.decoder.exp } };
+    register const FLOAT_HELPER f2 = { .i = core->fregs[rs2] };
+
     switch (funct3) {
     // fsgnj
-    case 0b000: val.decoder.sign = f2.decoder.sign; break;
+    case 0b000: f1.decoder.sign = f2.decoder.sign; break;
     // fsgnjn
-    case 0b001: val.decoder.sign = ~f2.decoder.sign; break;
+    case 0b001: f1.decoder.sign = ~f2.decoder.sign; break;
     // fsgnjx
-    case 0b010: val.decoder.sign = f1.decoder.sign ^ f2.decoder.sign; break;
+    case 0b010: f1.decoder.sign = f1.decoder.sign ^ f2.decoder.sign; break;
     // unexpected
     default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
     }
 
-    core->fregs[rd] = val.i;
+    core->fregs[rd] = f1.i;
     core->pc += 4;
 }
 
