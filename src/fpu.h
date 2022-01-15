@@ -14,7 +14,7 @@ typedef union float_helper {
     } __attribute__((packed)) decoder;
 } FLOAT_HELPER;
 
-FLOAT_HELPER fmul(const FLOAT_HELPER, const FLOAT_HELPER);
-FLOAT_HELPER fdiv(const FLOAT_HELPER, const FLOAT_HELPER);
-FLOAT_HELPER fsqrt(const FLOAT_HELPER);
+const FLOAT_HELPER fmul(const FLOAT_HELPER, const FLOAT_HELPER);
+const FLOAT_HELPER fdiv(const FLOAT_HELPER, const FLOAT_HELPER);
+const FLOAT_HELPER fsqrt(const FLOAT_HELPER);
 void init_fpu(void);

@@ -1,30 +1,31 @@
 #include "cache.h"
 
-s32 cache_get_valid_block(const CACHE* cache, const ADDR addr) {
+const s32 cache_get_valid_block(const CACHE* cache, const ADDR addr) {
+    register const CACHE_BLOCK** blocks = (const CACHE_BLOCK**)cache->blocks;
     register const CACHE_ADDR_HELPER helper = { .raw = addr };
     register const s32 idx = helper.d.set_idx * ASSOCIATIVITY;
     register const u32 tag = helper.d.tag;
     #if (ASSOCIATIVITY == 1)
-    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
+    if (blocks[idx]->valid && (blocks[idx]->tag == tag)) return idx;
     #elif (ASSOCIATIVITY == 2)
-    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
-    if (cache->blocks[idx + 1]->valid && (cache->blocks[idx + 1]->tag == tag)) return idx + 1;
+    if (blocks[idx]->valid && (blocks[idx]->tag == tag)) return idx;
+    if (blocks[idx + 1]->valid && (blocks[idx + 1]->tag == tag)) return idx + 1;
     #elif (ASSOCIATIVITY == 4)
-    if (cache->blocks[idx]->valid && (cache->blocks[idx]->tag == tag)) return idx;
-    if (cache->blocks[idx + 1]->valid && (cache->blocks[idx + 1]->tag == tag)) return idx + 1;
-    if (cache->blocks[idx + 2]->valid && (cache->blocks[idx + 2]->tag == tag)) return idx + 2;
-    if (cache->blocks[idx + 3]->valid && (cache->blocks[idx + 3]->tag == tag)) return idx + 3;
+    if (blocks[idx]->valid && (blocks[idx]->tag == tag)) return idx;
+    if (blocks[idx + 1]->valid && (blocks[idx + 1]->tag == tag)) return idx + 1;
+    if (blocks[idx + 2]->valid && (blocks[idx + 2]->tag == tag)) return idx + 2;
+    if (blocks[idx + 3]->valid && (blocks[idx + 3]->tag == tag)) return idx + 3;
     #else
     for (register int i = 0; i < ASSOCIATIVITY; ++i) {
-        if (!cache->blocks[idx + i]->valid) continue;
-        if (cache->blocks[idx + i]->tag ^ tag) continue;
+        if (!blocks[idx + i]->valid) continue;
+        if (blocks[idx + i]->tag ^ tag) continue;
         return idx + i;
     }
     #endif
     return -1;
 }
 
-s32 cache_get_empty_block(const CACHE* cache, const ADDR addr) {
+const s32 cache_get_empty_block(const CACHE* cache, const ADDR addr) {
     register const s32 idx = (CACHE_ADDR_HELPER){ .raw = addr }.d.set_idx * ASSOCIATIVITY;
     #if (ASSOCIATIVITY == 1)
     if (!cache->blocks[idx]->valid) return idx;
@@ -45,7 +46,7 @@ s32 cache_get_empty_block(const CACHE* cache, const ADDR addr) {
     return -1;
 }
 
-s32 cache_get_replacable_block(const CACHE* cache, const ADDR addr) {
+const s32 cache_get_replacable_block(const CACHE* cache, const ADDR addr) {
     register const s32 start_idx = (CACHE_ADDR_HELPER){ .raw = addr }.d.set_idx * ASSOCIATIVITY;
     register s32 block_idx;
     #if defined(CACHE_FIFO) // fifo
@@ -60,7 +61,7 @@ s32 cache_get_replacable_block(const CACHE* cache, const ADDR addr) {
     #if (ASSOCIATIVITY == 1)
     block_idx = start_idx;
     #elif (ASSOCIATIVITY == 2)
-    block_idx = start_idx + ((cache->blocks[start_idx]->last_referenced < cache->blocks[start_idx + 1]->last_referenced) ? 0 : 1);
+    block_idx = (cache->blocks[start_idx]->last_referenced < cache->blocks[start_idx + 1]->last_referenced) ? start_idx : (start_idx + 1);
     #else
     register u64 min = 0xFFFFFFFFFFFFFFFF;
     for (register int i = 0; i < ASSOCIATIVITY; ++i) {
@@ -85,7 +86,7 @@ s32 cache_get_replacable_block(const CACHE* cache, const ADDR addr) {
     return block_idx;
 }
 
-u32 cache_read_word(CACHE* const cache, const ADDR addr, WORD* const val) {
+const u32 cache_read_word(CACHE* const cache, const ADDR addr, WORD* const val) {
     ++cache->reference_counter;
     ++cache->read_counter;
     register const s32 block_idx = cache_get_valid_block(cache, addr);
@@ -102,7 +103,7 @@ u32 cache_read_word(CACHE* const cache, const ADDR addr, WORD* const val) {
     }
 }
 
-u32 cache_write_word(CACHE* const cache, const ADDR addr, const WORD val) {
+const u32 cache_write_word(CACHE* const cache, const ADDR addr, const WORD val) {
     ++cache->reference_counter;
     ++cache->write_counter;
     register const s32 block_idx = cache_get_valid_block(cache, addr);
@@ -179,7 +180,7 @@ void cache_reset(CACHE* cache) {
 }
 
 void init_cache(CACHE* cache) {
-    // check BLOCK_SIZE
+    // check BLOCK_SIZE and ASSOCIATIVITY
     if (BLOCK_SIZE & 0x3) {
         printf("cache: block size should be the multiple of 4(words).\n");
         exit(-1);

@@ -52,8 +52,8 @@ typedef struct cache {
     u64 write_counter;
     u64 reference_counter;
     // interfaces
-    u32 (*read_word)(struct cache* const, const ADDR, WORD* const);
-    u32 (*write_word)(struct cache* const, const ADDR, const WORD);
+    const u32 (*read_word)(struct cache* const, const ADDR, WORD* const);
+    const u32 (*write_word)(struct cache* const, const ADDR, const WORD);
     void (*load_block)(struct cache* const, const ADDR, const MEM*);
     u32 (*sneak)(struct cache*, ADDR, WORD*);
     void (*reset)(struct cache*);

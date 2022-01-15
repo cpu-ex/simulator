@@ -1,18 +1,13 @@
 #include "mmu.h"
 #include "core.h"
 
-WORD mmu_read_instr(const MMU* mmu, const ADDR addr) {
+const WORD mmu_read_instr(const MMU* mmu, const ADDR addr) {
     return (addr < mmu->instr_len) ? mmu->instr_mem[addr] : 0;
 }
 
-void mmu_write_instr(const MMU* mmu, const ADDR addr, const WORD val) {
-    if (addr < mmu->instr_len)
-        mmu->instr_mem[addr] = val;
-}
-
-WORD mmu_read_data(const MMU* mmu, void* const core, const ADDR addr) {
+const WORD mmu_read_data(const MMU* mmu, void* const core, const ADDR addr) {
     WORD val;
-    #if defined(NO_CACHE)
+    #if defined(NO_CACHE) || defined(LITE_MODE)
     val = mmu->data_mem->read_word(mmu->data_mem, addr);
     ((CORE*)core)->stall_counter += 12;
     #else
@@ -26,8 +21,13 @@ WORD mmu_read_data(const MMU* mmu, void* const core, const ADDR addr) {
     return val;
 }
 
+void mmu_write_instr(const MMU* mmu, const ADDR addr, const WORD val) {
+    if (addr < mmu->instr_len)
+        mmu->instr_mem[addr] = val;
+}
+
 void mmu_write_data(const MMU* mmu, void* const core, const ADDR addr, const WORD val) {
-    #if defined(NO_CACHE)
+    #if defined(NO_CACHE) || defined(LITE_MODE)
     mmu->data_mem->write_word(mmu->data_mem, addr, val);
     ((CORE*)core)->stall_counter += 12;
     #else

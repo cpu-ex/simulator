@@ -1,6 +1,6 @@
 #include "branch_predictor.h"
 
-u32 bp_get_branch_stall(BRANCH_PREDICTOR* const branch_predictor, const ADDR pc, const u32 result) {
+const u32 bp_get_branch_stall(BRANCH_PREDICTOR* const branch_predictor, const ADDR pc, const u32 result) {
     register u32 predicted;
     #if defined(BP_AT)
     predicted = 1;
@@ -22,14 +22,14 @@ u32 bp_get_branch_stall(BRANCH_PREDICTOR* const branch_predictor, const ADDR pc,
     #else
     predicted = 0; // default to always untaken
     #endif
-    if (predicted  == result) {
-        // hit
-        ++branch_predictor->hit_counter;
-        return 0;
-    } else {
+    if (predicted ^ result) {
         // miss
         ++branch_predictor->miss_counter;
         return 2;
+    } else {
+        // hit
+        ++branch_predictor->hit_counter;
+        return 0;
     }
 }
 

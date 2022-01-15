@@ -47,11 +47,13 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block2, 4, 0, "cache size = %u block * 0x%X words", BLOCK_NUM, BLOCK_SIZE);
     mvwprintw(block2, 6, 0, "read  %u times", core->mmu->data_cache->read_counter);
     mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
-    u64 hitTimes = core->mmu->data_cache->hit_counter;
-    u64 missTimes = core->mmu->data_cache->miss_counter;
-    f64 total = (f64)(hitTimes + missTimes);
-    mvwprintw(block2, 8, 0, "hit   %u times (%.3lf%%)", hitTimes, (total > 0) ? ((f64)hitTimes / total * 100) : 0);
-    mvwprintw(block2, 9, 0, "miss  %u times (%.3lf%%)", missTimes, (total > 0) ? ((f64)missTimes / total * 100) : 0);
+    {
+        u64 hitTimes = core->mmu->data_cache->hit_counter;
+        u64 missTimes = core->mmu->data_cache->miss_counter;
+        f64 total = (f64)(hitTimes + missTimes);
+        mvwprintw(block2, 8, 0, "hit   %u times (%.3lf%%)", hitTimes, (total > 0) ? ((f64)hitTimes * 100 / total) : 0);
+        mvwprintw(block2, 9, 0, "miss  %u times (%.3lf%%)", missTimes, (total > 0) ? ((f64)missTimes * 100 / total) : 0);
+    }
     #endif
     // block3: branch predictor
     wattron(block3, COLOR_PAIR(STANDOUT_COLOR));
@@ -72,8 +74,13 @@ void show_analysis_win(CORE* core) {
         "policy: Always Untaken (default)"
         #endif
     );
-    mvwprintw(block3, 4, 0, "hit   %u times", core->branch_predictor->hit_counter);
-    mvwprintw(block3, 5, 0, "miss  %u times", core->branch_predictor->miss_counter);
+    {
+        u32 hitTimes = core->branch_predictor->hit_counter;
+        u32 missTimes = core->branch_predictor->miss_counter;
+        f64 total = (f64)(hitTimes + missTimes);
+        mvwprintw(block3, 4, 0, "hit   %u times (%.3lf%%)", hitTimes, (total > 0) ? ((f64)hitTimes * 100 / total) : 0);
+        mvwprintw(block3, 5, 0, "miss  %u times (%.3lf%%)", missTimes, (total > 0) ? ((f64)missTimes * 100 / total) : 0);
+    }
     // refresh
     refresh();
     wrefresh(block1);

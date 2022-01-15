@@ -4,10 +4,10 @@
 // customizable variables
 // #define BP_AT // always taken
 // #define BP_NT // always untaken
-// #define BP_2BIT
-#define BP_BIMODAL
+#define BP_2BIT
+// #define BP_BIMODAL
 // #define BP_GSHARE
-#define PHT_SIZE 4096
+// #define PHT_SIZE 1024
 
 typedef struct branch_predictor {
     #if defined(BP_2BIT)
@@ -22,7 +22,7 @@ typedef struct branch_predictor {
     #endif
     u32 hit_counter;
     u32 miss_counter;
-    u32 (*get_branch_stall)(struct branch_predictor* const, const ADDR, const u32);
+    const u32 (*get_branch_stall)(struct branch_predictor* const, const ADDR, const u32);
     void (*reset)(struct branch_predictor*);
 } BRANCH_PREDICTOR;
 

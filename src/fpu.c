@@ -7,7 +7,7 @@
 #define BIT_GET_ONE(val, n) ((val >> n) & 1)
 
 // fmul
-FLOAT_HELPER fmul(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
+const FLOAT_HELPER fmul(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
     register const u32 h1 = BIT_SET_ONE(BIT_GET(x1.decoder.mantissa, 22, 11), 12); // BIT_SET(m1h, 12, 12)
     register const u32 h2 = BIT_SET_ONE(BIT_GET(x2.decoder.mantissa, 22, 11), 12); // BIT_SET(m2h, 12, 12)
     register const u32 lh = BIT_GET(x1.decoder.mantissa, 10, 0) * h2; // m1l * h2
@@ -21,26 +21,23 @@ FLOAT_HELPER fmul(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
     } };
 }
 
-// finv
 static f32 finv_table_a[1024];
 static f32 finv_table_b[1024];
-FLOAT_HELPER finv_m(const u32 mx) {
-    return (FLOAT_HELPER){
+// fdiv
+const FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
+    register const u32 e1 = x1.decoder.exp;
+    register const u32 e2 = x2.decoder.exp;
+    register const u32 mx = x2.decoder.mantissa;
+
+    if (e1 == 0) return (FLOAT_HELPER){ .i = 0 };
+
+    // finv
+    register const FLOAT_HELPER c = {
         .f = (FLOAT_HELPER){ .f = finv_table_b[mx >> 13] }.f - fmul(
             (FLOAT_HELPER){ .f = finv_table_a[mx >> 13] },
             (FLOAT_HELPER){ .decoder = { .mantissa = mx, .exp = 0b01111111, .sign = 0 } }
         ).f
     };
-}
-
-// fdiv
-FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
-    register const u32 e1 = x1.decoder.exp;
-    register const u32 e2 = x2.decoder.exp;
-
-    if (e1 == 0) return (FLOAT_HELPER){ .i = 0 };
-
-    register const FLOAT_HELPER c  = finv_m(x2.decoder.mantissa);
     register const FLOAT_HELPER yn = fmul(
         (FLOAT_HELPER){ .decoder = { .mantissa = x1.decoder.mantissa, .exp = 127, .sign = 0 } },
         (FLOAT_HELPER){ .decoder = { .mantissa = c.decoder.mantissa,  .exp = 127, .sign = 0 } }
@@ -53,7 +50,7 @@ FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
 // fsqrt
 static f32 fsqrt_table_a[1024];
 static f32 fsqrt_table_b[1024];
-FLOAT_HELPER fsqrt(const FLOAT_HELPER x) {
+const FLOAT_HELPER fsqrt(const FLOAT_HELPER x) {
     register const u32 sx = x.decoder.sign;
     register const u32 ex = x.decoder.exp;
 

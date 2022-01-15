@@ -60,17 +60,20 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
 }
 
 void sim_run(SIM* const sim) {
-    #if defined(TIME_TEST_MODE)
+    #if defined(LITE_MODE)
     // timer
     clock_t t1, t2;
+    CORE* const core = sim->core;
     t1 = clock();
-    for (;;) {
-        sim->core->step(sim->core);
-        if (BROADCAST.decoder.type == STAT_EXIT) break;
-    }
+    for (; BROADCAST.decoder.type != STAT_EXIT;)
+        core->step(core);
     t2 = clock();
-    u64 num = sim->core->instr_counter;
-    printf("%llu instructions in %ld clk, %lf per sec\n", num, t2 - t1, (f64)num * CLOCKS_PER_SEC / (f64)(t2 - t1));
+    printf(
+        "%llu instructions in %ld clk, %lf per sec\n",
+        sim->core->instr_counter,
+        t2 - t1,
+        (f64)sim->core->instr_counter * CLOCKS_PER_SEC / (f64)(t2 - t1)
+    );
     sim->core->deinit(sim->core);
     #else
     // init GUI

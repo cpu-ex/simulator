@@ -23,6 +23,7 @@
 - [2021/12/28] fix the exception of branching too far for assembler
 - [2022/01/08] refactor assembler
 - [2022/01/13] adjust some parameters for executing time prediction
+- [2022/01/15] finalize LITE mode
 
 ![sample](sample.gif)
 
@@ -66,7 +67,7 @@
 	> - Cache (under `src/cache.h`)
 	> 	- block size
 	> 	- associativity
-	>	- page switching policy
+	>	- block switching policy
 	> - Branch Predictor (under `src/branch_predictor.h`)
 	> 	- prediction policy
 	> 	- size of PHT
@@ -86,10 +87,17 @@
 	- step4: type `quit` to exit simulator
 	- step5: `make clean`
 
-## 3. efficiency
+## 3. time prediction
 
-- [2021/12/12] fib 35: 230686620 instructions in 17853138 clk, 12921348.616697 per sec (cache equipped)
-- [2021/12/21] fib 35: 249141551 instructions in 17645914 clk, 14118937.165850 per sec (cache equipped)
-- [2022/01/12] minrt16: 162007498 instructions in 6881938 clk, 23540970.290636 per sec (cache equipped)
-- [2022/01/13] minrt16: 161812352 instructions in 6441914 clk, 25118676.219521 per sec (cache equipped)
-- [2022/01/15] minrt16: 161812352 instructions in 4662497 clk, 34705084.421502 per sec (cache equipped)
+- no cache ver. (time / hit rate)
+
+	| branch prediction policy | minrt16           | minrt64            | minrt128           |
+	| :----------------------- | :---------------- | :----------------- | :----------------- |
+	| always untaken           | 111.268 (46.237%) | 1087.053 (46.716%) | 3333.707 (46.652%) |
+	| always taken             | 111.160 (53.763%) | 1086.138 (53.284%) | 3330.855 (53.348%) |
+	| 2bit counter             | 111.118 (56.741%) | 1085.694 (56.478%) | 3329.513 (56.498%) |
+	| bimodal                  | 110.874 (73.790%) | 1083.313 (73.579%) | 3322.219 (73.619%) |
+	| Gshare                   | 110.654 (89.182%) | 1081.161 (89.043%) | 3315.675 (88.978%) |
+
+	- clk = 10Mhz, PHT size = 1024
+	- error of alway untaken = 0.24% ~ 0.49%

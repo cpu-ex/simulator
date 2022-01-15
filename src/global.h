@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-// #define TIME_TEST_MODE
+// #define LITE_MODE
 // #define NO_CACHE
 
 typedef unsigned char      u8;
