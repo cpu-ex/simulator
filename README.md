@@ -25,8 +25,6 @@
 - [2022/01/13] adjust some parameters for executing time prediction
 - [2022/01/15] finalize LITE mode
 
-![sample](sample.gif)
-
 ## 2. how to build
 
 ***recommended workflow as well***
@@ -89,15 +87,17 @@
 
 ## 3. time prediction
 
-- no cache ver. (time / hit rate)
+- no cache ver : time (hit rate)
 
-	| branch prediction policy | minrt16           | minrt64            | minrt128           |
-	| :----------------------- | :---------------- | :----------------- | :----------------- |
-	| always untaken           | 111.268 (46.237%) | 1087.053 (46.716%) | 3333.707 (46.652%) |
-	| always taken             | 111.160 (53.763%) | 1086.138 (53.284%) | 3330.855 (53.348%) |
-	| 2bit counter             | 111.118 (56.741%) | 1085.694 (56.478%) | 3329.513 (56.498%) |
-	| bimodal                  | 110.874 (73.790%) | 1083.313 (73.579%) | 3322.219 (73.619%) |
-	| Gshare                   | 110.654 (89.182%) | 1081.161 (89.043%) | 3315.675 (88.978%) |
+	| branch prediction policy | minrt16           | minrt64            | minrt128           | minrt512            |
+	| :----------------------- | :---------------- | :----------------- | :----------------- |:------------------- |
+	| always untaken           | 111.268 (46.237%) | 1087.053 (46.716%) | 3333.707 (46.652%) | no tested           |
+	| always taken             | 111.160 (53.763%) | 1086.138 (53.284%) | 3330.855 (53.348%) | no tested           |
+	| 2bit counter             | 111.118 (56.741%) | 1085.694 (56.478%) | 3329.513 (56.498%) | 37721.116 (56.594%) |
+	| bimodal                  | 110.874 (73.790%) | 1083.313 (73.579%) | 3322.219 (73.619%) | no tested           |
+	| Gshare                   | 110.654 (89.182%) | 1081.161 (89.043%) | 3315.675 (88.978%) | no tested           |
 
 	- clk = 10Mhz, PHT size = 1024
-	- error of alway untaken = 0.24% ~ 0.49%
+	- error of always untaken = 0.24% ~ 0.49%
+
+- ...

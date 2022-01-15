@@ -10,13 +10,13 @@
 // #define PHT_SIZE 1024
 
 typedef struct branch_predictor {
-    #if defined(BP_2BIT)
-    u8 counter;
-    #elif (defined(BP_BIMODAL)) || (defined(BP_GSHARE))
     // 0 : strongly untaken
     // 1 : weakly untaken
     // 2 : weakly taken
     // 3 : strongly taken
+    #if defined(BP_2BIT)
+    u8 counter;
+    #elif (defined(BP_BIMODAL)) || (defined(BP_GSHARE))
     u8 pht[PHT_SIZE]; // pattern history table
     u32 gh; // global history
     #endif

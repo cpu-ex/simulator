@@ -48,12 +48,13 @@ void update_list(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused) 
     mvwprintw(outer, 1, 7, (focused->line > 0) ? "^" : " ");
     mvwprintw(outer, 18, 7, (focused->line < BLOCK_NUM - 1) ? "v" : " ");
 
-    for (int i = focused->line; i < min(focused->line + 16, BLOCK_NUM); ++i) {
+    int start_point = focused->line & ~0xF;
+    for (int i = start_point; i < min(start_point + 16, BLOCK_NUM); ++i) {
         char block_name[15];
         sprintf(block_name, "block %u", i);
         if (i == focused->line)
             wattron(inner, A_STANDOUT);
-        wmove(inner, i - focused->line, 0);
+        wmove(inner, i - start_point, 0);
         print_info(inner, core->mmu->data_cache->blocks[i]->valid, block_name, block_name);
         wattroff(inner, A_STANDOUT);
     }

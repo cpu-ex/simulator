@@ -3,11 +3,16 @@
 #include "mmu.h"
 #include "branch_predictor.h"
 
+#define MINRT_16_SIZE  0x1000   // 4KB
+#define MINRT_64_SIZE  0xC800   // 50KB
+#define MINRT_128_SIZE 0x32000  // 200KB
+#define MINRT_512_SIZE 0x320000 // 3200KB
+
 #define CLK_FREQUENCY 10000000
 #define DEFAULT_PC    0x100
 #define UART_ADDR     0x3FFFFFC
 #define UART_IN_SIZE  0x800   // 2KB
-#define UART_OUT_SIZE 0x32000 // 200KB
+#define UART_OUT_SIZE MINRT_128_SIZE
 #define UART_BAUDRATE 576000
 
 static char* reg_name[32] = {

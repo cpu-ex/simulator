@@ -14,15 +14,15 @@ void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     INSTR instr = { .raw = op };
     disasm(instr, asm_buf);
     // render
-    wprintw(inner, "%-10llu 0x%08X : %08X : %-19s", core->instr_counter, pc, op, asm_buf);
+    wprintw(inner, "%-11llu 0x%08X : %08X : %-24s", core->instr_counter, pc, op, asm_buf);
     wattron(inner, COLOR_PAIR(WARNING_COLOR));
     switch (BROADCAST.decoder.type) {
-    case STAT_EXIT: wprintw(inner, "%24s", "exit"); break;
-    case STAT_HALT: wprintw(inner, "%24s", "halt"); break;
-    case STAT_STEP: wprintw(inner, "%24s", "step"); break;
-    case STAT_MEM_EXCEPTION: wprintw(inner, "%24s", "mem exception"); break;
-    case STAT_INSTR_EXCEPTION: wprintw(inner, "%24s", "instr exception"); break;
-    default: wprintw(inner, "%24s", "quit or unknow"); break;
+    case STAT_EXIT: wprintw(inner, "%18s", "exit"); break;
+    case STAT_HALT: wprintw(inner, "%18s", "halt"); break;
+    case STAT_STEP: wprintw(inner, "%18s", "step"); break;
+    case STAT_MEM_EXCEPTION: wprintw(inner, "%18s", "mem exception"); break;
+    case STAT_INSTR_EXCEPTION: wprintw(inner, "%18s", "instr exception"); break;
+    default: wprintw(inner, "%18s", "quit or unknow"); break;
     }
     wattroff(inner, COLOR_PAIR(WARNING_COLOR));
 
@@ -32,10 +32,11 @@ void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
 
 void update_reg_sub(WINDOW* win, GUI* gui, CORE* core, u8 focused) {
     wclear(win);
-    for (int idx = gui->reg_start; idx < min(gui->reg_start + 16, 64); ++idx) {
+    int start_point = gui->reg_start & ~0xF;
+    for (int idx = start_point; idx < min(start_point + 16, 64); ++idx) {
         // print reg name
         wattron(win, COLOR_PAIR(SUBTITLE_COLOR));
-        mvwprintw(win, idx - gui->reg_start, 0, "%-4s ", (idx < 32) ? reg_name[idx] : freg_name[idx - 32]);
+        mvwprintw(win, idx - start_point, 0, "%-4s ", (idx < 32) ? reg_name[idx] : freg_name[idx - 32]);
         wattroff(win, COLOR_PAIR(SUBTITLE_COLOR));
         // print reg value
         if (focused && idx == gui->reg_start) wattron(win, A_STANDOUT);
