@@ -25,79 +25,102 @@
 - [2022/01/13] adjust some parameters for executing time prediction
 - [2022/01/15] finalize LITE mode
 
-## 2. how to build
+## 2. how to use
 
 ***recommended workflow as well***
 
-- prerequisites
-	- gcc
-	- ncurses
+### 2.1 prerequisites
 
-		> MacOS: supported
-		> 
-		> Ubuntu: run `sudo apt-get install libncurses5-dev`
-	
-	- python3.8
+- gcc (for simulator & disasm)
+- ncurses (for simulator)
 
-- assembler
-	- step1: `cd ./asm`
-	- step2: check `python3 asm.py -h` for help
-	- step3: `python3 asm.py fileName.s`
-
-		> supposing the existence of `./fileName.s` (relative path supported)
-	
-	- step4: check outputs in `./bin`
-
-		> `xxd fileName.code` or `hexdump fileName.code` would be helpful
-	
-- dis-assembler
-	- step1: `make disasm`
-	- step2: `./disasm fileName`
-
-		> supposing the existence of `./bin/fileName.code`
-		>
-		> using stdout as output
-
-- simulator
-
-	> customizable settings
+	> MacOS: supported
 	> 
-	> - Cache (under `src/cache.h`)
-	> 	- block size
-	> 	- associativity
-	>	- block switching policy
-	> - Branch Predictor (under `src/branch_predictor.h`)
-	> 	- prediction policy
-	> 	- size of PHT
+	> Ubuntu: run `sudo apt-get install libncurses5-dev`
+
+	> simulator looks better in brighter colors and here is a setting I personally prefer
 	> 
-	> run `make clean; make` to apply changes
+	> | color   | hex code | sample                                                                                 |
+	> | :------ | :------- | :------------------------------------------------------------------------------------- |
+	> | black   | #1C2126  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=1C2126' height=48> |
+	> | red     | #E06C75  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=E06C75' height=48> |
+	> | green   | #98C379  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=98C379' height=48> |
+	> | yellow  | #E5C07B  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=E5C07B' height=48> |
+	> | blue    | #61AFEF  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=61AFEF' height=48> |
+	> | magenta | #C678DD  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=C678DD' height=48> |
+	> | cyan    | #56B6C2  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=56B6C2' height=48> |
+	> | white   | #DCDFE4  | <img src='https://www.thecolorapi.com/id?format=svg&named=false&hex=DCDFE4' height=48> |
 
-	- step1: `make sim`
-	- step2: `./sim codeFileName [sldFileName]`
+- python3.8 (for assembler)
 
-		> codeFileName: supposing the existence of `./bin/codeFileName.code`
-		> 
-		> sldFileName: supposing the optional existence of `./sldFileName.sld` which is a binary file
-		> 
-		> e.g.: `./sim uart asm/test-codes/uart`
+### 2.2 assembler
+
+> supported instructions
+> 
+> - RV32I: *TODO*
+> 
+> - RV32F: *TODO*
+> 
+> - Pseudo instructions: *TODO*
+
+- step1: `cd ./asm`
+- step2: check `python3 asm.py -h` for help
+- step3: `python3 asm.py fileName.s`
+
+	> supposing the existence of `./fileName.s` (relative path supported)
 	
-	- step3: type `h` for help
-	- step4: type `quit` to exit simulator
-	- step5: `make clean`
+- step4: check outputs in `./bin`
+
+	> `xxd fileName.code` or `hexdump fileName.code` would be helpful
+	
+### 2.3 dis-assembler
+
+- step1: `make disasm`
+- step2: `./disasm fileName`
+
+	> supposing the existence of `./bin/fileName.code`
+	>
+	> using stdout as output
+
+### 2.4 simulator
+
+> customizable settings
+> 
+> - Cache (under `src/cache.h`)
+> 	- block size
+> 	- associativity
+>	- block switching policy (specially optimized for LRU)
+> - Branch Predictor (under `src/branch_predictor.h`)
+> 	- prediction policy
+> 	- size of PHT
+> 
+> run `make clean; make` to apply changes
+
+- step1: `make sim`
+- step2: `./sim codeFileName [sldFileName]`
+
+	> codeFileName: supposing the existence of `./bin/codeFileName.code`
+	> 
+	> sldFileName: supposing the optional existence of `./sldFileName.sld` which is a binary file
+	> 
+	> e.g.: `./sim uart asm/test-codes/uart`
+	
+- step3: type `h` for help
+- step4: type `quit` to exit simulator
+- step5: `make clean`
 
 ## 3. time prediction
 
-- no cache ver : time (hit rate)
+### 3.1 no cache ver
 
-	| branch prediction policy | minrt16           | minrt64            | minrt128           | minrt512            |
-	| :----------------------- | :---------------- | :----------------- | :----------------- |:------------------- |
-	| always untaken           | 111.268 (46.237%) | 1087.053 (46.716%) | 3333.707 (46.652%) | no tested           |
-	| always taken             | 111.160 (53.763%) | 1086.138 (53.284%) | 3330.855 (53.348%) | no tested           |
-	| 2bit counter             | 111.118 (56.741%) | 1085.694 (56.478%) | 3329.513 (56.498%) | 37721.116 (56.594%) |
-	| bimodal                  | 110.874 (73.790%) | 1083.313 (73.579%) | 3322.219 (73.619%) | no tested           |
-	| Gshare                   | 110.654 (89.182%) | 1081.161 (89.043%) | 3315.675 (88.978%) | no tested           |
-
+- time & hit rate
 	- clk = 10Mhz, PHT size = 1024
 	- error of always untaken = 0.24% ~ 0.49%
 
-- ...
+	| branch prediction policy | minrt16           | minrt64            | minrt128           | minrt512            |
+	| :----------------------- | :---------------- | :----------------- | :----------------- | :------------------ |
+	| always untaken           | 111.268 (46.237%) | 1087.053 (46.716%) | 3333.707 (46.652%) | not tested          |
+	| always taken             | 111.160 (53.763%) | 1086.138 (53.284%) | 3330.855 (53.348%) | not tested          |
+	| 2bit counter             | 111.118 (56.741%) | 1085.694 (56.478%) | 3329.513 (56.498%) | 37721.116 (56.594%) |
+	| bimodal                  | 110.874 (73.790%) | 1083.313 (73.579%) | 3322.219 (73.619%) | not tested          |
+	| Gshare                   | 110.654 (89.182%) | 1081.161 (89.043%) | 3315.675 (88.978%) | not tested          |
