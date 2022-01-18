@@ -57,14 +57,6 @@ class Block(object):
         'EBREAK': (re.compile(r'(ebreak)\s+(\S+)'), Ebreak),
 
 
-        # RV32M
-        # 'MUL': (re.compile(r'(mul)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        # 'DIV': (re.compile(r'(div)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        # 'DIVU': (re.compile(r'(divu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        # 'REM': (re.compile(r'(rem)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        # 'REMU': (re.compile(r'(remu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-
-
         # RV32F
         'FLW': (re.compile(r'(flw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), F_load),
         'FSW': (re.compile(r'(fsw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), F_store),
@@ -155,7 +147,7 @@ class Block(object):
         # in bytes
         # should be called after 'optimize'
         # otherwise 'actualLength' will not be updated
-        return 4 * sum(code.actualLength for code in self.processedCodeList)
+        return 4 * self.originalCodeObj.actualLength
 
     def isDirec(self) -> bool:
         return self.originalCodeObj.isDirec()

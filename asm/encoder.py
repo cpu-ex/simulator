@@ -35,10 +35,7 @@ class Tags(Code):
         super().__init__(tokenizedCode, forSim=forSim)
         self.name = tokenizedCode[0]
         self.assumedLength = 0
-    
-    def optimize(self, addr: int, tags: dict) -> list:
         self.actualLength = 0
-        return [self]
     
     def encode(self):
         return []
@@ -215,6 +212,7 @@ class Branch(Code):
 
         try:
             checkImm(imm, 13, True)
+            self.actualLength = 1
             return [self]
         except RuntimeError:
             oppositeDict = {
@@ -225,6 +223,7 @@ class Branch(Code):
             oldTag = self.tag
             newTag = f'additional_branch_tag_{inc()}'
             newName = oppositeDict[name]
+            self.actualLength = 2
             return [
                 Branch((newName, self.rs1, self.rs2, newTag)),
                 Jal(('jal', 'zero', oldTag)),
@@ -437,7 +436,6 @@ class Arith(Code):
         mc |= (rd & 0x1F) << 7
         mc |= (rs1 & 0x1F) << 15
         mc |= (rs2 & 0x1F) << 20
-        # RV32I
         if name == 'add':
             mc |= 0b000 << 12
             mc |= 0b0000000 << 25
@@ -468,22 +466,6 @@ class Arith(Code):
         elif name == 'and':
             mc |= 0b111 << 12
             mc |= 0b0000000 << 25
-        # RV32M
-        # elif name == 'mul':
-        #     mc |= 0b000 << 12
-        #     mc |= 0b0000001 << 25
-        # elif name == 'div':
-        #     mc |= 0b100 << 12
-        #     mc |= 0b0000001 << 25
-        # elif name == 'divu':
-        #     mc |= 0b101 << 12
-        #     mc |= 0b0000001 << 25
-        # elif name == 'rem':
-        #     mc |= 0b110 << 12
-        #     mc |= 0b0000001 << 25
-        # elif name == 'remu':
-        #     mc |= 0b111 << 12
-        #     mc |= 0b0000001 << 25
         else:
             # not suppose to be here
             raise RuntimeError(f'unrecognizable arith type \'{name}\'')
@@ -726,10 +708,7 @@ class Pseudo_la(Code):
         self.rd = tokenizedCode[1]
         self.tag = tokenizedCode[2]
         self.assumedLength = 2
-
-    def optimize(self, addr: int, tags: dict) -> list:
         self.actualLength = 2
-        return [self]
     
     def finalize(self, addr: int, tags: dict) -> list:
         offset = tag2offset(self.tag, tags, addr)
@@ -832,10 +811,7 @@ class Pseudo_call(Code):
         super().__init__(tokenizedCode, forSim=forSim)
         self.tag = tokenizedCode[1]
         self.assumedLength = 2
-    
-    def optimize(self, addr: int, tags: dict) -> list:
         self.actualLength = 2
-        return [self]
     
     def finalize(self, addr: int, tags: dict) -> list:
         offset = tag2offset(self.tag, tags, addr)
@@ -856,10 +832,7 @@ class Pseudo_tail(Code):
         super().__init__(tokenizedCode, forSim=forSim)
         self.tag = tokenizedCode[1]
         self.assumedLength = 2
-    
-    def optimize(self, addr: int, tags: dict) -> list:
         self.actualLength = 2
-        return [self]
     
     def finalize(self, addr: int, tags: dict) -> list:
         offset = tag2offset(self.tag, tags, addr)
