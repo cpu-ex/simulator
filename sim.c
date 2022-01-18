@@ -12,11 +12,8 @@ u64 get_file_size(char* file_name) {
     }
 }
 
-void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
-    char code_name[36], data_name[36], sld_name[36];
-    sprintf(code_name, "./bin/%s.code", file_name);
-    sprintf(data_name, "./bin/%s.data", file_name);
-    sprintf(sld_name, "./%s.sld", sld_path);
+void sim_load_file(SIM* sim, char* code_name, char* data_name, char* sld_name) {
+    // printf("%s %s %s\n", code_name, data_name, sld_name);
     u64 file_size;
     // load instr
     file_size = get_file_size(code_name) >> 2;
@@ -32,7 +29,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
         }
         fclose(file);
     } else {
-        printf("invalid file name: %s.\n", file_name);
+        printf("invalid code name: %s.\n", code_name);
         exit(-1);
     }
     // load data
@@ -59,8 +56,7 @@ void sim_load_file(SIM* sim, char* file_name, char* sld_path) {
     }
 }
 
-void sim_run(SIM* const sim) {
-    #if defined(LITE_MODE)
+void sim_run_lite(SIM* const sim) {
     // timer
     clock_t t1, t2;
     CORE* const core = sim->core;
@@ -75,11 +71,9 @@ void sim_run(SIM* const sim) {
         (f64)sim->core->instr_counter * CLOCKS_PER_SEC / (f64)(t2 - t1)
     );
     sim->core->deinit(sim->core);
-    #else
-    // init GUI
-    static GUI gui;
-    init_gui(&gui);
-    sim->gui = &gui;
+}
+
+void sim_run_gui(SIM* const sim) {
     // main loop of simulator
     for (;;) {
         switch (BROADCAST.decoder.type) {
@@ -127,13 +121,12 @@ void sim_run(SIM* const sim) {
             break;
         }
     }
-    #endif
 }
 
-void init_sim(SIM* sim) {
+void init_sim(SIM* sim, u8 is_lite, u8 is_nocache) {
     // init mmu
     static MMU mmu;
-    init_mmu(&mmu);
+    init_mmu(&mmu, is_lite || is_nocache);
     // init branch predictor
     static BRANCH_PREDICTOR branch_predictor;
     init_branch_predictor(&branch_predictor);
@@ -149,9 +142,15 @@ void init_sim(SIM* sim) {
     sim->core->branch_predictor = &branch_predictor;
     sim->core->uart_in = &uart_in;
     sim->core->uart_out = &uart_out;
+    // init GUI
+    if (!is_lite) {
+        static GUI gui;
+        init_gui(&gui);
+        sim->gui = &gui;
+    }
     // assign interfaces
     sim->load = sim_load_file;
-    sim->run = sim_run;
+    sim->run = is_lite ? sim_run_lite : sim_run_gui;
     // broadcast state
     BROADCAST(STAT_HALT);
 }

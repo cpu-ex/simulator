@@ -4,9 +4,6 @@
 #include <string.h>
 #include <time.h>
 
-// #define LITE_MODE
-// #define NO_CACHE
-
 typedef unsigned char      u8;
 typedef signed char        s8;
 typedef unsigned short     u16;

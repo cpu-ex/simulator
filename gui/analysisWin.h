@@ -27,32 +27,32 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block1, 19, 0, "time in second: %.6lf", core->predict_exec_time(core));
     // block2: cache info
     wattron(block2, COLOR_PAIR(STANDOUT_COLOR));
-    #if defined(NO_CACHE)
-    mvwprintw(block2, 5, 4, "cache system not equipped");
-    #else
-    mvwprintw(block2, 0, 0, "%u way Set-associative Cache Info:", ASSOCIATIVITY);
-    wattroff(block2, COLOR_PAIR(STANDOUT_COLOR));
-    mvwprintw(block2, 2, 0,
-        #if defined(CACHE_FIFO)
-        "policy: FIFO"
-        #elif defined(CACHE_LRU)
-        "policy: LRU"
-        #elif defined(CACHE_RR)
-        "policy: Round Robin"
-        #else
-        "policy: Alway 1st entry (default)"
-        #endif
-    );
-    mvwprintw(block2, 3, 0, "addr = tag[%u]+idx[%u]+offset[%u]", TAG_LEN, SET_IDX_LEN, OFFSET_LEN);
-    mvwprintw(block2, 4, 0, "cache size = %u * %u * %u words", ASSOCIATIVITY, SET_NUM, BLOCK_SIZE);
-    mvwprintw(block2, 6, 0, "read  %u times", core->mmu->data_cache->read_counter);
-    mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
-    u64 cacheHitTimes = core->mmu->data_cache->hit_counter;
-    u64 cacheMissTimes = core->mmu->data_cache->miss_counter;
-    f64 cacheTotal = (f64)(cacheHitTimes + cacheMissTimes);
-    mvwprintw(block2, 8, 0, "hit   %u times (%.3lf%%)", cacheHitTimes, (cacheTotal > 0) ? ((f64)cacheHitTimes * 100 / cacheTotal) : 0);
-    mvwprintw(block2, 9, 0, "miss  %u times (%.3lf%%)", cacheMissTimes, (cacheTotal > 0) ? ((f64)cacheMissTimes * 100 / cacheTotal) : 0);
-    #endif
+    if (core->mmu->is_nocache) {
+        mvwprintw(block2, 5, 4, "cache system not equipped");
+    } else {
+        mvwprintw(block2, 0, 0, "%u way Set-associative Cache Info:", ASSOCIATIVITY);
+        wattroff(block2, COLOR_PAIR(STANDOUT_COLOR));
+        mvwprintw(block2, 2, 0,
+            #if defined(CACHE_FIFO)
+            "policy: FIFO"
+            #elif defined(CACHE_LRU)
+            "policy: LRU"
+            #elif defined(CACHE_RR)
+            "policy: Round Robin"
+            #else
+            "policy: Alway 1st entry (default)"
+            #endif
+        );
+        mvwprintw(block2, 3, 0, "addr = tag[%u]+idx[%u]+offset[%u]", TAG_LEN, SET_IDX_LEN, OFFSET_LEN);
+        mvwprintw(block2, 4, 0, "cache size = %u * %u * %u words", ASSOCIATIVITY, SET_NUM, BLOCK_SIZE);
+        mvwprintw(block2, 6, 0, "read  %u times", core->mmu->data_cache->read_counter);
+        mvwprintw(block2, 7, 0, "write %u times", core->mmu->data_cache->write_counter);
+        u64 cacheHitTimes = core->mmu->data_cache->hit_counter;
+        u64 cacheMissTimes = core->mmu->data_cache->miss_counter;
+        f64 cacheTotal = (f64)(cacheHitTimes + cacheMissTimes);
+        mvwprintw(block2, 8, 0, "hit   %u times (%.3lf%%)", cacheHitTimes, (cacheTotal > 0) ? ((f64)cacheHitTimes * 100 / cacheTotal) : 0);
+        mvwprintw(block2, 9, 0, "miss  %u times (%.3lf%%)", cacheMissTimes, (cacheTotal > 0) ? ((f64)cacheMissTimes * 100 / cacheTotal) : 0);
+    }
     // block3: branch predictor
     wattron(block3, COLOR_PAIR(STANDOUT_COLOR));
     mvwprintw(block3, 0, 0, "Branch Predictor Info:");

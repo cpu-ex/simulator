@@ -106,8 +106,8 @@ COMMAND get_command(GUI* gui) {
         com.type = 'c';
         com.argc = 1;
         com.argv[0] = argc > 1 ? atoi(output[1]) : 0;
-    } else {
-        // parse as step 1
+    } else if (!strcmp(output[0], "")) {
+        // parse KEY_ENTER as step 1
         com.type = 's';
         com.argc = 1;
         com.argv[0] = 1;
@@ -149,7 +149,8 @@ STATE wait4command(GUI* gui, CORE* core) {
         show_analysis_win(core);
         return STAT_HALT;
     case 'c':
-        show_cache_win(core, com.argv[0]);
+        if (!core->mmu->is_nocache) 
+            show_cache_win(core, com.argv[0]);
         return STAT_HALT;
     case 'h':
         show_help_win();

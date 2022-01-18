@@ -24,6 +24,7 @@
 - [2022/01/08] refactor assembler
 - [2022/01/13] adjust some parameters for executing time prediction
 - [2022/01/15] finalize LITE mode
+- [2022/01/18] support switching LITE mode and NOCACHE mode as optional argument
 
 ## 2. how to use
 
@@ -65,10 +66,7 @@
 
 - step1: `cd ./asm`
 - step2: check `python3 asm.py -h` for help
-- step3: `python3 asm.py fileName.s`
-
-	> supposing the existence of `./fileName.s` (relative path supported)
-	
+- step3: do some executions like `python3 asm.py minrt16.s -b`
 - step4: check outputs in `./bin`
 
 	> `xxd fileName.code` or `hexdump fileName.code` would be helpful
@@ -97,17 +95,11 @@
 > run `make clean; make` to apply changes
 
 - step1: `make sim`
-- step2: `./sim codeFileName [sldFileName]`
-
-	> codeFileName: supposing the existence of `./bin/codeFileName.code`
-	> 
-	> sldFileName: supposing the optional existence of `./sldFileName.sld` which is a binary file
-	> 
-	> e.g.: `./sim uart asm/test-codes/uart`
-	
-- step3: type `h` for help
-- step4: type `quit` to exit simulator
-- step5: `make clean`
+- step2: check `./sim -h` for help
+- step3: do some executions like `./sim minrt16 --sld bin/contest.sld`
+- step4: type `help` to get more information about gui mode
+- step5: type `quit` to exit simulator
+- step6: `make clean`
 
 ## 3. time prediction
 

@@ -9,6 +9,7 @@ typedef struct mmu {
     WORD* instr_mem;
     CACHE* data_cache;
     MEM* data_mem;
+    u8 is_nocache;
     // interfaces
     void (*allocate_instr)(struct mmu*, u64);
     const WORD (*read_instr)(const struct mmu*, const ADDR);
@@ -19,4 +20,4 @@ typedef struct mmu {
     void (*reset)(struct mmu*, ADDR);
 } MMU;
 
-void init_mmu(MMU* mmu);
+void init_mmu(MMU* mmu, u8 is_nocache);
