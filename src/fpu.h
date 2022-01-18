@@ -1,7 +1,5 @@
 #pragma once
 #include "global.h"
-#include "instr.h"
-#include "core.h"
 
 typedef union float_helper {
     u32 i;

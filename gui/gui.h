@@ -26,6 +26,7 @@ typedef struct gui {
     u8 mem_type;
     s32 stepping_interval;
     // interfaces
+    void (*activate)(struct gui*);
     STATE (*update)(struct gui*, CORE*);
     void (*deinit)(struct gui*);
 } GUI;

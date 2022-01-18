@@ -13,10 +13,15 @@ u64 get_file_size(char* file_name) {
 }
 
 void sim_load_file(SIM* sim, char* code_name, char* data_name, char* sld_name) {
-    // printf("%s %s %s\n", code_name, data_name, sld_name);
-    u64 file_size;
+    // check before actually loading
+    printf("Loading code: %s\n", code_name);
+    printf("Loading data: %s (which might be a default value)\n", data_name);
+    printf("Loading sld : %s (it's ok to be empty)\n", sld_name);
+    printf("Are you sure to proceed? [y]/n ");
+    if (getchar() == 'n') exit(0);
+    printf("All confirmed.\n");
     // load instr
-    file_size = get_file_size(code_name) >> 2;
+    u64 file_size = get_file_size(code_name) >> 2;
     if (file_size) {
         sim->core->mmu->allocate_instr(sim->core->mmu, (DEFAULT_PC >> 2) + file_size);
         FILE* file = fopen(code_name, "rb");
@@ -74,6 +79,7 @@ void sim_run_lite(SIM* const sim) {
 }
 
 void sim_run_gui(SIM* const sim) {
+    sim->gui->activate(sim->gui);
     // main loop of simulator
     for (;;) {
         switch (BROADCAST.decoder.type) {

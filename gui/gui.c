@@ -166,16 +166,7 @@ STATE gui_update(GUI* gui, CORE* core) {
     return wait4command(gui, core);
 }
 
-void gui_deinit(GUI* gui) {
-    // at the end of program ncurses mode should be exited properly
-    endwin();
-}
-
-void init_gui(GUI* gui) {
-    char title[] = " RISC-V simulator ";
-    // resize the terminal to 80 * 24
-    printf("\e[8;24;80t");
-    // initialize ncurses mode, and end it in deinit()
+void gui_activate(GUI* gui) {
     initscr();
     noecho();
     curs_set(0);
@@ -186,16 +177,27 @@ void init_gui(GUI* gui) {
     init_pair(WARNING_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(HIGHLIGHT_COLOR, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(STANDOUT_COLOR, COLOR_YELLOW, COLOR_BLACK);
-    // regist variables
+    // switch to splash screen
+    show_splash_win();
+    if (getch() == 'h') show_help_win();
+}
+
+void gui_deinit(GUI* gui) {
+    // at the end of program ncurses mode should be exited properly
+    endwin();
+}
+
+void init_gui(GUI* gui) {
+    // resize the terminal to 80 * 24
+    printf("\e[8;24;80t");
+    // init basic info
     gui->focused_win = COM_WIN;
     gui->reg_start = 0;
     memset(gui->reg_focus, 0, 64);
     gui->mem_type = MEM_INSTR;
     gui->stepping_interval = -1;
     // assign interfaces
+    gui->activate = gui_activate;
     gui->update = gui_update;
     gui->deinit = gui_deinit;
-
-    show_splash_win();
-    if (getch() == 'h') show_help_win();
 }
