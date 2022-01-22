@@ -11,12 +11,12 @@ disasm: ./asm/disasm.o ./src/instr.o
 	gcc -o $@ $^
 
 $(objs): global.h
+cache.o: mem.h
 mmu.o: mem.h cache.h
 core.o: mmu.h branch_predictor.h
-win.o: core.h
 sim.o: core.h gui.h
 disasm.o: global.h instr.h
-gui.o: splashWin.h helpWin.h mainWin.h analysisWin.h cacheWin.h
+gui.o: core.h splash_win.h help_win.h main_win.h analysis_win.h cache_win.h
 
 .PHONY: clean
 clean:

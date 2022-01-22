@@ -11,8 +11,8 @@
 // 1  ~ 0  (2): disused
 
 #define INDEX_1_LEN 2
-#define INDEX_2_LEN 2
-#define INDEX_3_LEN 20
+#define INDEX_2_LEN 6
+#define INDEX_3_LEN 16
 
 #define PAGE_1_SIZE (1 << INDEX_1_LEN)
 #define PAGE_2_SIZE (1 << INDEX_2_LEN)

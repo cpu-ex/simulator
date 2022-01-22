@@ -40,7 +40,7 @@ void sim_load_file(SIM* sim, char* code_name, char* data_name, char* sld_name) {
     // load data
     file_size = get_file_size(data_name);
     if (file_size) {
-        FILE* file = fopen(data_name, "rd");
+        FILE* file = fopen(data_name, "rb");
         u32 word = 0;
         for (ADDR addr = 0; addr < file_size; addr += 4) {
             fread(&word, 4, 1, file);
@@ -65,12 +65,13 @@ void sim_run_lite(SIM* const sim) {
     // timer
     clock_t t1, t2;
     CORE* const core = sim->core;
+    printf("Processing ..."); fflush(stdout);
     t1 = clock();
     for (; BROADCAST.decoder.type != STAT_EXIT;)
         core->step(core);
     t2 = clock();
     printf(
-        "%llu instructions in %ld clk, %lf per sec\n",
+        "\r%llu instructions in %ld clk, %lf per sec\n",
         sim->core->instr_counter,
         t2 - t1,
         (f64)sim->core->instr_counter * CLOCKS_PER_SEC / (f64)(t2 - t1)
@@ -87,7 +88,7 @@ void sim_run_gui(SIM* const sim) {
             if (BROADCAST.decoder.info > 0) {
                 // step forward
                 sim->core->step(sim->core);
-                BROADCAST.decoder.info--;
+                --BROADCAST.decoder.info;
             } else if (BROADCAST.decoder.info < 0) {
                 // roll back
                 s64 remains = (s64)sim->core->instr_counter + BROADCAST.decoder.info;
@@ -142,7 +143,7 @@ void init_sim(SIM* sim, u8 is_lite, u8 is_nocache) {
     init_uart_queue(&uart_out, UART_OUT_SIZE);
     // init core
     static CORE core;
-    init_core(&core);
+    init_core(&core, is_lite);
     sim->core = &core;
     sim->core->mmu = &mmu;
     sim->core->branch_predictor = &branch_predictor;

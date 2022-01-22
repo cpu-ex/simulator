@@ -1,5 +1,4 @@
-#include "mainWin.h"
-#include "../src/instr.h"
+#include "main_win.h"
 
 void update_pc(WINDOW* outer, WINDOW* inner, GUI* gui, CORE* core) {
     wattron(outer, COLOR_PAIR(TITLE_COLOR));

@@ -1,9 +1,9 @@
 #include "gui.h"
-#include "splashWin.h"
-#include "helpWin.h"
-#include "mainWin.h"
-#include "analysisWin.h"
-#include "cacheWin.h"
+#include "splash_win.h"
+#include "help_win.h"
+#include "main_win.h"
+#include "analysis_win.h"
+#include "cache_win.h"
 
 typedef struct command {
     s8 type;

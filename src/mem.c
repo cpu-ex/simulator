@@ -58,7 +58,7 @@ void init_mem(MEM* mem) {
         exit(-1);
     }
     // set up parameters
-    memset(mem->data, 0, PAGE_1_SIZE * sizeof(BYTE**));
+    memset(mem->data, 0, PAGE_1_SIZE * sizeof(WORD**));
     // assign interfaces
     mem->read_word = mem_read_word;
     mem->write_word = mem_write_word;

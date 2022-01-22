@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     }
     int ch, idx;
     int is_lite = 0, is_nocache = 0;
-    char code_name[36], data_name[36], sld_name[36];
+    char code_name[36], data_name[36], sld_name[36] = "";
     // take 1st argument as code name by default
     sprintf(code_name, "bin/%s.code", argv[1]);
     sprintf(data_name, "bin/%s.data", argv[1]);

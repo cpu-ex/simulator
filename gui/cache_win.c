@@ -1,4 +1,4 @@
-#include "cacheWin.h"
+#include "cache_win.h"
 
 typedef struct focus_info {
     WINDOW* win;

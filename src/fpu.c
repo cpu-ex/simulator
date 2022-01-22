@@ -10,9 +10,8 @@
 const FLOAT_HELPER fmul(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
     register const u32 h1 = BIT_SET_ONE(BIT_GET(x1.decoder.mantissa, 22, 11), 12); // BIT_SET(m1h, 12, 12)
     register const u32 h2 = BIT_SET_ONE(BIT_GET(x2.decoder.mantissa, 22, 11), 12); // BIT_SET(m2h, 12, 12)
-    register const u32 lh = BIT_GET(x1.decoder.mantissa, 10, 0) * h2; // m1l * h2
     register const u32 e3 =  x1.decoder.exp + x2.decoder.exp + 129; // e1 + e2 + 129
-    register const u32 m3 = h1 * h2 + ((h1 * BIT_GET(x2.decoder.mantissa, 10, 0)) >> 11) + (lh >> 11) + 2;
+    register const u32 m3 = h1 * h2 + ((h1 * BIT_GET(x2.decoder.mantissa, 10, 0)) >> 11) + (BIT_GET(x1.decoder.mantissa, 10, 0) * h2 >> 11) + 2;
 
     return (FLOAT_HELPER){ .decoder = {
         .mantissa = (BIT_GET_ONE(e3, 8) == 0) ? 0 : ((BIT_GET_ONE(m3, 25) == 1) ? BIT_GET(m3, 24, 2) : BIT_GET(m3, 23, 1)),
@@ -26,7 +25,6 @@ static f32 finv_table_b[1024];
 // fdiv
 const FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
     register const u32 e1 = x1.decoder.exp;
-    register const u32 e2 = x2.decoder.exp;
     register const u32 mx = x2.decoder.mantissa;
 
     if (e1 == 0) return (FLOAT_HELPER){ .i = 0 };
@@ -43,32 +41,35 @@ const FLOAT_HELPER fdiv(const FLOAT_HELPER x1, const FLOAT_HELPER x2) {
         (FLOAT_HELPER){ .decoder = { .mantissa = c.decoder.mantissa,  .exp = 127, .sign = 0 } }
     );
 
-    register const u32 ey = (c.decoder.mantissa == 0) ? e1 - e2 + yn.decoder.exp : e1 - e2 - 1 + yn.decoder.exp;
-    return (FLOAT_HELPER){ .decoder = { .mantissa = yn.decoder.mantissa, .exp = ey, .sign = x1.decoder.sign ^ x2.decoder.sign } };
+    return (FLOAT_HELPER){
+        .decoder = {
+            .mantissa = yn.decoder.mantissa,
+            .exp = (e1 - x2.decoder.exp + yn.decoder.exp) - ((c.decoder.mantissa == 0) ? 0 : 1),
+            .sign = x1.decoder.sign ^ x2.decoder.sign }
+    };
 }
 
 // fsqrt
 static f32 fsqrt_table_a[1024];
 static f32 fsqrt_table_b[1024];
 const FLOAT_HELPER fsqrt(const FLOAT_HELPER x) {
-    register const u32 sx = x.decoder.sign;
     register const u32 ex = x.decoder.exp;
 
-    if (ex == 0) return (FLOAT_HELPER){ .decoder = { .mantissa = 0, .exp = 0, .sign = sx } };
+    if (ex == 0) return (FLOAT_HELPER){ .decoder = { .mantissa = 0, .exp = 0, .sign = x.decoder.sign } };
 
-    register const FLOAT_HELPER offset = { .decoder = {
-        .mantissa = x.decoder.mantissa,
-        .exp      = ((ex & 1) ? 0b01111110 : 0b10000000) | (ex & 1),
-        .sign     = 0
-    } };
     register const FLOAT_HELPER c = {
         .f = (FLOAT_HELPER){ .f = fsqrt_table_b[BIT_GET(x.i, 23, 14)] }.f + fmul(
-            (FLOAT_HELPER){ .f = fsqrt_table_a[BIT_GET(x.i, 23, 14)] }, offset
+            (FLOAT_HELPER){ .f = fsqrt_table_a[BIT_GET(x.i, 23, 14)] },
+            (FLOAT_HELPER){ .decoder = { .mantissa = x.decoder.mantissa, .exp = ((ex & 1) ? 0b01111110 : 0b10000000) | (ex & 1), .sign = 0 } }
         ).f
     }; // fadd
-    register const u32 ey = (ex & 1) ? (ex > 127 ? ((ex - 127) >> 1) + 127 : 127 - ((127 - ex) >> 1)) :
-                        (ex > 128 ? ((ex - 128) >> 1) + 127 : 127 - ((128 - ex) >> 1));
-    return (FLOAT_HELPER){ .decoder = { .mantissa = c.decoder.mantissa, .exp = ey, .sign = sx } };
+    return (FLOAT_HELPER){
+        .decoder = {
+            .mantissa = c.decoder.mantissa,
+            .exp = (ex & 1) ? (ex > 127 ? ((ex - 127) >> 1) + 127 : 127 - ((127 - ex) >> 1)) : (ex > 128 ? ((ex - 128) >> 1) + 127 : 127 - ((128 - ex) >> 1)),
+            .sign = x.decoder.sign
+        }
+    };
 }
 
 void gen_finv_table(void) {
