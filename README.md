@@ -95,10 +95,9 @@
 
 ## 3. Executing time prediction
 
-### 3.1 No cache ver
-
-- time & hit rate
+- 2022.01.15
 	- compiler: 2707f16
+	- nocache
 	- clk = 10Mhz, PHT size = 1024
 	- error of always untaken = 0.24% ~ 0.49%
 
@@ -109,3 +108,13 @@
 	| 2bit counter             | 111.118 (56.741%) | 3329.513 (56.498%) | 37721.116 (56.594%) |
 	| bimodal                  | 110.874 (73.790%) | 3322.219 (73.619%) | not tested          |
 	| Gshare                   | 110.654 (89.182%) | 3315.675 (88.978%) | not tested          |
+
+- 2022.01.25
+	- compiler: 8c6d128
+	- nocache
+	- clk = 100Mhz
+	- error = 0.94% ~ 4.72%
+
+	| branch prediction policy | minrt16          | minrt128          | minrt512   |
+	| :----------------------- | :--------------- | :---------------- | :--------- |
+	| always untaken           | 21.914 (46.861%) | 651.095 (47.385%) | not tested |

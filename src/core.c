@@ -352,7 +352,7 @@ void core_step_gui(CORE* const core) {
         // funct3: 010 -> lw
         core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
         core->pc += 4;
-        // rudely fetch next instr and count stall
+        // fetch next instr and count stall
         tmp = core->load_instr(core, core->pc);
         core->stall_counter += get_lw_stall(rd, tmp);
         ++core->instr_analysis[LOAD];
@@ -423,6 +423,8 @@ void core_step_gui(CORE* const core) {
                 (FLOAT_HELPER){ .i = core->fregs[rs2] }
             ).i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 3;
             ++core->instr_analysis[FMUL];
             break;
         // fcmp
@@ -452,6 +454,8 @@ void core_step_gui(CORE* const core) {
                 }.f
             }.i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 3;
             ++core->instr_analysis[FADD];
             break;
         // fsub
@@ -464,6 +468,8 @@ void core_step_gui(CORE* const core) {
                 }.f
             }.i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 3;
             ++core->instr_analysis[FSUB];
             break;
         // fsgnj
@@ -494,6 +500,8 @@ void core_step_gui(CORE* const core) {
         case 0b0101100:
             core->fregs[rd] = fsqrt((FLOAT_HELPER){ .i = core->fregs[rs1] }).i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 8;
             ++core->instr_analysis[FSQRT];
             break;
         // fdiv
@@ -503,6 +511,8 @@ void core_step_gui(CORE* const core) {
                 (FLOAT_HELPER){ .i = core->fregs[rs2] }
             ).i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 10;
             ++core->instr_analysis[FDIV];
             break;
         // fcvt to integer from float
@@ -517,6 +527,8 @@ void core_step_gui(CORE* const core) {
             default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
             }
             core->pc += 4;
+            // count stall
+            core->stall_counter += 1;
             ++core->instr_analysis[FCVT2I];
             break;
         // fcvt to float from integer
@@ -531,6 +543,8 @@ void core_step_gui(CORE* const core) {
             }
             core->fregs[rd] = f1.i;
             core->pc += 4;
+            // count stall
+            core->stall_counter += 1;
             ++core->instr_analysis[FCVT2F];
             break;
         // f-mv to integer from float

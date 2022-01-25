@@ -24,7 +24,7 @@ void show_analysis_win(CORE* core) {
     mvwprintw(block1, 16, 0, "instruction(s): %llu", core->instr_counter);
     mvwprintw(block1, 17, 0, "cycle(s)      : %llu", core->instr_counter + core->stall_counter);
     mvwprintw(block1, 18, 0, "stall(s)      : %llu", core->stall_counter);
-    mvwprintw(block1, 19, 0, "time in second: %.6lf", core->predict_exec_time(core));
+    mvwprintw(block1, 19, 0, "time in second: %.6lf (%uMHz)", core->predict_exec_time(core), CLK_FREQUENCY / 1000000);
     // block2: cache info
     wattron(block2, COLOR_PAIR(STANDOUT_COLOR));
     if (core->mmu->is_nocache) {

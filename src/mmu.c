@@ -9,6 +9,8 @@ const WORD mmu_read_data_cached(const MMU* mmu, void* const core, const ADDR add
     WORD val;
     // cache miss
     if (mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
+        // count stall
+        // ((CORE*)core)->stall_counter += TODO;
         // load certain block to cache
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         val = mmu->data_mem->read_word(mmu->data_mem, addr);
@@ -17,7 +19,8 @@ const WORD mmu_read_data_cached(const MMU* mmu, void* const core, const ADDR add
 }
 
 const WORD mmu_read_data_nocache(const MMU* mmu, void* const core, const ADDR addr) {
-    ((CORE*)core)->stall_counter += 12;
+    // count stall
+    ((CORE*)core)->stall_counter += 50;
     return mmu->data_mem->read_word(mmu->data_mem, addr);
 }
 
@@ -29,6 +32,8 @@ void mmu_write_instr(const MMU* mmu, const ADDR addr, const WORD val) {
 void mmu_write_data_cached(const MMU* mmu, void* const core, const ADDR addr, const WORD val) {
     // cache miss
     if (mmu->data_cache->write_word(mmu->data_cache, addr, val)) {
+        // count stall
+        // ((CORE*)core)->stall_counter += TODO;
         // write allocate
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         mmu->data_cache->write_word(mmu->data_cache, addr, val);
@@ -36,8 +41,9 @@ void mmu_write_data_cached(const MMU* mmu, void* const core, const ADDR addr, co
 }
 
 void mmu_write_data_nocache(const MMU* mmu, void* const core, const ADDR addr, const WORD val) {
+    // count stall
+    ((CORE*)core)->stall_counter += 26;
     mmu->data_mem->write_word(mmu->data_mem, addr, val);
-    ((CORE*)core)->stall_counter += 12;
 }
 
 BYTE mmu_sneak_cached(MMU* mmu, ADDR addr, u8 type) {
