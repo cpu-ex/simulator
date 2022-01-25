@@ -42,7 +42,7 @@ void mmu_write_data_cached(const MMU* mmu, void* const core, const ADDR addr, co
 
 void mmu_write_data_nocache(const MMU* mmu, void* const core, const ADDR addr, const WORD val) {
     // count stall
-    ((CORE*)core)->stall_counter += 26;
+    ((CORE*)core)->stall_counter += 25;
     mmu->data_mem->write_word(mmu->data_mem, addr, val);
 }
 

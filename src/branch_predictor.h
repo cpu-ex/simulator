@@ -3,8 +3,8 @@
 
 // customizable variables
 // #define BP_AT // always taken
-// #define BP_NT // always untaken
-#define BP_2BIT
+#define BP_NT // always untaken
+// #define BP_2BIT
 // #define BP_BIMODAL
 // #define BP_GSHARE
 // #define PHT_SIZE 1024

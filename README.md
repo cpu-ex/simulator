@@ -97,7 +97,7 @@
 
 - 2022.01.15
 	- compiler: 2707f16
-	- nocache
+	- no cache
 	- clk = 10Mhz, PHT size = 1024
 	- error of always untaken = 0.24% ~ 0.49%
 
@@ -111,10 +111,10 @@
 
 - 2022.01.25
 	- compiler: 8c6d128
-	- nocache
+	- no cache
 	- clk = 100Mhz
-	- error = 0.94% ~ 4.72%
+	- error = 0.19% ~ 3.60%
 
 	| branch prediction policy | minrt16          | minrt128          | minrt512   |
 	| :----------------------- | :--------------- | :---------------- | :--------- |
-	| always untaken           | 21.914 (46.861%) | 651.095 (47.385%) | not tested |
+	| always untaken           | 21.755 (46.861%) | 646.243 (47.385%) | not tested |
