@@ -51,10 +51,6 @@ void BRANCH_DISASM(INSTR instr, char* buffer) {
     case 0b100: sprintf(buffer, "blt %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // bge
     case 0b101: sprintf(buffer, "bge %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
-    // bltu
-    case 0b110: sprintf(buffer, "bltu %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
-    // bgeu
-    case 0b111: sprintf(buffer, "bgeu %s, %s, %d", reg_name[rs1], reg_name[rs2], sext(imm, 12)); break;
     // unexpected
     default: sprintf(buffer, "unexpected branch"); break;
     }
@@ -104,8 +100,6 @@ void ARITH_I_DISASM(INSTR instr, char* buffer) {
     case 0b001: sprintf(buffer, "slli %s, %s, %d", reg_name[rd], reg_name[rs1], imm & 0x1F); break;
     // slti
     case 0b010: sprintf(buffer, "slti %s, %s, %d", reg_name[rd], reg_name[rs1], sext(imm, 11)); break;
-    // sltiu
-    case 0b011: sprintf(buffer, "sltiu %s, %s, %d", reg_name[rd], reg_name[rs1], sext(imm, 11)); break;
     // xori
     case 0b100: sprintf(buffer, "xori %s, %s, %d", reg_name[rd], reg_name[rs1], sext(imm, 11)); break;
     // srli + srai
@@ -133,8 +127,6 @@ void ARITH_DISASM(INSTR instr, char* buffer) {
     case 0b001: sprintf(buffer, "sll %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
     // slt
     case 0b010: sprintf(buffer, "slt %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
-    // sltu
-    case 0b011: sprintf(buffer, "sltu %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
     // xor
     case 0b100: sprintf(buffer, "xor %s, %s, %s", reg_name[rd], reg_name[rs1], reg_name[rs2]); break;
     // srl + sra
@@ -264,7 +256,6 @@ void FCVT2F_DISASM(INSTR instr, char* buffer) {
     BYTE rs2 = instr.r.rs2;
     switch (rs2) {
     case 0b00000: sprintf(buffer, "fcvt.s.w %s, %s", freg_name[rd], reg_name[rs1]); break;
-    case 0b00001: sprintf(buffer, "fcvt.s.wu %s, %s", freg_name[rd], reg_name[rs1]); break;
     default: sprintf(buffer, "unexpected load"); break;
     }
 }
@@ -276,7 +267,6 @@ void FCVT2I_DISASM(INSTR instr, char* buffer) {
     BYTE rs2 = instr.r.rs2;
     switch (rs2) {
     case 0b00000: sprintf(buffer, "fcvt.w.s %s, %s", reg_name[rd], freg_name[rs1]); break;
-    case 0b00001: sprintf(buffer, "fcvt.wu.s %s, %s", reg_name[rd], freg_name[rs1]); break;
     default: sprintf(buffer, "unexpected load"); break;
     }
 }
@@ -297,7 +287,7 @@ void FSGNJ_DISASM(INSTR instr, char* buffer) {
 
 u8 disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
-    /* RV32I + RV32M */
+    /* RV32I */
     // lui
     case 0b0110111: LUI_DISASM(instr, buffer); return LUI;
     // auipc

@@ -26,8 +26,6 @@ class Block(object):
         'BNE': (re.compile(r'(bne)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
         'BLT': (re.compile(r'(blt)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
         'BGE': (re.compile(r'(bge)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
-        'BLTU': (re.compile(r'(bltu)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
-        'BGEU': (re.compile(r'(bgeu)\s+(\S+),\s*(\S+),\s*(\S+)'), Branch),
         # load rd, offset(rs1)
         'LW': (re.compile(r'(lw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Load),
         # store rs2, offset(rs1)
@@ -36,7 +34,6 @@ class Block(object):
         'ADDI': (re.compile(r'(addi)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
         'SLLI': (re.compile(r'(slli)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
         'SLTI': (re.compile(r'(slti)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
-        'SLTIU': (re.compile(r'(sltiu)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
         'XORI': (re.compile(r'(xori)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
         'SRLI': (re.compile(r'(srli)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
         'SRAI': (re.compile(r'(srai)\s+(\S+),\s*(\S+),\s*(-?\S+)'), Arith_i),
@@ -47,7 +44,6 @@ class Block(object):
         'SUB': (re.compile(r'(sub)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
         'SLL': (re.compile(r'(sll)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
         'SLT': (re.compile(r'(slt)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
-        'SLTU': (re.compile(r'(sltu)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
         'XOR': (re.compile(r'(xor)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
         'SRL': (re.compile(r'(srl)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
         'SRA': (re.compile(r'(sra)\s+(\S+),\s*(\S+),\s*(\S+)'), Arith),
@@ -72,8 +68,6 @@ class Block(object):
         'FLE': (re.compile(r'(fle)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FCVT.S.W': (re.compile(r'(fcvt\.s\.w)\s+(\S+),\s*(\S+)'), F_arith),
         'FCVT.W.S': (re.compile(r'(fcvt\.w\.s)\s+(\S+),\s*(\S+)'), F_arith),
-        'FCVT.S.WU': (re.compile(r'(fcvt\.s\.wu)\s+(\S+),\s*(\S+)'), F_arith),
-        'FCVT.WU.S': (re.compile(r'(fcvt\.wu\.s)\s+(\S+),\s*(\S+)'), F_arith),
         'FSGNJ': (re.compile(r'(fsgnj)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJN': (re.compile(r'(fsgnjn)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJX': (re.compile(r'(fsgnjx)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),

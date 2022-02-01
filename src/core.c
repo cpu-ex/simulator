@@ -57,45 +57,7 @@ void core_step_lite(CORE* const core) {
         core->regs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
         core->pc += 4; // ignore lw stall
         break;
-    // store
-    case 0b0100011:
-        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
-        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
-        core->pc += 4;
-        ++core->instr_analysis[STORE];
-        break;
-    // arith
-    case 0b0110011:
-        switch (funct3) {
-        // add + sub
-        case 0b000:
-            if (funct7)
-                core->regs[rd] = core->regs[rs1] - core->regs[rs2];
-            else
-                core->regs[rd] = core->regs[rs1] + core->regs[rs2];
-            break;
-        // sll
-        case 0b001: core->regs[rd] = core->regs[rs1] << core->regs[rs2]; break;
-        // or
-        case 0b110: core->regs[rd] = core->regs[rs1] | core->regs[rs2]; break;
-        // srl + sra
-        case 0b101:
-            if (funct7)
-                core->regs[rd] = (u32)(((s32)core->regs[rs1]) >> core->regs[rs2]);
-            else
-                core->regs[rd] = core->regs[rs1] >> core->regs[rs2];
-            break;
-        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-        }
-        core->pc += 4;
-        break;
-    // f-load
-    case 0b0000111:
-        imm = instr.i.imm;
-        core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
-        core->pc += 4; // ignore flw stall
-        break;
-    // f-arith (seprating for better analysis)
+    // f-arith
     case 0b1010011:
         switch (funct7) {
         // fmul
@@ -195,6 +157,19 @@ void core_step_lite(CORE* const core) {
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
+    // f-load
+    case 0b0000111:
+        imm = instr.i.imm;
+        core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
+        core->pc += 4; // ignore flw stall
+        break;
+    // store
+    case 0b0100011:
+        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
+        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
+        core->pc += 4;
+        ++core->instr_analysis[STORE];
+        break;
     // branch
     case 0b1100011:
         imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
@@ -212,12 +187,36 @@ void core_step_lite(CORE* const core) {
         }
         core->pc += tmp ? sext(imm, 12) : 4; // ignore branch stall
         break;
-    // jalr
-    case 0b1100111:
-        imm = instr.i.imm;
-        register const WORD t = core->pc + 4;
-        core->pc = core->regs[rs1] + sext(imm, 11);
-        core->regs[rd] = t;
+    // jal
+    case 0b1101111:
+        imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
+        core->regs[rd] = core->pc + 4;
+        core->pc += sext(imm, 20);
+        break;
+    // arith
+    case 0b0110011:
+        switch (funct3) {
+        // add + sub
+        case 0b000:
+            if (funct7)
+                core->regs[rd] = core->regs[rs1] - core->regs[rs2];
+            else
+                core->regs[rd] = core->regs[rs1] + core->regs[rs2];
+            break;
+        // sll
+        case 0b001: core->regs[rd] = core->regs[rs1] << core->regs[rs2]; break;
+        // or
+        case 0b110: core->regs[rd] = core->regs[rs1] | core->regs[rs2]; break;
+        // srl + sra
+        case 0b101:
+            if (funct7)
+                core->regs[rd] = (u32)(((s32)core->regs[rs1]) >> core->regs[rs2]);
+            else
+                core->regs[rd] = core->regs[rs1] >> core->regs[rs2];
+            break;
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        core->pc += 4;
         break;
     // f-store
     case 0b0100111:
@@ -225,11 +224,12 @@ void core_step_lite(CORE* const core) {
         core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2]);
         core->pc += 4;
         break;
-    // jal
-    case 0b1101111:
-        imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
-        core->regs[rd] = core->pc + 4;
-        core->pc += sext(imm, 20);
+    // jalr
+    case 0b1100111:
+        imm = instr.i.imm;
+        register const WORD t = core->pc + 4;
+        core->pc = core->regs[rs1] + sext(imm, 11);
+        core->regs[rd] = t;
         break;
     // lui
     case 0b0110111:
@@ -325,8 +325,6 @@ void core_step_gui(CORE* const core) {
         case 0b001: core->regs[rd] = core->regs[rs1] << sext(imm, 11); break;
         // slti (never used)
         case 0b010: core->regs[rd] = ((s32)core->regs[rs1] < (s32)sext(imm, 11)) ? 1 : 0; break;
-        // sltiu (never used)
-        case 0b011: core->regs[rd] = (core->regs[rs1] < sext(imm, 11)) ? 1 : 0; break;
         // xori (never used)
         case 0b100: core->regs[rd] = core->regs[rs1] ^ sext(imm, 11); break;
         // srli + srai (same with slli) (never used)
@@ -356,62 +354,6 @@ void core_step_gui(CORE* const core) {
         tmp = core->load_instr(core, core->pc);
         core->stall_counter += get_lw_stall(rd, tmp);
         ++core->instr_analysis[LOAD];
-        break;
-    // store
-    case 0b0100011:
-        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
-        // funct3: 011 -> swi, 010 -> sw
-        if (funct3 == 0b011)
-            core->store_instr(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
-        else
-            core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
-        core->pc += 4;
-        ++core->instr_analysis[STORE];
-        break;
-    // arith
-    case 0b0110011:
-        switch (funct3) {
-        // add + sub
-        case 0b000:
-            if (funct7)
-                core->regs[rd] = core->regs[rs1] - core->regs[rs2];
-            else
-                core->regs[rd] = core->regs[rs1] + core->regs[rs2];
-            break;
-        // sll
-        case 0b001: core->regs[rd] = core->regs[rs1] << core->regs[rs2]; break;
-        // or
-        case 0b110: core->regs[rd] = core->regs[rs1] | core->regs[rs2]; break;
-        // srl + sra
-        case 0b101:
-            if (funct7)
-                core->regs[rd] = (u32)(((s32)core->regs[rs1]) >> core->regs[rs2]);
-            else
-                core->regs[rd] = core->regs[rs1] >> core->regs[rs2];
-            break;
-        // slt (never used)
-        case 0b010: core->regs[rd] = ((s32)core->regs[rs1] < (s32)core->regs[rs2]) ? 1 : 0; break;
-        // sltu (never used)
-        case 0b011: core->regs[rd] = (core->regs[rs1] < core->regs[rs2]) ? 1 : 0; break;
-        // xor (never used)
-        case 0b100: core->regs[rd] = core->regs[rs1] ^ core->regs[rs2]; break;
-        // and (never used)
-        case 0b111: core->regs[rd] = core->regs[rs1] & core->regs[rs2]; break;
-        // unexpected
-        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-        }
-        core->pc += 4;
-        ++core->instr_analysis[ARITH];
-        break;
-    // f-load
-    case 0b0000111:
-        imm = instr.i.imm;
-        core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
-        core->pc += 4;
-        // fetch next instr and count stall
-        tmp = core->load_instr(core, core->pc);
-        core->stall_counter += get_lw_stall(rd, tmp);
-        ++core->instr_analysis[F_LOAD];
         break;
     // f-arith (seprating for better analysis)
     case 0b1010011:
@@ -518,14 +460,8 @@ void core_step_gui(CORE* const core) {
         // fcvt to integer from float
         case 0b1100000:
             f1.i = core->fregs[rs1];
-            switch (rs2) {
             // fcvt.w.s
-            case 0b00000: core->regs[rd] = (f1.f < 0.0) ? ((s32)(f1.f - (f32)((s32)(f1.f - 1.0)) + 0.5) + (s32)(f1.f - 1.0)) : ((s32)(f1.f + 0.5)); break;
-            // fcvt.wu.s
-            case 0b00001: core->regs[rd] = (u32)(f1.f + 0.5); break;
-            // unexpected
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
+            core->regs[rd] = (f1.f < 0.0) ? ((s32)(f1.f - (f32)((s32)(f1.f - 1.0)) + 0.5) + (s32)(f1.f - 1.0)) : ((s32)(f1.f + 0.5));
             core->pc += 4;
             // count stall
             core->stall_counter += 1;
@@ -533,14 +469,8 @@ void core_step_gui(CORE* const core) {
             break;
         // fcvt to float from integer
         case 0b1101000:
-            switch (rs2) {
             // fcvt.s.w
-            case 0b00000: f1.f = (f32)((s32)core->regs[rs1]); break;
-            // fcvt.s.wu
-            case 0b00001: f1.f = (f32)((u32)core->regs[rs1]); break;
-            // unexpected
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
+            f1.f = (f32)((s32)core->regs[rs1]);
             core->fregs[rd] = f1.i;
             core->pc += 4;
             // count stall
@@ -557,6 +487,23 @@ void core_step_gui(CORE* const core) {
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         break;
+    // f-load
+    case 0b0000111:
+        imm = instr.i.imm;
+        core->fregs[rd] = core->load_data(core, core->regs[rs1] + sext(imm, 11));
+        core->pc += 4;
+        // fetch next instr and count stall
+        tmp = core->load_instr(core, core->pc);
+        core->stall_counter += get_lw_stall(rd, tmp);
+        ++core->instr_analysis[F_LOAD];
+        break;
+    // store
+    case 0b0100011:
+        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
+        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->regs[rs2]);
+        core->pc += 4;
+        ++core->instr_analysis[STORE];
+        break;
     // branch
     case 0b1100011:
         imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
@@ -569,10 +516,6 @@ void core_step_gui(CORE* const core) {
         case 0b001: tmp = (core->regs[rs1] != core->regs[rs2]) ? 1 : 0; break;
         // blt
         case 0b100: tmp = ((s32)core->regs[rs1] < (s32)core->regs[rs2]) ? 1 : 0; break;
-        // bltu
-        case 0b110: tmp = (core->regs[rs1] < core->regs[rs2]) ? 1 : 0; break;
-        // bgeu
-        case 0b111: tmp = (core->regs[rs1] >= core->regs[rs2]) ? 1 : 0; break;
         // unexpected
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
@@ -581,6 +524,55 @@ void core_step_gui(CORE* const core) {
         // increment pc
         core->pc += tmp ? sext(imm, 12) : 4;
         ++core->instr_analysis[BRANCH];
+        break;
+    // jal
+    case 0b1101111:
+        imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
+        core->regs[rd] = core->pc + 4;
+        core->pc += sext(imm, 20);
+        // count stall
+        core->stall_counter += 2;
+        ++core->instr_analysis[JAL];
+        break;
+    // arith
+    case 0b0110011:
+        switch (funct3) {
+        // add + sub
+        case 0b000:
+            if (funct7)
+                core->regs[rd] = core->regs[rs1] - core->regs[rs2];
+            else
+                core->regs[rd] = core->regs[rs1] + core->regs[rs2];
+            break;
+        // sll
+        case 0b001: core->regs[rd] = core->regs[rs1] << core->regs[rs2]; break;
+        // or
+        case 0b110: core->regs[rd] = core->regs[rs1] | core->regs[rs2]; break;
+        // srl + sra
+        case 0b101:
+            if (funct7)
+                core->regs[rd] = (u32)(((s32)core->regs[rs1]) >> core->regs[rs2]);
+            else
+                core->regs[rd] = core->regs[rs1] >> core->regs[rs2];
+            break;
+        // slt (never used)
+        case 0b010: core->regs[rd] = ((s32)core->regs[rs1] < (s32)core->regs[rs2]) ? 1 : 0; break;
+        // xor (never used)
+        case 0b100: core->regs[rd] = core->regs[rs1] ^ core->regs[rs2]; break;
+        // and (never used)
+        case 0b111: core->regs[rd] = core->regs[rs1] & core->regs[rs2]; break;
+        // unexpected
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        core->pc += 4;
+        ++core->instr_analysis[ARITH];
+        break;
+    // f-store
+    case 0b0100111:
+        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
+        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2]);
+        core->pc += 4;
+        ++core->instr_analysis[F_STORE];
         break;
     // jalr
     case 0b1100111:
@@ -591,22 +583,6 @@ void core_step_gui(CORE* const core) {
         // count stall
         core->stall_counter += 2;
         ++core->instr_analysis[JALR];
-        break;
-    // f-store
-    case 0b0100111:
-        imm = instr.s.imm11_5 << 5 | instr.s.imm4_0;
-        core->store_data(core, core->regs[rs1] + sext(imm, 11), core->fregs[rs2]);
-        core->pc += 4;
-        ++core->instr_analysis[F_STORE];
-        break;
-    // jal
-    case 0b1101111:
-        imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
-        core->regs[rd] = core->pc + 4;
-        core->pc += sext(imm, 20);
-        // count stall
-        core->stall_counter += 2;
-        ++core->instr_analysis[JAL];
         break;
     // lui
     case 0b0110111:
