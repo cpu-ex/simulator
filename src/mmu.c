@@ -76,8 +76,12 @@ void mmu_allocate_instr(MMU* mmu, u64 size) {
     mmu->instr_mem = malloc(size * sizeof(WORD));
 }
 
-void mmu_reset(MMU* mmu, ADDR addr) {
+void mmu_reset_cached(MMU* mmu, ADDR addr) {
     mmu->data_cache->reset(mmu->data_cache);
+    mmu->data_mem->reset_stack(mmu->data_mem, addr);
+}
+
+void mmu_reset_nocache(MMU* mmu, ADDR addr) {
     mmu->data_mem->reset_stack(mmu->data_mem, addr);
 }
 
@@ -100,5 +104,5 @@ void init_mmu(MMU* mmu, u8 is_nocache) {
     mmu->read_data = is_nocache ? mmu_read_data_nocache : mmu_read_data_cached;
     mmu->write_data = is_nocache ? mmu_write_data_nocache : mmu_write_data_cached;
     mmu->sneak = is_nocache ? mmu_sneak_nocache : mmu_sneak_cached;
-    mmu->reset = mmu_reset;
+    mmu->reset = is_nocache ? mmu_reset_nocache : mmu_reset_cached;
 }
