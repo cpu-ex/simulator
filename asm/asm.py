@@ -32,6 +32,8 @@ class ASM(object):
             self.fileName = fileName.split('/')[-1].split('.')[0]
             # remove all unnecessary parts like space\n\t and comments
             self.rawText = [line.lstrip().rstrip().split('#')[0] for line in codeText]
+            # print progress
+            printProgress(1, 1, info='Loading')
         except FileNotFoundError:
             raise RuntimeError(f'invalid file name: {fileName}.')
 
@@ -63,6 +65,8 @@ class ASM(object):
             else:
                 self.code.append(codeObj)
                 self.codeCounter += codeObj.assumedLength
+            # print progress
+            printProgress(lineno, len(self.rawText), info='Decoding')
         # prepend initialization codes
         if _ := self.codeTag.get(self.startTag, None):
             self.code = [
@@ -77,25 +81,31 @@ class ASM(object):
         assumedAddress = ASM.DEFAULT_PC
         actualAddress = ASM.DEFAULT_PC
         assumedTagDict = {**self.codeTag, **self.dataTag}
-        for codeObj in self.code:
+        for idx, codeObj in enumerate(self.code, start=1):
             # optimize
             readdressingInfo = codeObj.optimize(assumedAddress, assumedTagDict, actualAddress)
             assumedAddress += codeObj.assumedLength
             # readdress (only code-tag left in this stage)
             self.codeTag.update(readdressingInfo)
             actualAddress += codeObj.actualLength
+            # print progress
+            printProgress(idx, len(self.code), 'Optimizing')
     
     def finalize(self) -> None:
         # remap data tags (disused)
         # self.dataTag = {tag: (addr + len(self.code) * 4) for tag, addr in self.dataTag.items()}
         # finalize all codes
-        for codeObj in self.code:
+        for idx, codeObj in enumerate(self.code, start=1):
             codeObj.finalize({**self.codeTag, **self.dataTag})
+            # print progress
+            printProgress(idx, len(self.code), 'Finalizing')
     
     def encode(self) -> None:
         self.machineCode.clear()
-        for codeObj in self.code:
+        for idx, codeObj in enumerate(self.code, start=1):
             self.machineCode.extend(codeObj.encode())
+            # print progress
+            printProgress(idx, len(self.code), info='Encoding')
     
     def save(self, binaryOutput: bool, textOutput: bool) -> None:
         # prepare for output
@@ -105,25 +115,33 @@ class ASM(object):
         if binaryOutput:
             if self.machineCode:
                 with open(f'../bin/{self.fileName}.code', 'wb') as file:
-                    for mc in self.machineCode:
+                    for idx, mc in enumerate(self.machineCode, start=1):
                         file.write(struct.pack('>I', mc))
+                        # print progress
+                        printProgress(idx, len(self.machineCode), info='Saving code (bin)')
             if self.data:
                 with open(f'../bin/{self.fileName}.data', 'wb') as file:
-                    for d in self.data:
+                    for idx, d in enumerate(self.data, start=1):
                         file.write(struct.pack('>I', d))
+                        # print progress
+                        printProgress(idx, len(self.data), info='Saving data (bin)')
         # output text file
         if textOutput:
             if self.machineCode:
                 with open(f'../bin/{self.fileName}.code.txt', 'w') as file:
-                    for mc in self.machineCode:
+                    for idx, mc in enumerate(self.machineCode, start=1):
                         file.write(f'{bin(mc)[2:].zfill(32)}\n')
+                        # print progress
+                        printProgress(idx, len(self.machineCode), info='Saving code (text)')
             if self.data:
                 with open(f'../bin/{self.fileName}.data.txt', 'w') as file:
-                    for d in self.data:
+                    for idx, d in enumerate(self.data, start=1):
                         file.write(f'{bin(d)[2:].zfill(32)}\n')
-        # warn
-        if not (binaryOutput or textOutput):
-            print(f'none of the output format specified, check \'python3 asm.py --help\' for detailed information.')
+                        # print progress
+                        printProgress(idx, len(self.data), info='Saving data (text)')
+        # warning
+        if not(binaryOutput or textOutput):
+            print('none of the output format specified, check \'python3 asm.py --help\' for detailed information.')
 
     def printTagInfo(self) -> None:
         print('\n'.join(f'{tag=}\taddr={addr:#08X}' for tag, addr in {**self.codeTag, **self.dataTag}.items()))
