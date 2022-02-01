@@ -89,7 +89,7 @@ class ASM(object):
             self.codeTag.update(readdressingInfo)
             actualAddress += codeObj.actualLength
             # print progress
-            printProgress(idx, len(self.code), 'Optimizing')
+            printProgress(idx, len(self.code), info='Optimizing')
     
     def finalize(self) -> None:
         # remap data tags (disused)

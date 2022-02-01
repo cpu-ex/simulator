@@ -78,6 +78,12 @@ def tag2offset(name: str, tags: dict, addr: int) -> int:
     else:
         raise RuntimeError(f'no tag name \'{name}\'')
 
+def tag2imm(name: str, tags: dict) -> int:
+    if (dst := tags.get(name, None)) is not None:
+        return dst
+    else:
+        raise RuntimeError(f'no tag name \'{name}\'')
+
 def pack2word(data: list, bitLen: int) -> list:
     words = list()
     size = 4 // bitLen
@@ -103,8 +109,8 @@ def printProgress(iteration, total, info='', barLength=32):
     percent = f'{100 * (iteration / float(total)):.1f}'
     filledLength = int(round(barLength * iteration / float(total)))
     bar = '#' * filledLength + '-' * (barLength - filledLength)
-    sys.stdout.write(f'\r{info:20s} [{bar}] {percent}%')
+    sys.stderr.write(f'\r{info:20s} [{bar}] {percent}%')
     if iteration == total:
-        sys.stdout.write(u'\u001b[2K')
-        sys.stdout.write(u'\u001b[0G')
-    sys.stdout.flush()
+        sys.stderr.write(u'\u001b[2K')
+        sys.stderr.write(u'\u001b[0G')
+    sys.stderr.flush()

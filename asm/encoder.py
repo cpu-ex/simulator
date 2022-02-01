@@ -708,15 +708,30 @@ class Pseudo_la(Code):
         self.rd = tokenizedCode[1]
         self.tag = tokenizedCode[2]
         self.assumedLength = 2
-        self.actualLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        try:
+            imm = tag2imm(self.tag, tags)
+            # check if the address of tag is small enough to fit in addi
+            checkImm(imm, 12, True)
+            self.actualLength = 1
+        except RuntimeError:
+            self.actualLength = 2
+        return [self]
     
     def finalize(self, addr: int, tags: dict) -> list:
-        offset = tag2offset(self.tag, tags, addr)
-        hi, lo = getHiLo(offset)
-        return [
-            Auipc(('auipc', self.rd, str(hi))),
-            Arith_i(('addi', self.rd, self.rd, str(lo)))
-        ]
+        try:
+            imm = tag2imm(self.tag, tags)
+            checkImm(imm, 12, True)
+            # the address of tag is small enough to fit in addi
+            return [Arith_i(('addi', self.rd, 'zero', str(imm)))]
+        except RuntimeError:
+            offset = tag2offset(self.tag, tags, addr)
+            hi, lo = getHiLo(offset)
+            return [
+                Auipc(('auipc', self.rd, str(hi))),
+                Arith_i(('addi', self.rd, self.rd, str(lo)))
+            ]
     
     def __str__(self) -> str:
         return f'la {self.rd}, {self.tag}'
@@ -811,15 +826,31 @@ class Pseudo_call(Code):
         super().__init__(tokenizedCode, forSim=forSim)
         self.tag = tokenizedCode[1]
         self.assumedLength = 2
-        self.actualLength = 2
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        try:
+            offset = tag2offset(self.tag, tags, addr)
+            # check if the address of tag is small enough to fit in jal
+            checkImm(offset, 21, True)
+            self.actualLength = 1
+        except RuntimeError:
+            self.actualLength = 2
+        return [self]
     
     def finalize(self, addr: int, tags: dict) -> list:
         offset = tag2offset(self.tag, tags, addr)
-        hi, lo = getHiLo(offset)
-        return [
-            Auipc(('auipc', 't1', str(hi))),
-            Jalr(('jalr', 'ra', str(lo), 't1'))
-        ]
+        try:
+            checkImm(offset, 21, True)
+            # the address of tag is small enough to fit in jal
+            jal = Jal(('jal', 'ra', self.tag))
+            jal.imm = offset
+            return [jal]
+        except RuntimeError:
+            hi, lo = getHiLo(offset)
+            return [
+                Auipc(('auipc', 't1', str(hi))),
+                Jalr(('jalr', 'ra', str(lo), 't1'))
+            ]
 
     def __str__(self) -> str:
         return f'call {self.tag}'
