@@ -217,8 +217,7 @@ class Branch(Code):
         except RuntimeError:
             oppositeDict = {
                 'beq': 'bne', 'bne': 'beq',
-                'blt': 'bge', 'bge': 'blt',
-                'bltu': 'bgeu', 'bgeu': 'bltu'
+                'blt': 'bge', 'bge': 'blt'
             }
             oldTag = self.tag
             newTag = f'additional_branch_tag_{inc()}'
@@ -253,10 +252,6 @@ class Branch(Code):
             mc |= 0b100 << 12
         elif name == 'bge':
             mc |= 0b101 << 12
-        elif name == 'bltu':
-            mc |= 0b110 << 12
-        elif name == 'bgeu':
-            mc |= 0b111 << 12
         else:
             # not suppose to be here
             raise RuntimeError(f'unrecognizable branch type \'{name}\'')
@@ -378,9 +373,6 @@ class Arith_i(Code):
         elif name == 'slti':
             mc |= 0b010 << 12
             mc |= (imm & 0xFFF) << 20
-        elif name == 'sltiu':
-            mc |= 0b011 << 12
-            mc |= (imm & 0xFFF) << 20
         elif name == 'xori':
             mc |= 0b100 << 12
             mc |= (imm & 0xFFF) << 20
@@ -447,9 +439,6 @@ class Arith(Code):
             mc |= 0b0000000 << 25
         elif name == 'slt':
             mc |= 0b010 << 12
-            mc |= 0b0000000 << 25
-        elif name == 'sltu':
-            mc |= 0b011 << 12
             mc |= 0b0000000 << 25
         elif name == 'xor':
             mc |= 0b100 << 12

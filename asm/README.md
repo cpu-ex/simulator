@@ -13,7 +13,6 @@
 | sub                         | `sub rd, rs1, rs2`   | R   | 0110011 | 000    | 0100000        | rd = rs1 - rs2                    |
 | shift left logical          | `sll rd, rs1, rs2`   | R   | 0110011 | 001    | 0000000        | rd = rs1 << rs2                   |
 | set less than               | `slt rd, rs1, rs2`   | R   | 0110011 | 010    | 0000000        | rd = (rs1 < rs2) ? 1 : 0          |
-| set less than (U)           | `sltu rd, rs1, rs2`  | R   | 0110011 | 011    | 0000000        | rd = (rs1 < rs2) ? 1 : 0          |
 | xor                         | `xor rd, rs1, rs2`   | R   | 0110011 | 100    | 0000000        | rd = rs1 ^ rs2                    |
 | shift right logical         | `srl rd, rs1, rs2`   | R   | 0110011 | 101    | 0000000        | rd = rs1 >> rs2 (zero-ext)        |
 | shift right arith           | `sra rd, rs1, rs2`   | R   | 0110011 | 101    | 0100000        | rd = rs1 >> rs2 (msb-ext)         |
@@ -23,7 +22,6 @@
 | add immediate               | `addi rd, rs1, imm`  | I   | 0010011 | 000    |                | rd = rs1 + sext(imm)              |
 | shift left logical imm      | `slli rd, rs1, imm`  | I   | 0010011 | 001    | imm[11:5]=0x00 | rd = rs1 << imm[4:0]              |
 | set less than imm           | `slti rd, rs1, imm`  | I   | 0010011 | 010    |                | rd = (rs1 < sext(imm)) ? 1 : 0    |
-| set less than imm (U)       | `sltiu rd, rs1, imm` | I   | 0010011 | 011    |                | rd = (rs1 < imm) ? 1 : 0          |
 | xor immediate               | `xori rd, rs1, imm`  | I   | 0010011 | 100    |                | rd = rs1 ^ sext(imm)              |
 | shift right logical imm     | `srli rd, rs1, imm`  | I   | 0010011 | 101    | imm[11:5]=0x00 | rd = rs1 >> imm[4:0] (zero-ext)   |
 | shift right arith imm       | `srai rd, rs1, imm`  | I   | 0010011 | 101    | imm[11:5]=0x20 | rd = rs1 >> imm[4:0] (msb-ext)    |
@@ -38,8 +36,6 @@
 | branch not equal            | `bne rs1, rs2, tag`  | B   | 1100011 | 001    |                | if (rs1 != rs2) PC += (&tag - pc) |
 | branch less than            | `blt rs1, rs2, tag`  | B   | 1100011 | 100    |                | if (rs1 < rs2) PC += (&tag - pc)  |
 | branch great equal than     | `bge rs1, rs2, tag`  | B   | 1100011 | 101    |                | if (rs1 >= rs2) PC += (&tag - pc) |
-| branch less than (U)        | `bltu rs1, rs2, tag` | B   | 1100011 | 110    |                | if (rs1 < rs2) PC += (&tag - pc)  |
-| branch great equal than (U) | `bgeu rs1, rs2, tag` | B   | 1100011 | 111    |                | if (rs1 >= rs2) PC += (&tag - pc) |
 | **JUMP**                    |                      |     |         |        |                |                                   |
 | jump and link               | `jal rd, tag`        | J   | 1101111 |        |                | rd = PC + 4; PC += (&tag - pc)    |
 | jump and link register      | `jalr rd, imm(rs1)`  | I   | 0010111 | 000    |                | rd = PC + 4; PC = rs1 + sext(imm) |
