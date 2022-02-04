@@ -187,6 +187,21 @@ void core_step_lite(CORE* const core) {
         }
         core->pc += tmp ? sext(imm, 12) : 4; // ignore branch stall
         break;
+    // f-branch
+    case 0b1100001:
+        f1.i = core->fregs[rs1];
+        f2.i = core->fregs[rs2];
+        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
+        switch (funct3) {
+        // bfle
+        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
+        // bfeq
+        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
+        // unexpected
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        core->pc += tmp ? sext(imm, 12) : 4; // ignore branch stall
+        break;
     // jal
     case 0b1101111:
         imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
@@ -525,6 +540,25 @@ void core_step_gui(CORE* const core) {
         core->pc += tmp ? sext(imm, 12) : 4;
         ++core->instr_analysis[BRANCH];
         break;
+    // f-branch
+    case 0b1100001:
+        f1.i = core->fregs[rs1];
+        f2.i = core->fregs[rs2];
+        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
+        switch (funct3) {
+        // bfle
+        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
+        // bfeq
+        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
+        // unexpected
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        // predict branch and count stall
+        core->stall_counter += core->branch_predictor->get_branch_stall(core->branch_predictor, core->pc, tmp);
+        // increment pc
+        core->pc += tmp ? sext(imm, 12) : 4;
+        ++core->instr_analysis[F_BRANCH];
+        break;
     // jal
     case 0b1101111:
         imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
@@ -692,7 +726,7 @@ void core_reset(CORE* core) {
     // reset instruction analysis
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 23 * sizeof(u64));
+    memset(core->instr_analysis, 0, 24 * sizeof(u64));
     // reset branch predictor
     core->branch_predictor->reset(core->branch_predictor);
 }
@@ -728,7 +762,7 @@ void init_core(CORE* core, u8 is_lite) {
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 23 * sizeof(u64));
+    memset(core->instr_analysis, 0, 24 * sizeof(u64));
     // prepare for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);

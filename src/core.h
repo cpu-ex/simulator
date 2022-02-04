@@ -58,7 +58,7 @@ typedef struct core {
     // analysis
     u64 instr_counter;
     u64 stall_counter;
-    u64 instr_analysis[23];
+    u64 instr_analysis[24];
     // interfaces
     void (*step)(struct core* const);
     const WORD (*load_instr)(const struct core*, const ADDR);

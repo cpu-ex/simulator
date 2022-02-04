@@ -285,6 +285,25 @@ void FSGNJ_DISASM(INSTR instr, char* buffer) {
     }
 }
 
+// f-branch rs1, rs2, imm
+void F_BRANCH_DISASM(INSTR instr, char* buffer) {
+    WORD imm = instr.b.imm12 << 12 |
+                instr.b.imm11 << 11 |
+                instr.b.imm10_5 << 5 |
+                instr.b.imm4_1 << 1;
+    BYTE rs1 = instr.b.rs1;
+    BYTE rs2 = instr.b.rs2;
+    BYTE funct3 = instr.b.funct3;
+    switch (funct3) {
+    // bfeq
+    case 0b000: sprintf(buffer, "bfeq %s, %s, %d", freg_name[rs1], freg_name[rs2], sext(imm, 12)); break;
+    // bfle
+    case 0b001: sprintf(buffer, "bfle %s, %s, %d", freg_name[rs1], freg_name[rs2], sext(imm, 12)); break;
+    // unexpected
+    default: sprintf(buffer, "unexpected branch"); break;
+    }
+}
+
 u8 disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* RV32I */
@@ -346,6 +365,8 @@ u8 disasm(INSTR instr, char* buffer) {
         default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
         }
         break;
+    // f-branch
+    case 0b1100001: F_BRANCH_DISASM(instr, buffer); return F_BRANCH;
     // unexpected
     default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
     }

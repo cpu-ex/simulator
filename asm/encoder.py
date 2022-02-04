@@ -62,7 +62,7 @@ class Direc(Code):
             self.data = [fimm2int(x) & 0xFFFFFFFF for x in tokenizedCode[1].split(',')]
         elif self.name not in ['data', 'text']:
             raise RuntimeError(f'unsupported directive \'{self.name}\'')
-        self.assumedLength = len(self.data) * 4
+        self.assumedLength = len(self.data)
     
     def isStartDirec(self) -> bool:
         return self.name == 'globl'
@@ -72,6 +72,9 @@ class Direc(Code):
     
     def isCodeDirec(self) -> bool:
         return self.name == 'text'
+    
+    def __str__(self) -> str:
+        return f'{self.name} ' + ', '.join(hex(d) for d in self.data)
 
 ######################################## lui ########################################
 
@@ -652,6 +655,52 @@ class F_arith(Code):
             return f'{self.name} {rd}, {rs1}'
         else:
             return f'{self.name} {rd}, {rs1}, {rs2}'
+
+######################################## f-branch ########################################
+
+class F_branch(Code):
+
+    # f-branch rs1, rs2, tag
+    def __init__(self, tokenizedCode: tuple, forSim: bool = True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.name = tokenizedCode[0].lower()
+        self.rs1 = tokenizedCode[1]
+        self.rs2 = tokenizedCode[2]
+        self.tag = tokenizedCode[3]
+
+    def finalize(self, addr: int, tags: dict) -> list:
+        self.imm = tag2offset(self.tag, tags, addr)
+        return [self]
+    
+    # branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100001
+    def encode(self) -> list:
+        name = self.name
+        rs1 = reg2idx(self.rs1)
+        rs2 = reg2idx(self.rs2)
+        imm = self.imm
+        checkImm(imm, 13, True)
+
+        mc = 0b1100001
+        mc |= ((imm & 0x00000800) >> 11) << 7 # 11
+        mc |= ((imm & 0x0000001E) >>  1) << 8 # 4:1
+        if name == 'bfeq':
+            mc |= 0b000 << 12
+        elif name == 'bfle':
+            mc |= 0b001 << 12
+        else:
+            # not suppose to be here
+            raise RuntimeError(f'unrecognizable branch type \'{name}\'')
+        mc |= (rs1 & 0x1F) << 15
+        mc |= (rs2 & 0x1F) << 20
+        mc |= ((imm & 0x000007E0) >>  5) << 25 # 10:5
+        mc |= ((imm & 0x00001000) >> 12) << 31 # 12
+        return [mc]
+    
+    def __str__(self) -> str:
+        rs1 = idx2reg(reg2idx(self.rs1))
+        rs2 = idx2reg(reg2idx(self.rs2))
+        imm = self.imm
+        return f'{self.name} {rs1}, {rs2}, {imm}'
 
 ######################################## pseudo-nop ########################################
 

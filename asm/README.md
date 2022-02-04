@@ -75,22 +75,25 @@
 
 ## 4. Customized instructions
 
-| name                  | assembly              | fmt | opcode  | funct3 | description                                                                 |
-| :-------------------- | :-------------------- | :-- | :------ | :----- | :-------------------------------------------------------------------------- |
-| **STORE**             |                       |     |         |        |                                                                             |
-| store instruction     | `swi rs2, imm(rs1)`   | S   | 0100011 | 011    | Instr[rs1+sext(imm)] = rs2                                                  |
-| **ENVIRONMENT**       |                       |     |         |        |                                                                             |
-| environment break     | `ebreak imm`          | I   | 1110011 |        | transfer control to debugger at the imm times encountering this instruction |
-| (AKA set breakpoint)  |                       |     |         |        | using imm=0 to imply the end of program                                     |
-| **VECTOR** (for 2nd)  |                       |     |         |        |                                                                             |
-| vector load word      | `vlw v0, imm(rs1)`    | I   | 0000111 | 000    | v0 = M[rs1+sext(imm)][127:0]                                                |
-| vector store word     | `vsw v0, imm(rs1)`    | S   | 0100111 | 000    | M[rs1+sext(imm)][127:0] = v0                                                |
-| burst load word       | `blw rd, imm(rs1)`    | I   | 0000111 | 001    | rd, rd + 1, rd + 2, rd + 3 = M[rs1+sext(imm)][127:0]                        |
-| burst store word      | `bsw rs2, imm(rs1)`   | S   | 0100111 | 001    | M[rs1+sext(imm)][127:0] = {rs2, rs2 + 1, rs2 + 2, rs2 + 3}                  |
-| burst load float      | `bflw frd, imm(rs1)`  | I   | 0000111 | 100    | frd, frd + 1, frd + 2, frd + 3 = M[rs1+sext(imm)][127:0]                    |
-| burst store float     | `bfsw frs2, imm(rs1)` | S   | 0100111 | 100    | M[rs1+sext(imm)][127:0] = {frs2, frs2 + 1, frs2 + 2, frs2 + 3}              |
-| move scalar to vector | `vmv.v.s v0, rs1, rs2, rs3, rs4` | ↓ | 1010111 | ↓ | v0 = {rs1, rs2, rs3, rs4} |
-| move vector to scalar | `vmv.s.v rs1, rs2, rs3, rs4, v0` | ↓ | 1010111 | ↓ | {rs1, rs2, rs3, rs4} = v0 |
+| name                    | assembly              | fmt | opcode  | funct3 | description                                                                 |
+| :---------------------- | :-------------------- | :-- | :------ | :----- | :-------------------------------------------------------------------------- |
+| **STORE**               |                       |     |         |        |                                                                             |
+| store instruction       | `swi rs2, imm(rs1)`   | S   | 0100011 | 011    | Instr[rs1+sext(imm)] = rs2                                                  |
+| **ENVIRONMENT**         |                       |     |         |        |                                                                             |
+| environment break       | `ebreak imm`          | I   | 1110011 |        | transfer control to debugger at the imm times encountering this instruction |
+| (AKA set breakpoint)    |                       |     |         |        | using imm=0 to imply the end of program                                     |
+| **F-BRANCH** (for 2nd)  |                       |     |         |        |                                                                             |
+| branch float equal      | `bfeq rs1, rs2, tag`  | B   | 1100001 | 000    | if (frs1 == frs2) PC += (&tag - pc)                                         |
+| branch float less equal | `bfle rs1, rs2, tag`  | B   | 1100001 | 001    | if (frs1 <= frs2) PC += (&tag - pc)                                         |
+| **VECTOR** (for 2nd)    |                       |     |         |        |                                                                             |
+| vector load word        | `vlw v0, imm(rs1)`    | I   | 0000111 | 000    | v0 = M[rs1+sext(imm)][127:0]                                                |
+| vector store word       | `vsw v0, imm(rs1)`    | S   | 0100111 | 000    | M[rs1+sext(imm)][127:0] = v0                                                |
+| burst load word         | `blw rd, imm(rs1)`    | I   | 0000111 | 001    | rd, rd + 1, rd + 2, rd + 3 = M[rs1+sext(imm)][127:0]                        |
+| burst store word        | `bsw rs2, imm(rs1)`   | S   | 0100111 | 001    | M[rs1+sext(imm)][127:0] = {rs2, rs2 + 1, rs2 + 2, rs2 + 3}                  |
+| burst load float        | `bflw frd, imm(rs1)`  | I   | 0000111 | 100    | frd, frd + 1, frd + 2, frd + 3 = M[rs1+sext(imm)][127:0]                    |
+| burst store float       | `bfsw frs2, imm(rs1)` | S   | 0100111 | 100    | M[rs1+sext(imm)][127:0] = {frs2, frs2 + 1, frs2 + 2, frs2 + 3}              |
+| move scalar to vector   | `vmv.v.s v0, rs1, rs2, rs3, rs4` | ↓ | 1010111 | ↓ | v0 = {rs1, rs2, rs3, rs4} |
+| move vector to scalar   | `vmv.s.v rs1, rs2, rs3, rs4, v0` | ↓ | 1010111 | ↓ | {rs1, rs2, rs3, rs4} = v0 |
 
 |           | 31 ~ 26 | 25 ~ 20 | 19 ~ 15  | 14     | 13  | 12 ~ 7 | 6 ~ 0   |
 | :-------- | :------ | :------ | :------- | :----- | :-- | :----- | :------ |

@@ -54,8 +54,11 @@ class Block(object):
 
 
         # RV32F
+        # f-load rd, offset(rs1)
         'FLW': (re.compile(r'(flw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), F_load),
+        # f-store rs2, offset(rs1)
         'FSW': (re.compile(r'(fsw)\s+(\S+),\s*(-?\S+)\((\S+)\)'), F_store),
+        # f-arith
         'FMV.X.W': (re.compile(r'(fmv\.x\.w)\s+(\S+),\s*(\S+)'), F_arith),
         'FMV.W.X': (re.compile(r'(fmv\.w\.x)\s+(\S+),\s*(\S+)'), F_arith),
         'FADD': (re.compile(r'(fadd)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
@@ -71,6 +74,9 @@ class Block(object):
         'FSGNJ': (re.compile(r'(fsgnj)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJN': (re.compile(r'(fsgnjn)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJX': (re.compile(r'(fsgnjx)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
+        # f-branch rs1, rs2, tag
+        'BFEQ': (re.compile(r'(bfeq)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
+        'BFLE': (re.compile(r'(bfle)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
 
 
         # pseudo
