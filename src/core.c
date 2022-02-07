@@ -546,6 +546,8 @@ void core_step_gui(CORE* const core) {
         f2.i = core->fregs[rs2];
         imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
         switch (funct3) {
+        // bflt
+        case 0b010: tmp = (f1.f < f2.f) ? 1 : 0; break;
         // bfle
         case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
         // bfeq

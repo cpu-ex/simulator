@@ -299,6 +299,8 @@ void F_BRANCH_DISASM(INSTR instr, char* buffer) {
     case 0b000: sprintf(buffer, "bfeq %s, %s, %d", freg_name[rs1], freg_name[rs2], sext(imm, 12)); break;
     // bfle
     case 0b001: sprintf(buffer, "bfle %s, %s, %d", freg_name[rs1], freg_name[rs2], sext(imm, 12)); break;
+    // bflt
+    case 0b010: sprintf(buffer, "bflt %s, %s, %d", freg_name[rs1], freg_name[rs2], sext(imm, 12)); break;
     // unexpected
     default: sprintf(buffer, "unexpected branch"); break;
     }
