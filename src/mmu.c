@@ -10,7 +10,7 @@ const WORD mmu_read_data_cached(const MMU* mmu, void* const core, const ADDR add
     // cache miss
     if (mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
         // count stall
-        // ((CORE*)core)->stall_counter += TODO;
+        ((CORE*)core)->stall_counter += 50;
         // load certain block to cache
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         val = mmu->data_mem->read_word(mmu->data_mem, addr);
@@ -33,7 +33,7 @@ void mmu_write_data_cached(const MMU* mmu, void* const core, const ADDR addr, co
     // cache miss
     if (mmu->data_cache->write_word(mmu->data_cache, addr, val)) {
         // count stall
-        // ((CORE*)core)->stall_counter += TODO;
+        ((CORE*)core)->stall_counter += 25;
         // write allocate
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         mmu->data_cache->write_word(mmu->data_cache, addr, val);

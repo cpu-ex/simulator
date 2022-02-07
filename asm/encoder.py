@@ -530,9 +530,9 @@ class F_load(Code):
         return [mc]
     
     def __str__(self) -> str:
-        rd = idx2reg(reg2idx(self.rd))
+        rd = idx2reg(reg2idx(self.rd), type='f')
         imm = self.imm
-        rs1 = idx2reg(reg2idx(self.rs1))
+        rs1 = idx2reg(reg2idx(self.rs1), type='f')
         return f'{self.name} {rd}, {imm}({rs1})'
 
 ######################################## f-store ########################################
@@ -563,9 +563,9 @@ class F_store(Code):
         return [mc]
     
     def __str__(self) -> str:
-        rs2 = idx2reg(reg2idx(self.rs2))
+        rs2 = idx2reg(reg2idx(self.rs2), type='f')
         imm = self.imm
-        rs1 = idx2reg(reg2idx(self.rs1))
+        rs1 = idx2reg(reg2idx(self.rs1), type='f')
         return f'{self.name} {rs2}, {imm}({rs1})'
 
 ######################################## f-arith ########################################
@@ -648,9 +648,9 @@ class F_arith(Code):
         return [mc]
     
     def __str__(self) -> str:
-        rd = idx2reg(reg2idx(self.rd))
-        rs1 = idx2reg(reg2idx(self.rs1))
-        rs2 = idx2reg(reg2idx(self.rs2))
+        rd = idx2reg(reg2idx(self.rd), type='f')
+        rs1 = idx2reg(reg2idx(self.rs1), type='f')
+        rs2 = idx2reg(reg2idx(self.rs2), type='f')
         if self.name == 'fsqrt':
             return f'{self.name} {rd}, {rs1}'
         else:
@@ -667,12 +667,44 @@ class F_branch(Code):
         self.rs1 = tokenizedCode[1]
         self.rs2 = tokenizedCode[2]
         self.tag = tokenizedCode[3]
+        self.assumedLength = 3
+    
+    def optimize(self, addr: int, tags: dict) -> list:
+        name = self.name
+        imm = tag2offset(self.tag, tags, addr)
+
+        try:
+            checkImm(imm, 13, True)
+            self.actualLength = 1
+            return [self]
+        except RuntimeError:
+            oldTag = self.tag
+            newTag = f'additional_branch_tag_{inc()}'
+            if name == 'bfeq':
+                self.actualLength = 3
+                return [
+                    F_arith(('feq', 'x4', self.rs1, self.rs2)),
+                    F_branch(('bfeq', 'x4', 'zero', newTag)),
+                    Jal(('jal', 'zero', oldTag)),
+                    Tags((newTag,))
+                ]
+            elif name in ['bflt', 'bfle']:
+                newName = 'bflt' if name == 'bfle' else 'bfle'
+                self.actualLength = 2
+                return [
+                    F_branch((newName, self.rs2, self.rs1, newTag)),
+                    Jal(('jal', 'zero', oldTag)),
+                    Tags((newTag,))
+                ]
+            else:
+                # not suppose to be here
+                raise RuntimeError(f'unrecognizable f-branch type \'{name}\'')
 
     def finalize(self, addr: int, tags: dict) -> list:
         self.imm = tag2offset(self.tag, tags, addr)
         return [self]
     
-    # branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100001
+    # f-branch imm[12,10:5] rs2 rs1 funct3 imm[4:1,11] 1100001
     def encode(self) -> list:
         name = self.name
         rs1 = reg2idx(self.rs1)
@@ -687,6 +719,8 @@ class F_branch(Code):
             mc |= 0b000 << 12
         elif name == 'bfle':
             mc |= 0b001 << 12
+        elif name == 'bflt':
+            mc |= 0b010 << 12
         else:
             # not suppose to be here
             raise RuntimeError(f'unrecognizable branch type \'{name}\'')
@@ -697,8 +731,8 @@ class F_branch(Code):
         return [mc]
     
     def __str__(self) -> str:
-        rs1 = idx2reg(reg2idx(self.rs1))
-        rs2 = idx2reg(reg2idx(self.rs2))
+        rs1 = idx2reg(reg2idx(self.rs1), type='f')
+        rs2 = idx2reg(reg2idx(self.rs2), type='f')
         imm = self.imm
         return f'{self.name} {rs1}, {rs2}, {imm}'
 

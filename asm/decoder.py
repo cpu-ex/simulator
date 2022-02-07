@@ -77,6 +77,7 @@ class Block(object):
         # f-branch rs1, rs2, tag
         'BFEQ': (re.compile(r'(bfeq)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
         'BFLE': (re.compile(r'(bfle)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
+        'BFLT': (re.compile(r'(bflt)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
 
 
         # pseudo

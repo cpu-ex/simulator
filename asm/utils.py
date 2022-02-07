@@ -41,8 +41,9 @@ def reg2idx(name: str) -> int:
             return idx
     raise RuntimeError(f'invalid register \'{name}\'')
 
-def idx2reg(idx: int) -> str:
-    names = [key for key, val in {**reg, **freg}.items() if val == idx]
+def idx2reg(idx: int, type: str='x') -> str:
+    d = reg if type == 'x' else freg
+    names = [key for key, val in d.items() if val == idx]
     return names[0] if names else None
 
 def imm2int(imm: str) -> int:
