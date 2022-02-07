@@ -81,7 +81,7 @@ void update_detail(WINDOW* outer, WINDOW* inner, CORE* core, FOCUS_INFO* focused
     } };
     for (int i = focused->offset; i < min(focused->offset + 16, BLOCK_SIZE >> 2); ++i) {
         wattron(inner, COLOR_PAIR(SUBTITLE_COLOR));
-        helper.d.offset = i << 4;
+        helper.d.offset = i << 2;
         mvwprintw(inner, i - focused->offset, 0, "0x%08X   ", helper.raw);
         wattroff(inner, COLOR_PAIR(SUBTITLE_COLOR));
         for (int j = 0; j < 0x10; ++j)
