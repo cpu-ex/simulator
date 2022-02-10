@@ -74,10 +74,6 @@ class Block(object):
         'FSGNJ': (re.compile(r'(fsgnj)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJN': (re.compile(r'(fsgnjn)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
         'FSGNJX': (re.compile(r'(fsgnjx)\s+(\S+),\s*(\S+),\s*(\S+)'), F_arith),
-        # f-branch rs1, rs2, tag
-        'BFEQ': (re.compile(r'(bfeq)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
-        'BFLE': (re.compile(r'(bfle)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
-        'BFLT': (re.compile(r'(bflt)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
 
 
         # pseudo
@@ -96,8 +92,16 @@ class Block(object):
         'PSEUDO-FMV': (re.compile(r'(fmv)\s+(\S+),\s*(\S+)'), Pseudo_fmv),
         'PSEUDO-FABS': (re.compile(r'(fabs)\s+(\S+),\s*(\S+)'), Pseudo_fabs),
         'PSEUDO-FNEG': (re.compile(r'(fneg)\s+(\S+),\s*(\S+)'), Pseudo_fneg),
+
         # special
         'SWI': (re.compile(r'(swi)\s+(\S+),\s*(-?\S+)\((\S+)\)'), Store),
+        # f-branch rs1, rs2, tag
+        'BFEQ': (re.compile(r'(bfeq)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
+        'BFLE': (re.compile(r'(bfle)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
+        'BFLT': (re.compile(r'(bflt)\s+(\S+),\s*(\S+),\s*(\S+)'), F_branch),
+        # vector
+        'VLW': (re.compile(r'(vlw)\s+(\S+),\s*(\S+),\s*(\S+),\s*(\S+),\s*(-?\S+)\((\S+)\),\s*(\S+)'), Vector),
+        'VSW': (re.compile(r'(vsw)\s+(\S+),\s*(\S+),\s*(\S+),\s*(\S+),\s*(-?\S+)\((\S+)\),\s*(\S+)'), Vector),
     }
 
     def __init__(self, originalCode: Code, lineno: int) -> None:

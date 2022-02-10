@@ -736,6 +736,59 @@ class F_branch(Code):
         imm = self.imm
         return f'{self.name} {rs1}, {rs2}, {imm}'
 
+######################################## vector ########################################
+
+class Vector(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool = True) -> None:
+        super().__init__(tokenizedCode, forSim)
+        self.name = tokenizedCode[0].lower()
+        self.r2 = tokenizedCode[1]
+        self.r3 = tokenizedCode[2]
+        self.r4 = tokenizedCode[3]
+        self.r5 = tokenizedCode[4]
+        self.imm = tokenizedCode[5]
+        self.r1 = tokenizedCode[6]
+        self.mask = tokenizedCode[7]
+
+        self.assumedLength = 2
+        self.actualLength = 2
+    
+    # vec r2, r3, r4, r5, imm(r1), mask
+    def encode(self) -> list:
+        name = self.name
+        r1 = reg2idx(self.r1, aligned=True)
+        r2 = reg2idx(self.r2, aligned=True)
+        r3 = reg2idx(self.r3, aligned=True)
+        r4 = reg2idx(self.r4, aligned=True)
+        r5 = reg2idx(self.r5, aligned=True)
+        imm = imm2int(self.imm)
+        mask = int(self.mask, base=2)
+        checkImm(imm, 12, True)
+        checkImm(mask, 4, False)
+
+        mc1 = 0b1000000 if name == 'vlw' else 0b1000010
+        mc1 |= (mask & 0xF) << 7
+        mc1 |= (r1 & 0x1F) << 15
+        mc1 |= (imm & 0xFFF) << 20
+        mc2 = 0b1000000 if name == 'vlw' else 0b1000010
+        mc2 |= (r5 & 0x3F) << 8
+        mc2 |= (r4 & 0x3F) << 14
+        mc2 |= (r3 & 0x3F) << 20
+        mc2 |= (r2 & 0x3F) << 26
+
+        return [mc1, mc2]
+    
+    def __str__(self) -> str:
+        r1 = idx2reg(reg2idx(self.r1, aligned=True))
+        r2 = idx2reg(reg2idx(self.r2, aligned=True))
+        r3 = idx2reg(reg2idx(self.r3, aligned=True))
+        r4 = idx2reg(reg2idx(self.r4, aligned=True))
+        r5 = idx2reg(reg2idx(self.r5, aligned=True))
+        imm = self.imm
+        mask = self.mask
+        return f'{self.name} {r2}, {r3}, {r4}, {r5}, {imm}({r1}), {mask}'
+
 ######################################## pseudo-nop ########################################
 
 class Pseudo_nop(Code):

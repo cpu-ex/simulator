@@ -30,20 +30,22 @@ def getHiLo(val: int) -> tuple:
     low = struct.unpack('>i', struct.pack('>I', low))[0]
     return high, low
 
-def reg2idx(name: str) -> int:
+def reg2idx(name: str, aligned: bool=False) -> int:
     if (idx := reg.get(name, None)) is not None:
         return idx
     elif (idx := freg.get(name, None)) is not None:
-        return idx
-    elif res := re.match(r'[xf](\d+)', name):
-        idx = int(res.groups()[0])
-        if idx < 32:
+        return idx + (32 if aligned else 0)
+    elif res := re.match(r'[x](\d+)', name):
+        if (idx := int(res.groups()[0])) < 32:
             return idx
+    elif res := re.match(r'[f](\d+)', name):
+        if (idx := int(res.groups()[0])) < 32:
+            return idx + (32 if aligned else 0)
     raise RuntimeError(f'invalid register \'{name}\'')
 
 def idx2reg(idx: int, type: str='x') -> str:
-    d = reg if type == 'x' else freg
-    names = [key for key, val in d.items() if val == idx]
+    d = freg if (type == 'f' or idx >= 32) else reg
+    names = [key for key, val in d.items() if val == (idx % 32)]
     return names[0] if names else None
 
 def imm2int(imm: str) -> int:
