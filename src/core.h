@@ -11,7 +11,7 @@
 #define UART_ADDR     0x3FFFFFC
 #define UART_IN_SIZE  0x800 // 2KB
 #define UART_OUT_SIZE MINRT_128_SIZE
-#define UART_BAUDRATE 576000
+#define UART_BAUDRATE 2304000
 
 static char* reg_name[32] = {
     "zero",

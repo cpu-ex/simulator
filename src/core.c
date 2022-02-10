@@ -27,6 +27,7 @@ void init_uart_queue(UART_QUEUE* uart, u32 size) {
 }
 
 /******************** core lite ********************/
+
 void core_step_lite(CORE* const core) {
     // rudely fetch
     register const INSTR instr = { .raw = core->mmu->instr_mem[core->pc >> 2] };
@@ -66,22 +67,6 @@ void core_step_lite(CORE* const core) {
                 (FLOAT_HELPER){ .i = core->fregs[rs1] },
                 (FLOAT_HELPER){ .i = core->fregs[rs2] }
             ).i;
-            core->pc += 4;
-            break;
-        // fcmp
-        case 0b1010000:
-            f1.i = core->fregs[rs1];
-            f2.i = core->fregs[rs2];
-            switch (funct3) {
-            // fle
-            case 0b000: core->regs[rd] = (f1.f <= f2.f) ? 1 : 0; break;
-            // flt
-            case 0b001: core->regs[rd] = (f1.f < f2.f) ? 1 : 0; break;
-            // feq
-            case 0b010: core->regs[rd] = (f1.f == f2.f) ? 1 : 0; break;
-            // unexpected
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
             core->pc += 4;
             break;
         // fadd
@@ -126,6 +111,22 @@ void core_step_lite(CORE* const core) {
         // f-mv to float from integer
         case 0b1111000:
             core->fregs[rd] = core->regs[rs1];
+            core->pc += 4;
+            break;
+        // fcmp
+        case 0b1010000:
+            f1.i = core->fregs[rs1];
+            f2.i = core->fregs[rs2];
+            switch (funct3) {
+            // fle
+            case 0b000: core->regs[rd] = (f1.f <= f2.f) ? 1 : 0; break;
+            // flt
+            case 0b001: core->regs[rd] = (f1.f < f2.f) ? 1 : 0; break;
+            // feq
+            case 0b010: core->regs[rd] = (f1.f == f2.f) ? 1 : 0; break;
+            // unexpected
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+            }
             core->pc += 4;
             break;
         // fsqrt
@@ -412,23 +413,6 @@ void core_step_gui(CORE* const core) {
             core->stall_counter += 3;
             ++core->instr_analysis[FMUL];
             break;
-        // fcmp
-        case 0b1010000:
-            f1.i = core->fregs[rs1];
-            f2.i = core->fregs[rs2];
-            switch (funct3) {
-            // fle
-            case 0b000: core->regs[rd] = (f1.f <= f2.f) ? 1 : 0; break;
-            // flt
-            case 0b001: core->regs[rd] = (f1.f < f2.f) ? 1 : 0; break;
-            // feq
-            case 0b010: core->regs[rd] = (f1.f == f2.f) ? 1 : 0; break;
-            // unexpected
-            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-            }
-            core->pc += 4;
-            ++core->instr_analysis[FCMP];
-            break;
         // fadd
         case 0b0000000:
             core->fregs[rd] = (FLOAT_HELPER){
@@ -481,12 +465,29 @@ void core_step_gui(CORE* const core) {
             core->pc += 4;
             ++core->instr_analysis[FMV2F];
             break;
+        // fcmp
+        case 0b1010000:
+            f1.i = core->fregs[rs1];
+            f2.i = core->fregs[rs2];
+            switch (funct3) {
+            // fle
+            case 0b000: core->regs[rd] = (f1.f <= f2.f) ? 1 : 0; break;
+            // flt
+            case 0b001: core->regs[rd] = (f1.f < f2.f) ? 1 : 0; break;
+            // feq
+            case 0b010: core->regs[rd] = (f1.f == f2.f) ? 1 : 0; break;
+            // unexpected
+            default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+            }
+            core->pc += 4;
+            ++core->instr_analysis[FCMP];
+            break;
         // fsqrt
         case 0b0101100:
             core->fregs[rd] = fsqrt((FLOAT_HELPER){ .i = core->fregs[rs1] }).i;
             core->pc += 4;
             // count stall
-            core->stall_counter += 8;
+            core->stall_counter += 7;
             ++core->instr_analysis[FSQRT];
             break;
         // fdiv
@@ -599,8 +600,6 @@ void core_step_gui(CORE* const core) {
         imm = instr.j.imm20 << 20 | instr.j.imm19_12 << 12 | instr.j.imm11 << 11 | instr.j.imm10_1 << 1;
         core->regs[rd] = core->pc + 4;
         core->pc += sext(imm, 20);
-        // count stall
-        core->stall_counter += 2;
         ++core->instr_analysis[JAL];
         break;
     // arith
