@@ -17,6 +17,8 @@ void show_analysis_win(CORE* core) {
     wattroff(block1, COLOR_PAIR(STANDOUT_COLOR));
     for (int i = 0; i < 10; ++i)
         mvwprintw(block1, i + 2, 0, "%-7s %11llu", instr_name[i], core->instr_analysis[i]);
+    mvwprintw(block1, 13, 0, "%-7s %11llu", "v-load", core->instr_analysis[V_LOAD]);
+    mvwprintw(block1, 14, 0, "%-7s %11llu", "v-store", core->instr_analysis[V_STORE]);
     for (int i = 10; i < 24; ++i)
         mvwprintw(block1, i - 10 + 2, 20, "%-8s %11llu", instr_name[i], core->instr_analysis[i]);
     mvwprintw(block1, 16, 0, "instruction(s): %llu", core->instr_counter);

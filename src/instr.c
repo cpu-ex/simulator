@@ -306,6 +306,40 @@ void F_BRANCH_DISASM(INSTR instr, char* buffer) {
     }
 }
 
+// v-load1 imm(r1), mask
+void V_LOAD1_DISASM(INSTR instr, char* buffer) {
+    WORD imm = instr.v1.imm;
+    BYTE r1 = instr.v1.r1;
+    BYTE mask = instr.v1.mask;
+    sprintf(buffer, "vlw %d(%s), 0x%X", sext(imm, 11), reg_name[r1], mask);
+}
+
+// v-load2 r2, r3, r4, r5
+void V_LOAD2_DISASM(INSTR instr, char* buffer) {
+    BYTE r2 = instr.v2.r2;
+    BYTE r3 = instr.v2.r3;
+    BYTE r4 = instr.v2.r4;
+    BYTE r5 = instr.v2.r5;
+    sprintf(buffer, "vlw %s, %s, %s, %s", reg_name[r2], reg_name[r3], reg_name[r4], reg_name[r5]);
+}
+
+// v-store1 imm(r1), mask
+void V_STORE1_DISASM(INSTR instr, char* buffer) {
+    WORD imm = instr.v1.imm;
+    BYTE r1 = instr.v1.r1;
+    BYTE mask = instr.v1.mask;
+    sprintf(buffer, "vsw %d(%s), 0x%X", sext(imm, 11), reg_name[r1], mask);
+}
+
+// v-store2 r2, r3, r4, r5
+void V_STORE2_DISASM(INSTR instr, char* buffer) {
+    BYTE r2 = instr.v2.r2;
+    BYTE r3 = instr.v2.r3;
+    BYTE r4 = instr.v2.r4;
+    BYTE r5 = instr.v2.r5;
+    sprintf(buffer, "vsw %s, %s, %s, %s", reg_name[r2], reg_name[r3], reg_name[r4], reg_name[r5]);
+}
+
 u8 disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* RV32I */
@@ -369,6 +403,11 @@ u8 disasm(INSTR instr, char* buffer) {
         break;
     // f-branch
     case 0b1100001: F_BRANCH_DISASM(instr, buffer); return F_BRANCH;
+    // vector
+    case 0b1000000: V_LOAD1_DISASM(instr, buffer); return V_LOAD;
+    case 0b1100000: V_LOAD2_DISASM(instr, buffer); return V_LOAD;
+    case 0b1000010: V_STORE1_DISASM(instr, buffer); return V_STORE;
+    case 0b1100010: V_STORE2_DISASM(instr, buffer); return V_STORE;
     // unexpected
     default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
     }

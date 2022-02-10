@@ -771,7 +771,7 @@ class Vector(Code):
         mc1 |= (mask & 0xF) << 7
         mc1 |= (r1 & 0x1F) << 15
         mc1 |= (imm & 0xFFF) << 20
-        mc2 = 0b1000000 if name == 'vlw' else 0b1000010
+        mc2 = 0b1100000 if name == 'vlw' else 0b1100010
         mc2 |= (r5 & 0x3F) << 8
         mc2 |= (r4 & 0x3F) << 14
         mc2 |= (r3 & 0x3F) << 20

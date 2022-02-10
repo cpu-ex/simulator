@@ -3,7 +3,7 @@
 
 #define sext(val, shift) ((val) | (((val) & (1 << (shift))) ? ~((1 << (shift)) - 1) : 0))
 
-static char* instr_name[24] = {
+static char* instr_name[] = {
     "lui", "auipc",
     "jal", "jalr",
     "branch",
@@ -13,7 +13,8 @@ static char* instr_name[24] = {
     "f-load", "f-store",
     "fmv2i", "fmv2f",
     "fadd", "fsub", "fmul", "fdiv", "fsqrt", "fcmp",
-    "fcvt2f", "fcvt2i", "fsgnj", "f-branch"
+    "fcvt2f", "fcvt2i", "fsgnj", "f-branch",
+    "v-load", "v-store"
 };
 
 enum instr_type {
@@ -26,7 +27,8 @@ enum instr_type {
     F_LOAD, F_STORE,
     FMV2I, FMV2F,
     FADD, FSUB, FMUL, FDIV, FSQRT, FCMP,
-    FCVT2F, FCVT2I, FSGNJ, F_BRANCH, UNDEFINED
+    FCVT2F, FCVT2I, FSGNJ, F_BRANCH,
+    V_LOAD, V_STORE, UNDEFINED
 };
 
 typedef union instr {
@@ -88,6 +90,23 @@ typedef union instr {
         u32 imm10_1 : 10;
         u32 imm20 : 1;
     } __attribute__((packed)) j;
+
+    struct instr_v1 {
+        u32 opcode : 7;
+        u32 mask : 4;
+        u32 : 4;
+        u32 r1 : 5;
+        u32 imm : 12;
+    } __attribute__((packed)) v1;
+
+    struct instr_v2 {
+        u32 opcode : 7;
+        u32 : 1;
+        u32 r5 : 6;
+        u32 r4 : 6;
+        u32 r3 : 6;
+        u32 r2 : 6;
+    } __attribute__((packed)) v2;
 } INSTR;
 
 u8 disasm(INSTR instr, char* buffer);

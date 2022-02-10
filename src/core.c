@@ -170,6 +170,32 @@ void core_step_lite(CORE* const core) {
         core->pc += 4;
         ++core->instr_analysis[STORE];
         break;
+    // vector1
+    case 0b1000000:
+    case 0b1000010:
+        imm = instr.v1.imm;
+        core->vec_addr = core->regs[rs1] + sext(imm, 11);
+        core->vec_mask = instr.v1.mask;
+        core->pc += 4;
+        return;
+    // v-load
+    case 0b1100000:
+        if (core->vec_mask & 0x8) core->regs[instr.v2.r2] = core->load_data(core, core->vec_addr);
+        if (core->vec_mask & 0x4) core->regs[instr.v2.r3] = core->load_data(core, core->vec_addr + 0x4);
+        if (core->vec_mask & 0x2) core->regs[instr.v2.r4] = core->load_data(core, core->vec_addr + 0x8);
+        if (core->vec_mask & 0x1) core->regs[instr.v2.r5] = core->load_data(core, core->vec_addr + 0xC);
+        core->pc += 4;
+        ++core->instr_analysis[V_LOAD];
+        break;
+    // v-store
+    case 0b1100010:
+        if (core->vec_mask & 0x8) core->store_data(core, core->vec_addr, core->regs[instr.v2.r2]);
+        if (core->vec_mask & 0x4) core->store_data(core, core->vec_addr + 0x4, core->regs[instr.v2.r3]);
+        if (core->vec_mask & 0x2) core->store_data(core, core->vec_addr + 0x8, core->regs[instr.v2.r4]);
+        if (core->vec_mask & 0x1) core->store_data(core, core->vec_addr + 0xC, core->regs[instr.v2.r5]);
+        core->pc += 4;
+        ++core->instr_analysis[V_STORE];
+        break;
     // branch
     case 0b1100011:
         imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
@@ -182,21 +208,6 @@ void core_step_lite(CORE* const core) {
         case 0b001: tmp = (core->regs[rs1] != core->regs[rs2]) ? 1 : 0; break;
         // blt
         case 0b100: tmp = ((s32)core->regs[rs1] < (s32)core->regs[rs2]) ? 1 : 0; break;
-        // unexpected
-        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-        }
-        core->pc += tmp ? sext(imm, 12) : 4; // ignore branch stall
-        break;
-    // f-branch
-    case 0b1100001:
-        f1.i = core->fregs[rs1];
-        f2.i = core->fregs[rs2];
-        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
-        switch (funct3) {
-        // bfle
-        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
-        // bfeq
-        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
         // unexpected
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
@@ -232,6 +243,23 @@ void core_step_lite(CORE* const core) {
         default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
         }
         core->pc += 4;
+        break;
+    // f-branch
+    case 0b1100001:
+        f1.i = core->fregs[rs1];
+        f2.i = core->fregs[rs2];
+        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
+        switch (funct3) {
+        // bflt
+        case 0b010: tmp = (f1.f < f2.f) ? 1 : 0; break;
+        // bfle
+        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
+        // bfeq
+        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
+        // unexpected
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        core->pc += tmp ? sext(imm, 12) : 4; // ignore branch stall
         break;
     // f-store
     case 0b0100111:
@@ -519,6 +547,32 @@ void core_step_gui(CORE* const core) {
         core->pc += 4;
         ++core->instr_analysis[STORE];
         break;
+    // vector1
+    case 0b1000000:
+    case 0b1000010:
+        imm = instr.v1.imm;
+        core->vec_addr = core->regs[rs1] + sext(imm, 11);
+        core->vec_mask = instr.v1.mask;
+        core->pc += 4;
+        return;
+    // v-load
+    case 0b1100000:
+        if (core->vec_mask & 0x8) core->regs[instr.v2.r2] = core->load_data(core, core->vec_addr);
+        if (core->vec_mask & 0x4) core->regs[instr.v2.r3] = core->load_data(core, core->vec_addr + 0x4);
+        if (core->vec_mask & 0x2) core->regs[instr.v2.r4] = core->load_data(core, core->vec_addr + 0x8);
+        if (core->vec_mask & 0x1) core->regs[instr.v2.r5] = core->load_data(core, core->vec_addr + 0xC);
+        core->pc += 4;
+        ++core->instr_analysis[V_LOAD];
+        break;
+    // v-store
+    case 0b1100010:
+        if (core->vec_mask & 0x8) core->store_data(core, core->vec_addr, core->regs[instr.v2.r2]);
+        if (core->vec_mask & 0x4) core->store_data(core, core->vec_addr + 0x4, core->regs[instr.v2.r3]);
+        if (core->vec_mask & 0x2) core->store_data(core, core->vec_addr + 0x8, core->regs[instr.v2.r4]);
+        if (core->vec_mask & 0x1) core->store_data(core, core->vec_addr + 0xC, core->regs[instr.v2.r5]);
+        core->pc += 4;
+        ++core->instr_analysis[V_STORE];
+        break;
     // branch
     case 0b1100011:
         imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
@@ -539,27 +593,6 @@ void core_step_gui(CORE* const core) {
         // increment pc
         core->pc += tmp ? sext(imm, 12) : 4;
         ++core->instr_analysis[BRANCH];
-        break;
-    // f-branch
-    case 0b1100001:
-        f1.i = core->fregs[rs1];
-        f2.i = core->fregs[rs2];
-        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
-        switch (funct3) {
-        // bflt
-        case 0b010: tmp = (f1.f < f2.f) ? 1 : 0; break;
-        // bfle
-        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
-        // bfeq
-        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
-        // unexpected
-        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
-        }
-        // predict branch and count stall
-        core->stall_counter += core->branch_predictor->get_branch_stall(core->branch_predictor, core->pc, tmp);
-        // increment pc
-        core->pc += tmp ? sext(imm, 12) : 4;
-        ++core->instr_analysis[F_BRANCH];
         break;
     // jal
     case 0b1101111:
@@ -602,6 +635,27 @@ void core_step_gui(CORE* const core) {
         }
         core->pc += 4;
         ++core->instr_analysis[ARITH];
+        break;
+    // f-branch
+    case 0b1100001:
+        f1.i = core->fregs[rs1];
+        f2.i = core->fregs[rs2];
+        imm = instr.b.imm12 << 12 | instr.b.imm11 << 11 | instr.b.imm10_5 << 5 | instr.b.imm4_1 << 1;
+        switch (funct3) {
+        // bflt
+        case 0b010: tmp = (f1.f < f2.f) ? 1 : 0; break;
+        // bfle
+        case 0b001: tmp = (f1.f <= f2.f) ? 1 : 0; break;
+        // bfeq
+        case 0b000: tmp = (f1.f == f2.f) ? 1 : 0; break;
+        // unexpected
+        default: BROADCAST(STAT_INSTR_EXCEPTION | ((u64)instr.raw << STAT_SHIFT_AMOUNT)); break;
+        }
+        // predict branch and count stall
+        core->stall_counter += core->branch_predictor->get_branch_stall(core->branch_predictor, core->pc, tmp);
+        // increment pc
+        core->pc += tmp ? sext(imm, 12) : 4;
+        ++core->instr_analysis[F_BRANCH];
         break;
     // f-store
     case 0b0100111:
@@ -728,7 +782,7 @@ void core_reset(CORE* core) {
     // reset instruction analysis
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 24 * sizeof(u64));
+    memset(core->instr_analysis, 0, 26 * sizeof(u64));
     // reset branch predictor
     core->branch_predictor->reset(core->branch_predictor);
 }
@@ -764,7 +818,7 @@ void init_core(CORE* core, u8 is_lite) {
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 24 * sizeof(u64));
+    memset(core->instr_analysis, 0, 26 * sizeof(u64));
     // prepare for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);

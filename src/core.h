@@ -49,6 +49,8 @@ typedef struct core {
     WORD pc;
     WORD regs[32];
     WORD fregs[32];
+    WORD vec_addr;
+    WORD vec_mask;
     UART_QUEUE *uart_in, *uart_out;
     MMU* mmu;
     BRANCH_PREDICTOR* branch_predictor;
@@ -58,7 +60,7 @@ typedef struct core {
     // analysis
     u64 instr_counter;
     u64 stall_counter;
-    u64 instr_analysis[24];
+    u64 instr_analysis[26];
     // interfaces
     void (*step)(struct core* const);
     const WORD (*load_instr)(const struct core*, const ADDR);
