@@ -555,6 +555,7 @@ void core_step_gui(CORE* const core) {
         core->vec_addr = core->regs[rs1] + sext(imm, 11);
         core->vec_mask = instr.v1.mask;
         core->pc += 4;
+        ++BROADCAST.decoder.info;
         return;
     // v-load
     case 0b1100000:
