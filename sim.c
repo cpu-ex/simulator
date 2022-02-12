@@ -61,7 +61,8 @@ void sim_load_file(SIM* sim, char* code_name, char* data_name, char* sld_name) {
     }
 }
 
-void sim_run_lite(SIM* const sim) {
+void sim_run(SIM* const sim) {
+    #if defined(LITE)
     // timer
     clock_t t1, t2;
     CORE* const core = sim->core;
@@ -77,9 +78,7 @@ void sim_run_lite(SIM* const sim) {
         (f64)sim->core->instr_counter * CLOCKS_PER_SEC / (f64)(t2 - t1)
     );
     sim->core->deinit(sim->core);
-}
-
-void sim_run_gui(SIM* const sim) {
+    #else
     sim->gui->activate(sim->gui);
     // main loop of simulator
     for (;;) {
@@ -128,12 +127,13 @@ void sim_run_gui(SIM* const sim) {
             break;
         }
     }
+    #endif
 }
 
-void init_sim(SIM* sim, u8 is_lite, u8 is_nocache) {
+void init_sim(SIM* sim, u8 is_nocache) {
     // init mmu
     static MMU mmu;
-    init_mmu(&mmu, is_lite || is_nocache);
+    init_mmu(&mmu, is_nocache);
     // init branch predictor
     static BRANCH_PREDICTOR branch_predictor;
     init_branch_predictor(&branch_predictor);
@@ -143,21 +143,21 @@ void init_sim(SIM* sim, u8 is_lite, u8 is_nocache) {
     init_uart_queue(&uart_out, UART_OUT_SIZE);
     // init core
     static CORE core;
-    init_core(&core, is_lite);
+    init_core(&core);
     sim->core = &core;
     sim->core->mmu = &mmu;
     sim->core->branch_predictor = &branch_predictor;
     sim->core->uart_in = &uart_in;
     sim->core->uart_out = &uart_out;
+    #if !defined(LITE)
     // init GUI
-    if (!is_lite) {
-        static GUI gui;
-        init_gui(&gui);
-        sim->gui = &gui;
-    }
+    static GUI gui;
+    init_gui(&gui);
+    sim->gui = &gui;
+    #endif
     // assign interfaces
     sim->load = sim_load_file;
-    sim->run = is_lite ? sim_run_lite : sim_run_gui;
+    sim->run = sim_run;
     // broadcast state
     BROADCAST(STAT_HALT);
 }

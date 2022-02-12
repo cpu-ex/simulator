@@ -12,4 +12,4 @@ typedef struct sim {
     void (*run)(struct sim* const);
 } SIM;
 
-void init_sim(SIM* sim, u8 is_lite, u8 is_nocache);
+void init_sim(SIM* sim, u8 is_nocache);

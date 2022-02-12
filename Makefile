@@ -2,9 +2,14 @@ VPATH = src gui asm
 srcs = $(wildcard *.c) $(wildcard src/*.c) $(wildcard gui/*.c)
 objs = $(patsubst %.c, %.o, $(srcs))
 
-all: sim disasm
+all: sim sim-lite disasm
 
 sim: $(objs)
+	gcc -o $@ $^ -lncurses -lm -O3
+
+sim-lite: $(objs)
+	gcc -c -o sim.o sim.c -DLITE
+	gcc -c -o src/core.o src/core.c -DLITE
 	gcc -o $@ $^ -lncurses -lm -O3
 
 disasm: ./asm/disasm.o ./src/instr.o
@@ -20,4 +25,4 @@ gui.o: core.h splash_win.h help_win.h main_win.h analysis_win.h cache_win.h
 
 .PHONY: clean
 clean:
-	rm sim $(objs) disasm ./asm/disasm.o
+	rm sim sim-lite $(objs) disasm ./asm/disasm.o

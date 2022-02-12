@@ -4,7 +4,6 @@
 static struct option optional_args[] = {
     {"data", required_argument, NULL, 'd'},
     {"sld", required_argument, NULL, 's'},
-    {"lite", no_argument, NULL, 'l'},
     {"nocache", no_argument, NULL, 'n'},
     {"help", no_argument, NULL, 'h'}
 };
@@ -18,7 +17,6 @@ static char* HELP_MSG[] = {
     "\t-h, --help\tshow this help message and exit\n",
     "\t--data DATA\tprovide a binary data file (relative path supported), default to ./bin/code_name.data\n",
     "\t--sld SLD\tprovide a binary sld file (relative path supported)\n",
-    "\t--lite   \tstart simulator in lite mode without gui window and no exception will be checked during excecuting, just looping util end of the program\n",
     "\t--nocache\tstart simulator in nocache mode which is valid in normal gui mode\n"
 };
 
@@ -29,7 +27,7 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
     int ch, idx;
-    int is_lite = 0, is_nocache = 0;
+    int is_nocache = 0;
     char code_name[36], data_name[36], sld_name[36] = "";
     // take 1st argument as code name by default
     sprintf(code_name, "bin/%s.code", argv[1]);
@@ -40,8 +38,6 @@ int main(int argc, char* argv[]) {
         case 'd': sprintf(data_name, "%s", optarg); break;
         // sld
         case 's': sprintf(sld_name, "%s", optarg); break;
-        // lite mode flag
-        case 'l': is_lite = 1; break;
         // nocache mode flag
         case 'n': is_nocache = 1; break;
         // show help message
@@ -51,7 +47,7 @@ int main(int argc, char* argv[]) {
     }
     // initialize simulator
     static SIM sim;
-    init_sim(&sim, is_lite, is_nocache);
+    init_sim(&sim, is_nocache);
     sim.load(&sim, code_name, data_name, sld_name);
     sim.run(&sim);
     return 0;

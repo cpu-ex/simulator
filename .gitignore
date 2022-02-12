@@ -4,6 +4,7 @@ __pycache__
 /bin
 
 sim
+sim-lite
 disasm
 *.o
 dumpfile*

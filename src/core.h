@@ -73,4 +73,4 @@ typedef struct core {
     f64 (*predict_exec_time)(struct core*);
 } CORE;
 
-void init_core(CORE* core, u8 is_lite);
+void init_core(CORE* core);
