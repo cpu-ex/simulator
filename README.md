@@ -118,3 +118,14 @@
 	| branch prediction policy | minrt16          | minrt128          | minrt512   |
 	| :----------------------- | :--------------- | :---------------- | :--------- |
 	| always untaken           | 21.755 (46.861%) | 646.243 (47.385%) | not tested |
+
+- 2022.02.12
+	- compiler: 4e1a317
+	- 2 way Set-associative Cache: LRU, 2 * 8192 * 4 words
+	- Gshare branch predictor (PHT size = 256)
+	- clk = 100Mhz, baud rate = 2304000
+
+	|       | minrt16  | minrt128  |
+	| :---- | :------- | :-------- |
+	| time  | 2.032523 | 46.339689 |
+	| error |          | 1.405%    |

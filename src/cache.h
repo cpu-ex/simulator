@@ -11,7 +11,7 @@
 // customizable variables
 #define BLOCK_SIZE    4    // in words
 #define ASSOCIATIVITY 2    // aka way
-#define SET_NUM       1024 // aka depth
+#define SET_NUM       8192 // aka depth
 // #define CACHE_FIFO
 #define CACHE_LRU
 // #define CACHE_RR // round robin

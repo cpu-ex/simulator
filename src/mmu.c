@@ -7,13 +7,15 @@ const WORD mmu_read_instr(const MMU* mmu, const ADDR addr) {
 
 const WORD mmu_read_data_cached(const MMU* mmu, void* const core, const ADDR addr) {
     WORD val;
-    // cache miss
     if (mmu->data_cache->read_word(mmu->data_cache, addr, &val)) {
-        // count stall
+        // cache miss, count stall
         ((CORE*)core)->stall_counter += 50;
         // load certain block to cache
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         val = mmu->data_mem->read_word(mmu->data_mem, addr);
+    } else {
+        // cache hit
+        ((CORE*)core)->stall_counter += 1;
     }
     return val;
 }
@@ -30,13 +32,15 @@ void mmu_write_instr(const MMU* mmu, const ADDR addr, const WORD val) {
 }
 
 void mmu_write_data_cached(const MMU* mmu, void* const core, const ADDR addr, const WORD val) {
-    // cache miss
     if (mmu->data_cache->write_word(mmu->data_cache, addr, val)) {
-        // count stall
+        // cache miss, count stall
         ((CORE*)core)->stall_counter += 25;
         // write allocate
         mmu->data_cache->load_block(mmu->data_cache, addr, mmu->data_mem);
         mmu->data_cache->write_word(mmu->data_cache, addr, val);
+    } else {
+        // cache hit
+        ((CORE*)core)->stall_counter += 1;
     }
 }
 
