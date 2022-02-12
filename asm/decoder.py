@@ -102,6 +102,8 @@ class Block(object):
         # vector
         'VLW': (re.compile(r'(vlw)\s+(\S+),\s*(\S+),\s*(\S+),\s*(\S+),\s*(-?\S+)\((\S+)\),\s*(\S+)'), Vector),
         'VSW': (re.compile(r'(vsw)\s+(\S+),\s*(\S+),\s*(\S+),\s*(\S+),\s*(-?\S+)\((\S+)\),\s*(\S+)'), Vector),
+        # fli
+        'FLI': (re.compile(r'(fli)\s+(\S+),\s*(-?\S+)'), Fli),
     }
 
     def __init__(self, originalCode: Code, lineno: int) -> None:

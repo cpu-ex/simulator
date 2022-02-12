@@ -14,7 +14,7 @@ static char* instr_name[] = {
     "fmv2i", "fmv2f",
     "fadd", "fsub", "fmul", "fdiv", "fsqrt", "fcmp",
     "fcvt2f", "fcvt2i", "fsgnj", "f-branch",
-    "v-load", "v-store"
+    "v-load", "v-store", "fli"
 };
 
 enum instr_type {
@@ -28,7 +28,7 @@ enum instr_type {
     FMV2I, FMV2F,
     FADD, FSUB, FMUL, FDIV, FSQRT, FCMP,
     FCVT2F, FCVT2I, FSGNJ, F_BRANCH,
-    V_LOAD, V_STORE, UNDEFINED
+    V_LOAD, V_STORE, FLI, UNDEFINED
 };
 
 typedef union instr {

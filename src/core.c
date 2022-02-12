@@ -275,6 +275,19 @@ void core_step_lite(CORE* const core) {
         core->pc = core->regs[rs1] + sext(imm, 11);
         core->regs[rd] = t;
         break;
+    // fli
+    case 0b1000100:
+        imm = instr.u.imm31_12;
+        core->fregs[rd] = imm << 12;
+        core->pc += 4;
+        ++BROADCAST.decoder.info;
+        return;
+    case 0b1100100:
+        imm = instr.u.imm31_12;
+        core->fregs[rd] |= imm;
+        core->pc += 4;
+        ++core->instr_analysis[FLI];
+        break;
     // lui
     case 0b0110111:
         imm = instr.u.imm31_12;
@@ -674,6 +687,19 @@ void core_step_gui(CORE* const core) {
         core->stall_counter += 2;
         ++core->instr_analysis[JALR];
         break;
+    // fli
+    case 0b1000100:
+        imm = instr.u.imm31_12;
+        core->fregs[rd] = imm << 12;
+        core->pc += 4;
+        ++BROADCAST.decoder.info;
+        return;
+    case 0b1100100:
+        imm = instr.u.imm31_12;
+        core->fregs[rd] |= imm;
+        core->pc += 4;
+        ++core->instr_analysis[FLI];
+        break;
     // lui
     case 0b0110111:
         imm = instr.u.imm31_12;
@@ -782,7 +808,7 @@ void core_reset(CORE* core) {
     // reset instruction analysis
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 26 * sizeof(u64));
+    memset(core->instr_analysis, 0, 27 * sizeof(u64));
     // reset branch predictor
     core->branch_predictor->reset(core->branch_predictor);
 }
@@ -818,7 +844,7 @@ void init_core(CORE* core, u8 is_lite) {
     core->pc = DEFAULT_PC;
     core->instr_counter = 0;
     core->stall_counter = 0;
-    memset(core->instr_analysis, 0, 26 * sizeof(u64));
+    memset(core->instr_analysis, 0, 27 * sizeof(u64));
     // prepare for outputs
     time_t curr_time = time(NULL);
     struct tm* info = localtime(&curr_time);

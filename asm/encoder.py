@@ -741,7 +741,7 @@ class F_branch(Code):
 class Vector(Code):
 
     def __init__(self, tokenizedCode: tuple, forSim: bool = True) -> None:
-        super().__init__(tokenizedCode, forSim)
+        super().__init__(tokenizedCode, forSim=forSim)
         self.name = tokenizedCode[0].lower()
         self.r2 = tokenizedCode[1]
         self.r3 = tokenizedCode[2]
@@ -768,10 +768,12 @@ class Vector(Code):
         checkImm(mask, 4, False)
 
         mc1 = 0b1000000 if name == 'vlw' else 0b1000010
+        mc2 = mc1 | (0b0100000 if self.forSim else 0)
+
         mc1 |= (mask & 0xF) << 7
         mc1 |= (r1 & 0x1F) << 15
         mc1 |= (imm & 0xFFF) << 20
-        mc2 = 0b1100000 if name == 'vlw' else 0b1100010
+
         mc2 |= (r5 & 0x3F) << 8
         mc2 |= (r4 & 0x3F) << 14
         mc2 |= (r3 & 0x3F) << 20
@@ -788,6 +790,35 @@ class Vector(Code):
         imm = self.imm
         mask = self.mask
         return f'{self.name} {r2}, {r3}, {r4}, {r5}, {imm}({r1}), {mask}'
+    
+######################################## fli ########################################
+
+class Fli(Code):
+
+    def __init__(self, tokenizedCode: tuple, forSim: bool = True) -> None:
+        super().__init__(tokenizedCode, forSim=forSim)
+        self.rd = tokenizedCode[1]
+        self.imm = tokenizedCode[2]
+        self.assumedLength = 2
+        self.actualLength = 2
+    
+    # fli rd, fimm
+    def encode(self) -> list:
+        rd = reg2idx(self.rd)
+        imm = fimm2int(self.imm)
+        hi, lo = getHiLo(imm)
+
+        mc1 = 0b1000100
+        mc1 |= (rd & 0x1F) << 7
+        mc2 = mc1 | (0b0100000 if self.forSim else 0)
+
+        mc1 |= ((hi >> 12) & 0xFFFFF) << 12
+        mc2 |= ((lo >> 12) & 0x7FF) << 12
+
+        return [mc1, mc2]
+    
+    def __str__(self) -> str:
+        return f'fli {self.rd}, {self.imm}'
 
 ######################################## pseudo-nop ########################################
 

@@ -340,6 +340,13 @@ void V_STORE2_DISASM(INSTR instr, char* buffer) {
     sprintf(buffer, "vsw %s, %s, %s, %s", reg_name[r2], reg_name[r3], reg_name[r4], reg_name[r5]);
 }
 
+// fli rd, imm
+void FLI_DISASM(INSTR instr, char* buffer) {
+    BYTE rd = instr.u.rd;
+    WORD imm = instr.u.imm31_12;
+    sprintf(buffer, "fli %s, %d", freg_name[rd], imm);
+}
+
 u8 disasm(INSTR instr, char* buffer) {
     switch (instr.decoder.opcode) {
     /* RV32I */
@@ -408,6 +415,8 @@ u8 disasm(INSTR instr, char* buffer) {
     case 0b1100000: V_LOAD2_DISASM(instr, buffer); return V_LOAD;
     case 0b1000010: V_STORE1_DISASM(instr, buffer); return V_STORE;
     case 0b1100010: V_STORE2_DISASM(instr, buffer); return V_STORE;
+    // fli
+    case 0b1000100: case 0b1100100: FLI_DISASM(instr, buffer); return FLI;
     // unexpected
     default: sprintf(buffer, "unexpected instr"); return UNDEFINED;
     }
