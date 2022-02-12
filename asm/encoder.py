@@ -1021,13 +1021,30 @@ class Pseudo_tail(Code):
         self.assumedLength = 2
         self.actualLength = 2
     
+    def optimize(self, addr: int, tags: dict) -> list:
+        try:
+            offset = tag2offset(self.tag, tags, addr)
+            # check if the address of tag is small enough to fit in jal
+            checkImm(offset, 21, True)
+            self.actualLength = 1
+        except RuntimeError:
+            self.actualLength = 2
+        return [self]
+    
     def finalize(self, addr: int, tags: dict) -> list:
         offset = tag2offset(self.tag, tags, addr)
-        hi, lo = getHiLo(offset)
-        return [
-            Auipc(('auipc', 't1', str(hi))),
-            Jalr(('jalr', 'zero', str(lo), 't1'))
-        ]
+        try:
+            checkImm(offset, 21, True)
+            # the address of tag is small enough to fit in jal
+            jal = Jal(('jal', 'zero', self.tag))
+            jal.imm = offset
+            return [jal]
+        except RuntimeError:
+            hi, lo = getHiLo(offset)
+            return [
+                Auipc(('auipc', 't1', str(hi))),
+                Jalr(('jalr', 'zero', str(lo), 't1'))
+            ]
 
     def __str__(self) -> str:
         return f'tail {self.tag}'
