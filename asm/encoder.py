@@ -813,7 +813,7 @@ class Fli(Code):
         mc2 = mc1 | (0b0100000 if self.forSim else 0)
 
         mc1 |= ((hi >> 12) & 0xFFFFF) << 12
-        mc2 |= ((lo >> 12) & 0x7FF) << 12
+        mc2 |= (lo & 0xFFF) << 12
 
         return [mc1, mc2]
     

@@ -2,14 +2,16 @@ VPATH = src gui asm
 srcs = $(wildcard *.c) $(wildcard src/*.c) $(wildcard gui/*.c)
 objs = $(patsubst %.c, %.o, $(srcs))
 
-all: sim sim-lite disasm
+all: sim disasm
 
 sim: $(objs)
+	gcc -c -o sim.o sim.c
+	gcc -c -o src/core.o src/core.c
 	gcc -o $@ $^ -lncurses -lm -O3
 
 sim-lite: $(objs)
-	gcc -c -o sim.o sim.c -DLITE
-	gcc -c -o src/core.o src/core.c -DLITE
+	gcc -c -o sim.o sim.c -D LITE
+	gcc -c -o src/core.o src/core.c -D LITE
 	gcc -o $@ $^ -lncurses -lm -O3
 
 disasm: ./asm/disasm.o ./src/instr.o
