@@ -209,7 +209,7 @@ void core_step(CORE* const core) {
             core->pc += 4;
             #if !defined(LITE)
             // count stall
-            core->stall_counter += 11;
+            core->stall_counter += 10;
             ++core->instr_analysis[FDIV];
             #endif
             break;
@@ -233,7 +233,7 @@ void core_step(CORE* const core) {
             core->pc += 4;
             #if !defined(LITE)
             // count stall
-            core->stall_counter += 2;
+            core->stall_counter += 1;
             ++core->instr_analysis[FCVT2F];
             #endif
             break;

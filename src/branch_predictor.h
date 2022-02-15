@@ -7,7 +7,7 @@
 // #define BP_2BIT
 // #define BP_BIMODAL
 #define BP_GSHARE
-#define PHT_SIZE 256
+#define PHT_SIZE 512
 
 typedef struct branch_predictor {
     // 0 : strongly untaken
