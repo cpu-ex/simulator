@@ -86,46 +86,9 @@
 > 
 > run `make clean; make` to apply changes
 
-- step1: `make sim`
+- step1: `make sim` for GUI mode or `make sim-lite` for LITE mode
 - step2: check `./sim -h` for help
 - step3: do some executions like `./sim minrt16 --sld bin/contest.sld`
 - step4: type `help` to get more information about gui mode
 - step5: type `quit` to exit simulator
 - step6: `make clean`
-
-## 3. Executing time prediction
-
-- 2022.01.15
-	- compiler: 2707f16
-	- no cache
-	- clk = 10Mhz, PHT size = 1024
-	- error of always untaken = 0.24% ~ 0.49%
-
-	| branch prediction policy | minrt16           | minrt128           | minrt512            |
-	| :----------------------- | :---------------- | :----------------- | :------------------ |
-	| always untaken           | 111.268 (46.237%) | 3333.707 (46.652%) | not tested          |
-	| always taken             | 111.160 (53.763%) | 3330.855 (53.348%) | not tested          |
-	| 2bit counter             | 111.118 (56.741%) | 3329.513 (56.498%) | 37721.116 (56.594%) |
-	| bimodal                  | 110.874 (73.790%) | 3322.219 (73.619%) | not tested          |
-	| Gshare                   | 110.654 (89.182%) | 3315.675 (88.978%) | not tested          |
-
-- 2022.01.25
-	- compiler: 8c6d128
-	- no cache
-	- clk = 100Mhz
-	- error = 0.19% ~ 3.60%
-
-	| branch prediction policy | minrt16          | minrt128          | minrt512   |
-	| :----------------------- | :--------------- | :---------------- | :--------- |
-	| always untaken           | 21.755 (46.861%) | 646.243 (47.385%) | not tested |
-
-- 2022.02.12
-	- compiler: 4e1a317
-	- 2 way Set-associative Cache: LRU, 2 * 8192 * 4 words
-	- Gshare branch predictor (PHT size = 256)
-	- clk = 100Mhz, baud rate = 2304000
-
-	|       | minrt16  | minrt128  |
-	| :---- | :------- | :-------- |
-	| time  | 2.032523 | 46.339689 |
-	| error |          | 1.405%    |
