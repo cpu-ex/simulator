@@ -88,7 +88,7 @@
 
 - step1: `make sim` for GUI mode or `make sim-lite` for LITE mode
 - step2: check `./sim -h` for help
-- step3: do some executions like `./sim minrt16 --sld bin/contest.sld`
+- step3: do some executions like `./sim minrt16 --sld contest.sld`
 - step4: type `help` to get more information about gui mode
 - step5: type `quit` to exit simulator
 - step6: `make clean`
